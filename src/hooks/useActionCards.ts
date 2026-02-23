@@ -10,6 +10,7 @@ export interface DBActionCard {
   severity: string;
   capability: string | null;
   business_process_id: string | null;
+  recurso_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -90,7 +91,7 @@ export function useCreateActionCard() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; business_process_id?: string }) => {
+    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; business_process_id?: string; recurso_id?: string }) => {
       const { error } = await supabase.from("action_cards").insert({
         ...data,
         owner_id: user?.id,
@@ -105,7 +106,7 @@ export function useUpdateActionCard() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; business_process_id?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; business_process_id?: string; recurso_id?: string }) => {
       const { error } = await supabase.from("action_cards").update(data).eq("id", id);
       if (error) throw error;
     },
