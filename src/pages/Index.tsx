@@ -31,7 +31,7 @@ const Index = () => {
   const Section = sectionMap[activeSection] || EmergencySection;
 
   return (
-    <main className="flex-1 overflow-auto p-4 max-w-3xl">
+    <main className="flex-1 overflow-auto p-4 md:p-6 w-full">
       <Section />
     </main>
   );
