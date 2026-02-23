@@ -45,6 +45,11 @@ const BIASection: React.FC = () => {
   const [linkPlatId, setLinkPlatId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
 
+  // Cascading filters for business process selection in dialog
+  const [selTipoFuncao, setSelTipoFuncao] = useState<string>("__all");
+  const [selFuncao, setSelFuncao] = useState<string>("__all");
+  const [selMacro, setSelMacro] = useState<string>("__all");
+
   const t = (pt: string, en: string) => lang === "pt" ? pt : en;
 
   // When DR type changes, auto-fill RTO/RPO from DR type
@@ -58,6 +63,27 @@ const BIASection: React.FC = () => {
     }));
   };
 
+  // Cascading filter options
+  const tipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao))].sort();
+  const funcoes = [...new Set(businessProcesses
+    .filter(bp => selTipoFuncao === "__all" || bp.tipo_funcao === selTipoFuncao)
+    .map(bp => bp.funcao))].sort();
+  const macros = [...new Set(businessProcesses
+    .filter(bp => (selTipoFuncao === "__all" || bp.tipo_funcao === selTipoFuncao) &&
+                  (selFuncao === "__all" || bp.funcao === selFuncao))
+    .map(bp => bp.macro_processo))].sort();
+  const filteredBPs = businessProcesses.filter(bp =>
+    (selTipoFuncao === "__all" || bp.tipo_funcao === selTipoFuncao) &&
+    (selFuncao === "__all" || bp.funcao === selFuncao) &&
+    (selMacro === "__all" || bp.macro_processo === selMacro)
+  );
+
+  const resetCascade = (bp?: { tipo_funcao: string; funcao: string; macro_processo: string }) => {
+    setSelTipoFuncao(bp?.tipo_funcao || "__all");
+    setSelFuncao(bp?.funcao || "__all");
+    setSelMacro(bp?.macro_processo || "__all");
+  };
+
   const chartData = biaProcesses.map(p => ({
     name: t(p.name_pt, p.name_en),
     RTO: p.rto,
@@ -68,6 +94,7 @@ const BIASection: React.FC = () => {
   const openNew = () => {
     setEditing(null);
     setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null });
+    resetCascade();
     setDialogOpen(true);
   };
 
@@ -79,6 +106,8 @@ const BIASection: React.FC = () => {
       business_process_id: p.business_process_id || null,
       dr_type_id: p.dr_type_id || null,
     });
+    const bp = p.business_process_id ? businessProcesses.find(b => b.id === p.business_process_id) : undefined;
+    resetCascade(bp);
     setDialogOpen(true);
   };
 
@@ -247,21 +276,53 @@ const BIASection: React.FC = () => {
             <DialogTitle>{editing ? t("Editar BIA", "Edit BIA") : t("Nova BIA", "New BIA")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            {/* Business Process */}
-            <div>
+            {/* Business Process - Cascading filters */}
+            <div className="space-y-2">
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 {t("Processo de Negócio", "Business Process")}
               </Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{t("Tipo Função", "Function Type")}</Label>
+                  <Select value={selTipoFuncao} onValueChange={v => { setSelTipoFuncao(v); setSelFuncao("__all"); setSelMacro("__all"); setForm(f => ({ ...f, business_process_id: null })); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="__all">{t("Todos", "All")}</SelectItem>
+                      {tipoFuncoes.map(tf => <SelectItem key={tf} value={tf}>{tf}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{t("Função", "Function")}</Label>
+                  <Select value={selFuncao} onValueChange={v => { setSelFuncao(v); setSelMacro("__all"); setForm(f => ({ ...f, business_process_id: null })); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="__all">{t("Todas", "All")}</SelectItem>
+                      {funcoes.map(fn => <SelectItem key={fn} value={fn}>{fn}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{t("Macro Processo", "Macro Process")}</Label>
+                  <Select value={selMacro} onValueChange={v => { setSelMacro(v); setForm(f => ({ ...f, business_process_id: null })); }}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="__all">{t("Todos", "All")}</SelectItem>
+                      {macros.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <Select
                 value={form.business_process_id || "__none"}
                 onValueChange={v => setForm(f => ({ ...f, business_process_id: v === "__none" ? null : v }))}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder={t("Selecionar processo...", "Select process...")} /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
                   <SelectItem value="__none">{t("— Nenhum —", "— None —")}</SelectItem>
-                  {businessProcesses.map(bp => (
+                  {filteredBPs.map(bp => (
                     <SelectItem key={bp.id} value={bp.id}>
-                      {bp.funcao} › {bp.processo}
+                      {bp.processo}
                     </SelectItem>
                   ))}
                 </SelectContent>
