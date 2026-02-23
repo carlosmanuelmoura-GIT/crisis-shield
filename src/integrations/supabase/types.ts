@@ -197,6 +197,33 @@ export type Database = {
           },
         ]
       }
+      decision_log: {
+        Row: {
+          author: string
+          created_at: string
+          id: string
+          owner_id: string | null
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           category_en: string
