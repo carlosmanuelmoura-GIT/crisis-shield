@@ -48,7 +48,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <Sidebar className="border-r border-border">
-      <SidebarContent className="pt-2">
+      <SidebarContent className="pt-14">
         {groups.map(group => {
           const groupSections = sections.filter(s => s.group === group);
 
