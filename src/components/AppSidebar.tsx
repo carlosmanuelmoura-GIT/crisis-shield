@@ -19,9 +19,11 @@ import {
   Activity,
   Video,
   ClipboardList,
+  LayoutGrid,
 } from "lucide-react";
 
 const sections = [
+  { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários", en: "Scenarios" }, group: "emergency" },
   { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" }, group: "emergency" },
   { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" }, group: "emergency" },
   { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" }, group: "emergency" },
