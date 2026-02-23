@@ -1,64 +1,81 @@
 
+# CRUD para Procedimentos e BIA
 
-# GCN Survival Intranet — "Antifragile Crisis Portal"
+## Resumo
+Os Procedimentos e os processos BIA estao atualmente guardados num ficheiro JSON estatico. Vamos criar tabelas na base de dados para cada um e adicionar funcionalidade completa de criar, editar e eliminar, seguindo o mesmo padrao usado nos Action Cards.
 
-Portal de intranet de Gestão de Continuidade de Negócio, desenhado para operar em condições extremas. SPA ultra-leve, mobile-first, com estética industrial/militar.
+## Alteracoes
+
+### 1. Criar tabelas na base de dados
+
+**Tabela `procedures`:**
+- `id` (uuid, PK)
+- `title_pt` (text)
+- `title_en` (text)
+- `category_pt` (text)
+- `category_en` (text)
+- `content_pt` (text) -- conteudo markdown
+- `content_en` (text)
+- `owner_id` (uuid, nullable)
+- `created_at`, `updated_at` (timestamptz)
+
+**Tabela `bia_processes`:**
+- `id` (uuid, PK)
+- `name_pt` (text)
+- `name_en` (text)
+- `rto` (numeric) -- horas
+- `rpo` (numeric) -- horas
+- `criticality` (text) -- critical/high/medium
+- `dependencies` (text[]) -- array de IDs
+- `owner_id` (uuid, nullable)
+- `created_at`, `updated_at` (timestamptz)
+
+**Politicas RLS** (mesmo padrao dos action_cards):
+- SELECT: todos os autenticados
+- INSERT: utilizadores privilegiados
+- UPDATE: owner ou privilegiados
+- DELETE: especialista_gcn
+
+**Dados iniciais**: seed com os dados atuais do JSON.
+
+### 2. Criar hooks de dados
+
+**`src/hooks/useProcedures.ts`** -- seguindo o padrao de `useActionCards.ts`:
+- `useProcedures()` -- query
+- `useCreateProcedure()`
+- `useUpdateProcedure()`
+- `useDeleteProcedure()`
+
+**`src/hooks/useBIAProcesses.ts`**:
+- `useBIAProcesses()` -- query
+- `useCreateBIAProcess()`
+- `useUpdateBIAProcess()`
+- `useDeleteBIAProcess()`
+
+### 3. Atualizar componentes
+
+**`ProceduresSection.tsx`**:
+- Substituir dados do contexto por `useProcedures()`
+- Adicionar botao "Novo" no cabecalho
+- Adicionar botoes Editar/Eliminar em cada card
+- Dialog com formulario: titulo PT/EN, categoria PT/EN, conteudo PT/EN (textarea para markdown)
+
+**`BIASection.tsx`**:
+- Substituir dados do contexto por `useBIAProcesses()`
+- Adicionar botao "Novo" no cabecalho
+- Adicionar botoes Editar/Eliminar em cada processo
+- Dialog com formulario: nome PT/EN, RTO, RPO, criticidade (select), dependencias (multi-select dos outros processos)
+- Grafico e mapa de dependencias continuam a funcionar com os dados da BD
+
+### 4. Limpar contexto
+
+Remover `procedures` e `biaProcesses` do `AppContext.tsx` (ja nao serao necessarios la, pois os componentes usam os hooks proprios). Manter o `searchQuery` disponivel no contexto para filtragem.
 
 ---
 
-## 🎨 Design & Estética
-- **Tema escuro militar**: fundo cinza escuro/charcoal, texto claro de alto contraste
-- **Acentos de cor**: Vermelho (emergência), Amarelo (alerta), Verde (OK)
-- **Tipografia**: system fonts (sem downloads de fontes)
-- **Mobile-first**: todos os controlos operáveis com polegar num ecrã pequeno
-- **Bilingue**: PT por defeito com toggle EN no header
+### Detalhes tecnicos
 
----
-
-## 🧭 Navegação & Layout
-- **Header fixo** com: logo/título, toggle Modo Satélite, toggle idioma, barra de pesquisa global, botão flutuante "DECLARAR CRISE"
-- **Menu principal** (sidebar colapsável em mobile) com 3 domínios: Emergência, Operacional, War Room
-
----
-
-## 🚨 Domínio: EMERGÊNCIA
-- **Action Cards**: cards flexíveis (lidos do JSON) com checklists interativos — itens marcáveis com estado persistido em LocalStorage
-- **Contactos Linha Vermelha**: lista pesquisável com botão "clique para ligar" (`tel:`) e link SMS rápido
-- **SMS Express**: link para envio rápido de SMS com mensagem pré-preenchida
-
-## ⚙️ Domínio: OPERACIONAL
-- **Procedimentos Críticos**: documentos em Markdown renderizados, organizados por pasta, pesquisáveis
-- **BIA (Análise de Impacto)**: gráficos de dependência simples com semáforo de criticidade usando Recharts
-- **Estado dos Serviços**: painel semáforo (Verde/Amarelo/Vermelho) com timestamp da última atualização
-
-## 🏛️ Domínio: WAR ROOM
-- **Links de Reunião**: botões diretos para Jitsi/Teams pré-configurados
-- **Log de Decisões**: cronologia onde qualquer utilizador adiciona notas rápidas, tudo guardado em LocalStorage com timestamp
-
----
-
-## 🔧 Funcionalidades Técnicas
-
-### Modo Satélite (Toggle no Header)
-Ao ativar: remove imagens, ícones SVG pesados, sombras e animações. Muda para modo "apenas texto" com alto contraste e layout ultra-comprimido.
-
-### Botão DECLARAR CRISE
-Botão flutuante fixo (estilo FAB). Ao premir: muda o tema inteiro para vermelho de alerta e abre automaticamente o primeiro Action Card de emergência.
-
-### Leitura de `crisis_data.json`
-Função que importa/lê um ficheiro JSON centralizado (`crisis_data.json`) que contém todos os dados: action cards, contactos, procedimentos, BIA, serviços. Simula o output de sync OneDrive.
-
-### Pesquisa Global
-Barra de pesquisa instantânea que filtra procedimentos, contactos e action cards em tempo real (client-side, sem servidor).
-
-### Log de Crise (LocalStorage)
-Todas as entradas do log e estados de checklists persistidos em LocalStorage para sobreviver a quedas de ligação.
-
-### PWA (Progressive Web App)
-Configuração de manifest.json e service worker para cache offline dos procedimentos e dados consultados.
-
----
-
-## 📦 Dados Demo
-Dados fictícios realistas pré-carregados no `crisis_data.json`: ~6 action cards (incêndio, ciberataque, inundação, pandemia, falha elétrica, falha telecomunicações), ~10 contactos, ~5 procedimentos, e mapa de dependências BIA.
-
+- Migracao SQL cria as tabelas, RLS e insere os dados seed
+- Triggers `update_updated_at_column` reutilizados para ambas as tabelas
+- Os hooks usam `@tanstack/react-query` com `useQuery` e `useMutation`, invalidando queries apos mutacoes
+- O formulario BIA usa inputs numericos para RTO/RPO e um multi-select para dependencias baseado nos processos existentes
