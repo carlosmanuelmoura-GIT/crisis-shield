@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Pencil, Trash2, X, Server, Database, Link2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers } from "lucide-react";
 import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
@@ -44,6 +44,7 @@ const BIASection: React.FC = () => {
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
+  const [filterPlatformId, setFilterPlatformId] = useState<string>("__all");
 
   // Cascading filters for business process selection in dialog
   const [selTipoFuncao, setSelTipoFuncao] = useState<string>("__all");
@@ -135,8 +136,21 @@ const BIASection: React.FC = () => {
     }
   };
 
-
   if (isLoading) return <div className="text-sm text-muted-foreground">{t("A carregar...", "Loading...")}</div>;
+
+  // Platform impact analysis
+  const platformImpact = filterPlatformId !== "__all" ? (() => {
+    const affectedBiaIds = procPlatLinks
+      .filter(l => l.platform_id === filterPlatformId)
+      .map(l => l.bia_process_id);
+    const affectedBias = biaProcesses.filter(b => affectedBiaIds.includes(b.id));
+    const affectedBpIds = [...new Set(affectedBias.map(b => b.business_process_id).filter(Boolean))];
+    const affectedBps = businessProcesses.filter(bp => affectedBpIds.includes(bp.id));
+    const affectedFuncoes = [...new Set(affectedBps.map(bp => bp.funcao))];
+    const platform = platforms.find(p => p.id === filterPlatformId);
+    const platDr = platform?.dr_type_id ? drTypes.find(d => d.id === platform.dr_type_id) : null;
+    return { affectedBias, affectedBps, affectedFuncoes, platform, platDr };
+  })() : null;
 
   // Filter and group BIAs by business process
   const filtered = filterBPId === "__all"
@@ -156,7 +170,20 @@ const BIASection: React.FC = () => {
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {t("Análise de Impacto (BIA)", "Business Impact Analysis (BIA)")}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={filterPlatformId} onValueChange={setFilterPlatformId}>
+            <SelectTrigger className="w-[200px] h-8 text-xs">
+              <Server className="h-3 w-3 mr-1 shrink-0" />
+              <SelectValue placeholder={t("Filtrar por plataforma...", "Filter by platform...")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all">{t("Todas plataformas", "All platforms")}</SelectItem>
+              {platforms.map(p => {
+                const dr = drTypes.find(d => d.id === p.dr_type_id);
+                return <SelectItem key={p.id} value={p.id}>{p.name} {dr ? `(${dr.code})` : ""}</SelectItem>;
+              })}
+            </SelectContent>
+          </Select>
           <Select value={filterBPId} onValueChange={setFilterBPId}>
             <SelectTrigger className="w-[220px] h-8 text-xs">
               <SelectValue placeholder={t("Filtrar por processo...", "Filter by process...")} />
@@ -175,6 +202,98 @@ const BIASection: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Platform Impact Panel */}
+      {platformImpact && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="p-4 pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Server className="h-4 w-4 text-primary" />
+              {t("Impacto da Plataforma", "Platform Impact")}: <span className="text-primary font-bold">{platformImpact.platform?.name}</span>
+              {platformImpact.platDr && (
+                <Badge variant="outline" className="text-[10px] h-5 ml-1">{platformImpact.platDr.code}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            {platformImpact.affectedBias.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">{t("Nenhuma BIA associada a esta plataforma.", "No BIA linked to this platform.")}</p>
+            ) : (
+              <div className="space-y-3">
+                {/* Summary stats */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-border bg-background p-3 text-center">
+                    <div className="text-2xl font-bold text-primary">{platformImpact.affectedBias.length}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{t("BIAs Afetadas", "Affected BIAs")}</div>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background p-3 text-center">
+                    <div className="text-2xl font-bold text-primary">{platformImpact.affectedBps.length}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{t("Processos", "Processes")}</div>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background p-3 text-center">
+                    <div className="text-2xl font-bold text-primary">{platformImpact.affectedFuncoes.length}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{t("Funções", "Functions")}</div>
+                  </div>
+                </div>
+
+                {/* Affected functions & processes */}
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="h-3 w-3" />
+                    {t("Funções e Processos Afetados", "Affected Functions & Processes")}
+                  </div>
+                  {platformImpact.affectedFuncoes.map(funcao => {
+                    const bpsInFunc = platformImpact.affectedBps.filter(bp => bp.funcao === funcao);
+                    return (
+                      <div key={funcao} className="rounded-md border border-border bg-background p-2.5">
+                        <div className="text-xs font-bold text-foreground mb-1.5 flex items-center gap-1.5">
+                          <Database className="h-3 w-3 text-muted-foreground" />
+                          {funcao}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {bpsInFunc.map(bp => (
+                            <Badge key={bp.id} variant="secondary" className="text-[10px] py-0.5">
+                              {bp.macro_processo} › {bp.processo}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Affected BIAs detail */}
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertTriangle className="h-3 w-3" />
+                    {t("BIAs Afetadas", "Affected BIAs")}
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {platformImpact.affectedBias.map(bia => {
+                      const dr = bia.dr_type_id ? drTypes.find(d => d.id === bia.dr_type_id) : null;
+                      const bp = bia.business_process_id ? businessProcesses.find(b => b.id === bia.business_process_id) : null;
+                      return (
+                        <div key={bia.id} className="rounded-md border border-border bg-background p-2.5 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[bia.criticality] }} />
+                            <span className="text-xs font-semibold truncate">{t(bia.name_pt, bia.name_en)}</span>
+                            {dr && <Badge variant="outline" className="text-[9px] h-4 px-1 ml-auto shrink-0">{dr.code}</Badge>}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground flex items-center gap-2">
+                            <span>RTO: {bia.rto}h</span>
+                            <span>RPO: {bia.rpo}h</span>
+                            {bp && <span className="truncate">· {bp.funcao} › {bp.processo}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Chart */}
       {biaProcesses.length > 0 && (
