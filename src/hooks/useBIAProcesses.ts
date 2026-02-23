@@ -10,6 +10,8 @@ export interface DBBIAProcess {
   rpo: number;
   criticality: string;
   dependencies: string[];
+  business_process_id: string | null;
+  dr_type_id: string | null;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -32,9 +34,12 @@ export function useBIAProcesses() {
 export function useCreateBIAProcess() {
   const qc = useQueryClient();
   const { user } = useAuth();
-
   return useMutation({
-    mutationFn: async (data: { name_pt: string; name_en: string; rto: number; rpo: number; criticality: string; dependencies: string[] }) => {
+    mutationFn: async (data: {
+      name_pt: string; name_en: string; rto: number; rpo: number;
+      criticality: string; dependencies: string[];
+      business_process_id?: string | null; dr_type_id?: string | null;
+    }) => {
       const { error } = await supabase.from("bia_processes").insert({ ...data, owner_id: user?.id });
       if (error) throw error;
     },
@@ -44,9 +49,12 @@ export function useCreateBIAProcess() {
 
 export function useUpdateBIAProcess() {
   const qc = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; name_pt: string; name_en: string; rto: number; rpo: number; criticality: string; dependencies: string[] }) => {
+    mutationFn: async ({ id, ...data }: {
+      id: string; name_pt: string; name_en: string; rto: number; rpo: number;
+      criticality: string; dependencies: string[];
+      business_process_id?: string | null; dr_type_id?: string | null;
+    }) => {
       const { error } = await supabase.from("bia_processes").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -56,7 +64,6 @@ export function useUpdateBIAProcess() {
 
 export function useDeleteBIAProcess() {
   const qc = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("bia_processes").delete().eq("id", id);

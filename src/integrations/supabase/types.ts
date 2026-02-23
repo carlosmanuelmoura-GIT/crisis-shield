@@ -106,9 +106,11 @@ export type Database = {
       }
       bia_processes: {
         Row: {
+          business_process_id: string | null
           created_at: string
           criticality: string
           dependencies: string[]
+          dr_type_id: string | null
           id: string
           name_en: string
           name_pt: string
@@ -118,9 +120,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          business_process_id?: string | null
           created_at?: string
           criticality?: string
           dependencies?: string[]
+          dr_type_id?: string | null
           id?: string
           name_en?: string
           name_pt: string
@@ -130,9 +134,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          business_process_id?: string | null
           created_at?: string
           criticality?: string
           dependencies?: string[]
+          dr_type_id?: string | null
           id?: string
           name_en?: string
           name_pt?: string
@@ -141,7 +147,22 @@ export type Database = {
           rto?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bia_processes_business_process_id_fkey"
+            columns: ["business_process_id"]
+            isOneToOne: false
+            referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bia_processes_dr_type_id_fkey"
+            columns: ["dr_type_id"]
+            isOneToOne: false
+            referencedRelation: "dr_types"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_processes: {
         Row: {
