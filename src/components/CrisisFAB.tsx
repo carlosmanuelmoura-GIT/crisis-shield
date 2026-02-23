@@ -47,11 +47,12 @@ const CrisisFAB: React.FC = () => {
       ? `🚨 CRISE ${typeLabel} DECLARADA — Recursos perdidos: ${recursoNames || "Nenhum selecionado"}`
       : `🚨 ${typeLabel} CRISIS DECLARED — Resources lost: ${recursoNames || "None selected"}`;
 
+    const startTime = new Date().toISOString();
     try {
-      await createLog.mutateAsync({ text, author });
+      await createLog.mutateAsync({ text, author, crisis_started_at: startTime });
     } catch {}
 
-    declareCrisis(selectedRecursos, crisisTypeChoice);
+    declareCrisis(selectedRecursos, crisisTypeChoice, startTime);
     setDialogOpen(false);
     setSelectedRecursos([]);
     setCrisisTypeChoice("real");

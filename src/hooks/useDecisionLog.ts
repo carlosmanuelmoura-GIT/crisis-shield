@@ -4,9 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 
 export interface DBDecisionLog {
   id: string;
+  title: string;
   text: string;
   author: string;
   owner_id: string | null;
+  crisis_started_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -29,8 +31,14 @@ export function useCreateDecisionLog() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (data: { text: string; author: string }) => {
-      const { error } = await supabase.from("decision_log").insert({ ...data, owner_id: user?.id });
+    mutationFn: async (data: { title?: string; text: string; author: string; crisis_started_at?: string | null }) => {
+      const { error } = await supabase.from("decision_log").insert({
+        title: data.title || "",
+        text: data.text,
+        author: data.author,
+        owner_id: user?.id,
+        crisis_started_at: data.crisis_started_at || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["decision_log"] }),
@@ -40,7 +48,7 @@ export function useCreateDecisionLog() {
 export function useUpdateDecisionLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; text: string; author: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; title?: string; text: string; author: string }) => {
       const { error } = await supabase.from("decision_log").update(data).eq("id", id);
       if (error) throw error;
     },

@@ -26,7 +26,7 @@ interface AppState {
   crisisActive: boolean;
   crisisType: CrisisType;
   crisisStartTime: string | null;
-  declareCrisis: (recursoIds?: string[], type?: "real" | "simulated") => void;
+  declareCrisis: (recursoIds?: string[], type?: "real" | "simulated", startTime?: string) => void;
   clearCrisis: () => void;
   crisisRecursoIds: string[];
   actionCards: ActionCard[];
@@ -91,11 +91,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [crisisActive]);
 
   const toggleSatellite = useCallback(() => setSatellite(p => !p), []);
-  const declareCrisis = useCallback((recursoIds?: string[], type?: "real" | "simulated") => {
+  const declareCrisis = useCallback((recursoIds?: string[], type?: "real" | "simulated", startTime?: string) => {
     setCrisis(true);
     setCrisisRecursoIds(recursoIds || []);
     setCrisisType(type || "real");
-    setCrisisStartTime(new Date().toISOString());
+    setCrisisStartTime(startTime || new Date().toISOString());
     setActiveSection("emergency");
   }, []);
   const clearCrisis = useCallback(() => {
