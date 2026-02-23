@@ -68,6 +68,42 @@ export type Database = {
           },
         ]
       }
+      bia_process_platforms: {
+        Row: {
+          bia_process_id: string
+          created_at: string
+          id: string
+          platform_id: string
+        }
+        Insert: {
+          bia_process_id: string
+          created_at?: string
+          id?: string
+          platform_id: string
+        }
+        Update: {
+          bia_process_id?: string
+          created_at?: string
+          id?: string
+          platform_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bia_process_platforms_bia_process_id_fkey"
+            columns: ["bia_process_id"]
+            isOneToOne: false
+            referencedRelation: "bia_processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bia_process_platforms_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "cmdb_platforms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bia_processes: {
         Row: {
           created_at: string
@@ -282,6 +318,41 @@ export type Database = {
           },
         ]
       }
+      cmdb_platforms: {
+        Row: {
+          created_at: string
+          dr_type_id: string | null
+          id: string
+          name: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dr_type_id?: string | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dr_type_id?: string | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cmdb_platforms_dr_type_id_fkey"
+            columns: ["dr_type_id"]
+            isOneToOne: false
+            referencedRelation: "dr_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contacts: {
         Row: {
           created_at: string
@@ -344,6 +415,39 @@ export type Database = {
           id?: string
           owner_id?: string | null
           text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dr_types: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          label: string
+          rpo: number
+          rto: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          label: string
+          rpo?: number
+          rto?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          label?: string
+          rpo?: number
+          rto?: number
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
