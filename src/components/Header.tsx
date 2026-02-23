@@ -104,7 +104,7 @@ const Header: React.FC = () => {
         {crisisActive && (
           <Button variant="destructive" size="sm" onClick={handleClearCrisis} className="h-8 text-xs animate-pulse-crisis shrink-0">
             <X className="h-3.5 w-3.5 mr-1" />
-            {lang === "pt" ? "LIMPAR" : "CLEAR"}
+            {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
           </Button>
         )}
 
