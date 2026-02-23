@@ -106,6 +106,7 @@ export type Database = {
           name_en: string
           name_pt: string
           owner_id: string | null
+          tipo_funcao: string
           updated_at: string
         }
         Insert: {
@@ -116,6 +117,7 @@ export type Database = {
           name_en?: string
           name_pt: string
           owner_id?: string | null
+          tipo_funcao?: string
           updated_at?: string
         }
         Update: {
@@ -126,6 +128,7 @@ export type Database = {
           name_en?: string
           name_pt?: string
           owner_id?: string | null
+          tipo_funcao?: string
           updated_at?: string
         }
         Relationships: []

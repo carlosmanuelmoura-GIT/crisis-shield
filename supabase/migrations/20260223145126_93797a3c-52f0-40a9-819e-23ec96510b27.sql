@@ -1,0 +1,1 @@
+ALTER TABLE public.business_processes ADD COLUMN tipo_funcao TEXT NOT NULL DEFAULT 'processo' CHECK (tipo_funcao IN ('funcao', 'macro_processo', 'processo'));

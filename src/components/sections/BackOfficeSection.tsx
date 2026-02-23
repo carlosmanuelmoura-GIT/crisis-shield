@@ -43,17 +43,17 @@ const BackOfficeSection: React.FC = () => {
   const deleteBP = useDeleteBusinessProcess();
   const [bpDialog, setBpDialog] = useState(false);
   const [editingBP, setEditingBP] = useState<string | null>(null);
-  const [bpForm, setBpForm] = useState({ name_pt: "", name_en: "", description_pt: "", description_en: "" });
+  const [bpForm, setBpForm] = useState({ name_pt: "", name_en: "", description_pt: "", description_en: "", tipo_funcao: "processo" });
 
   const openCreateBP = () => {
     setEditingBP(null);
-    setBpForm({ name_pt: "", name_en: "", description_pt: "", description_en: "" });
+    setBpForm({ name_pt: "", name_en: "", description_pt: "", description_en: "", tipo_funcao: "processo" });
     setBpDialog(true);
   };
 
   const openEditBP = (bp: typeof processes[0]) => {
     setEditingBP(bp.id);
-    setBpForm({ name_pt: bp.name_pt, name_en: bp.name_en, description_pt: bp.description_pt, description_en: bp.description_en });
+    setBpForm({ name_pt: bp.name_pt, name_en: bp.name_en, description_pt: bp.description_pt, description_en: bp.description_en, tipo_funcao: bp.tipo_funcao || "processo" });
     setBpDialog(true);
   };
 
@@ -183,7 +183,12 @@ const BackOfficeSection: React.FC = () => {
               <Card key={bp.id}>
                 <CardContent className="p-3 flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">{lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}</p>
+                      <Badge variant="outline" className="text-[10px]">
+                        {bp.tipo_funcao === "funcao" ? "Função" : bp.tipo_funcao === "macro_processo" ? "Macro Processo" : "Processo"}
+                      </Badge>
+                    </div>
                     {(bp.description_pt || bp.description_en) && (
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {lang === "pt" ? bp.description_pt : bp.description_en || bp.description_pt}
@@ -243,6 +248,16 @@ const BackOfficeSection: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
+            <Select value={bpForm.tipo_funcao} onValueChange={(v) => setBpForm(f => ({ ...f, tipo_funcao: v }))}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder="Tipo Função" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="funcao">Função</SelectItem>
+                <SelectItem value="macro_processo">Macro Processo</SelectItem>
+                <SelectItem value="processo">Processo</SelectItem>
+              </SelectContent>
+            </Select>
             <Input placeholder={lang === "pt" ? "Nome (PT)" : "Name (PT)"} value={bpForm.name_pt}
               onChange={e => setBpForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" />
             <Input placeholder={lang === "pt" ? "Nome (EN)" : "Name (EN)"} value={bpForm.name_en}

@@ -8,6 +8,7 @@ export interface DBBusinessProcess {
   name_en: string;
   description_pt: string;
   description_en: string;
+  tipo_funcao: string;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -31,7 +32,7 @@ export function useCreateBusinessProcess() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (data: { name_pt: string; name_en: string; description_pt?: string; description_en?: string }) => {
+    mutationFn: async (data: { name_pt: string; name_en: string; description_pt?: string; description_en?: string; tipo_funcao?: string }) => {
       const { error } = await supabase.from("business_processes").insert({ ...data, owner_id: user?.id });
       if (error) throw error;
     },
@@ -42,7 +43,7 @@ export function useCreateBusinessProcess() {
 export function useUpdateBusinessProcess() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; name_pt: string; name_en: string; description_pt?: string; description_en?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; name_pt: string; name_en: string; description_pt?: string; description_en?: string; tipo_funcao?: string }) => {
       const { error } = await supabase.from("business_processes").update(data).eq("id", id);
       if (error) throw error;
     },
