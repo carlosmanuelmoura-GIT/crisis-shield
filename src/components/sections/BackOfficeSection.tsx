@@ -9,11 +9,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings } from "lucide-react";
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
 import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso } from "@/hooks/useCenarios";
+import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
 import { useToast } from "@/hooks/use-toast";
 
 const roleLabels: Record<string, string> = {
@@ -67,6 +68,21 @@ const BackOfficeSection: React.FC = () => {
   const unlinkCR = useUnlinkCenarioRecurso();
   const [linkDialog, setLinkDialog] = useState<string | null>(null); // cenario_id
   const [linkRecursoId, setLinkRecursoId] = useState("");
+
+  // --- DR Types ---
+  const { data: drTypes = [], isLoading: drLoading } = useDRTypes();
+  const updateDR = useUpdateDRType();
+  const [editingDR, setEditingDR] = useState<string | null>(null);
+  const [drForm, setDrForm] = useState({ rto: 0, rpo: 0 });
+
+  // --- CMDB Platforms ---
+  const { data: platforms = [], isLoading: platLoading } = useCMDBPlatforms();
+  const createPlat = useCreateCMDBPlatform();
+  const updatePlat = useUpdateCMDBPlatform();
+  const deletePlat = useDeleteCMDBPlatform();
+  const [platDialog, setPlatDialog] = useState(false);
+  const [editingPlat, setEditingPlat] = useState<string | null>(null);
+  const [platForm, setPlatForm] = useState({ name: "", dr_type_id: "" });
 
   // --- Handlers ---
   const handleAssignRole = async () => {
@@ -136,6 +152,30 @@ const BackOfficeSection: React.FC = () => {
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
+  // DR Types
+  const openEditDR = (dr: typeof drTypes[0]) => { setEditingDR(dr.id); setDrForm({ rto: dr.rto, rpo: dr.rpo }); };
+  const handleSaveDR = async () => {
+    if (!editingDR) return;
+    try { await updateDR.mutateAsync({ id: editingDR, ...drForm }); setEditingDR(null); toast({ title: lang === "pt" ? "Guardado" : "Saved" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
+  // Platforms
+  const openCreatePlat = () => { setEditingPlat(null); setPlatForm({ name: "", dr_type_id: "" }); setPlatDialog(true); };
+  const openEditPlat = (p: typeof platforms[0]) => { setEditingPlat(p.id); setPlatForm({ name: p.name, dr_type_id: p.dr_type_id || "" }); setPlatDialog(true); };
+  const handleSavePlat = async () => {
+    try {
+      const payload = { name: platForm.name, dr_type_id: platForm.dr_type_id || null };
+      if (editingPlat) await updatePlat.mutateAsync({ id: editingPlat, ...payload });
+      else await createPlat.mutateAsync(payload);
+      setPlatDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+  const handleDeletePlat = async (id: string) => {
+    try { await deletePlat.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold uppercase tracking-wider">Back Office</h2>
@@ -146,6 +186,8 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="bp" className="text-xs"><Briefcase className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Processos" : "Processes"}</TabsTrigger>
           <TabsTrigger value="recursos" className="text-xs"><ShieldAlert className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Recursos" : "Resources"}</TabsTrigger>
           <TabsTrigger value="cenarios" className="text-xs"><Link2 className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Cenários" : "Scenarios"}</TabsTrigger>
+          <TabsTrigger value="platforms" className="text-xs"><Server className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Plataformas" : "Platforms"}</TabsTrigger>
+          <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
         </TabsList>
 
         {/* ===== USER ROLES ===== */}
@@ -308,6 +350,96 @@ const BackOfficeSection: React.FC = () => {
             })
           )}
         </TabsContent>
+
+        {/* ===== PLATAFORMAS CMDB ===== */}
+        <TabsContent value="platforms" className="space-y-3 mt-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={openCreatePlat} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Nova" : "New"}</Button>
+          </div>
+          {platLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : platforms.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhuma plataforma configurada." : "No platforms configured."}</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
+                    <TableHead className="text-xs">{lang === "pt" ? "Tipo DR" : "DR Type"}</TableHead>
+                    <TableHead className="text-xs">RTO (h)</TableHead>
+                    <TableHead className="text-xs">RPO (h)</TableHead>
+                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {platforms.map(p => {
+                    const dr = drTypes.find(d => d.id === p.dr_type_id);
+                    return (
+                      <TableRow key={p.id}>
+                        <TableCell className="text-sm font-medium">{p.name}</TableCell>
+                        <TableCell><Badge variant="outline" className="text-xs">{dr?.code || "—"}</Badge></TableCell>
+                        <TableCell className="text-sm">{dr?.rto ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{dr?.rpo ?? "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPlat(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeletePlat(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ===== TIPOS DR ===== */}
+        <TabsContent value="drtypes" className="space-y-3 mt-3">
+          {drLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">{lang === "pt" ? "Código" : "Code"}</TableHead>
+                    <TableHead className="text-xs">Label</TableHead>
+                    <TableHead className="text-xs">RTO (h)</TableHead>
+                    <TableHead className="text-xs">RPO (h)</TableHead>
+                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {drTypes.map(dr => (
+                    <TableRow key={dr.id}>
+                      <TableCell className="text-sm font-medium">{dr.code}</TableCell>
+                      <TableCell className="text-sm">{dr.label}</TableCell>
+                      <TableCell className="text-sm">
+                        {editingDR === dr.id ? (
+                          <Input type="number" step="0.25" min="0" value={drForm.rto} onChange={e => setDrForm(f => ({ ...f, rto: parseFloat(e.target.value) || 0 }))} className="h-7 w-20 text-xs" />
+                        ) : dr.rto}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {editingDR === dr.id ? (
+                          <Input type="number" step="0.25" min="0" value={drForm.rpo} onChange={e => setDrForm(f => ({ ...f, rpo: parseFloat(e.target.value) || 0 }))} className="h-7 w-20 text-xs" />
+                        ) : dr.rpo}
+                      </TableCell>
+                      <TableCell>
+                        {editingDR === dr.id ? (
+                          <div className="flex gap-1">
+                            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleSaveDR}>{lang === "pt" ? "Guardar" : "Save"}</Button>
+                            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingDR(null)}><X className="h-3 w-3" /></Button>
+                          </div>
+                        ) : (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDR(dr)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* ===== DIALOGS ===== */}
@@ -401,6 +533,28 @@ const BackOfficeSection: React.FC = () => {
             </Select>
             <Button onClick={handleLink} disabled={!linkRecursoId || linkCR.isPending} className="w-full">
               {linkCR.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Associar" : "Link"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Platform */}
+      <Dialog open={platDialog} onOpenChange={setPlatDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingPlat ? (lang === "pt" ? "Editar Plataforma" : "Edit Platform") : (lang === "pt" ? "Nova Plataforma" : "New Platform")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
+              <Input value={platForm.name} onChange={e => setPlatForm(f => ({ ...f, name: e.target.value }))} className="bg-secondary border-border" /></div>
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Tipo DR" : "DR Type"}</Label>
+              <Select value={platForm.dr_type_id} onValueChange={v => setPlatForm(f => ({ ...f, dr_type_id: v }))}>
+                <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} /></SelectTrigger>
+                <SelectContent>
+                  {drTypes.map(dr => <SelectItem key={dr.id} value={dr.id}>{dr.code} — {dr.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSavePlat} disabled={!platForm.name || createPlat.isPending || updatePlat.isPending} className="w-full">
+              {(createPlat.isPending || updatePlat.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
         </DialogContent>

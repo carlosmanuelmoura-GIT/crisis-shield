@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
+import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
 import { toast } from "sonner";
 
 const critColor: Record<string, string> = {
@@ -24,10 +26,17 @@ const BIASection: React.FC = () => {
   const createMut = useCreateBIAProcess();
   const updateMut = useUpdateBIAProcess();
   const deleteMut = useDeleteBIAProcess();
+  const { data: platforms = [] } = useCMDBPlatforms();
+  const { data: drTypes = [] } = useDRTypes();
+  const { data: procPlatLinks = [] } = useBIAProcessPlatforms();
+  const linkPlatform = useLinkBIAProcessPlatform();
+  const unlinkPlatform = useUnlinkBIAProcessPlatform();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
   const [form, setForm] = useState({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", dependencies: [] as string[] });
+  const [linkDialog, setLinkDialog] = useState<string | null>(null);
+  const [linkPlatId, setLinkPlatId] = useState("");
 
   const t = (pt: string, en: string) => lang === "pt" ? pt : en;
 
@@ -114,33 +123,56 @@ const BIASection: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Dependency table with edit/delete */}
+      {/* Dependency map by platforms */}
       <Card>
         <CardHeader className="p-3 pb-1">
-          <CardTitle className="text-sm">{lang === "pt" ? "Mapa de Dependências" : "Dependency Map"}</CardTitle>
+          <CardTitle className="text-sm">{lang === "pt" ? "Mapa de Dependências por Plataformas" : "Dependency Map by Platforms"}</CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-1">
-          <div className="space-y-2">
+          <div className="space-y-3">
             {biaProcesses.map(p => {
               const deps = (p.dependencies || []).map(d => {
                 const found = biaProcesses.find(bp => bp.id === d);
                 return found ? t(found.name_pt, found.name_en) : d;
               });
+              const pLinks = procPlatLinks.filter(l => l.bia_process_id === p.id);
+              const linkedPlats = pLinks.map(l => ({
+                link: l,
+                platform: platforms.find(pl => pl.id === l.platform_id),
+              })).filter(x => x.platform);
+
               return (
-                <div key={p.id} className="flex items-start gap-2 text-sm">
-                  <span className="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
-                  <div className="flex-1">
-                    <span className="font-medium">{t(p.name_pt, p.name_en)}</span>
-                    {deps.length > 0 && (
-                      <span className="text-muted-foreground"> → {deps.join(", ")}</span>
-                    )}
+                <div key={p.id} className="space-y-1">
+                  <div className="flex items-start gap-2 text-sm">
+                    <span className="inline-block w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
+                    <div className="flex-1">
+                      <span className="font-medium">{t(p.name_pt, p.name_en)}</span>
+                      {deps.length > 0 && (
+                        <span className="text-muted-foreground"> → {deps.join(", ")}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(p)}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(p)}>
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
-                      <Trash2 className="h-3 w-3" />
+                  {/* Platforms for this process */}
+                  <div className="pl-5 flex flex-wrap gap-1 items-center">
+                    {linkedPlats.map(({ link, platform }) => {
+                      const dr = drTypes.find(d => d.id === platform!.dr_type_id);
+                      return (
+                        <Badge key={link.id} variant="outline" className="text-[10px] gap-1 pr-1">
+                          🖥 {platform!.name} {dr ? `(${dr.code})` : ""}
+                          <button onClick={() => unlinkPlatform.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                        </Badge>
+                      );
+                    })}
+                    <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkDialog(p.id); setLinkPlatId(""); }}>
+                      <Plus className="h-2.5 w-2.5 mr-0.5" />{lang === "pt" ? "Plataforma" : "Platform"}
                     </Button>
                   </div>
                 </div>
@@ -150,6 +182,7 @@ const BIASection: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Edit/Create process dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -194,6 +227,34 @@ const BIASection: React.FC = () => {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{lang === "pt" ? "Cancelar" : "Cancel"}</Button>
             <Button onClick={handleSave} disabled={!form.name_pt}>{lang === "pt" ? "Guardar" : "Save"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link platform to BIA process */}
+      <Dialog open={!!linkDialog} onOpenChange={(o) => !o && setLinkDialog(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{lang === "pt" ? "Associar Plataforma" : "Link Platform"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Select value={linkPlatId} onValueChange={setLinkPlatId}>
+              <SelectTrigger><SelectValue placeholder={lang === "pt" ? "Selecionar plataforma..." : "Select platform..."} /></SelectTrigger>
+              <SelectContent>
+                {platforms.map(p => {
+                  const dr = drTypes.find(d => d.id === p.dr_type_id);
+                  return <SelectItem key={p.id} value={p.id}>🖥 {p.name} {dr ? `(${dr.code})` : ""}</SelectItem>;
+                })}
+              </SelectContent>
+            </Select>
+            <Button onClick={async () => {
+              if (!linkDialog || !linkPlatId) return;
+              try {
+                await linkPlatform.mutateAsync({ bia_process_id: linkDialog, platform_id: linkPlatId });
+                setLinkPlatId("");
+                toast.success(lang === "pt" ? "Plataforma associada" : "Platform linked");
+              } catch { toast.error(lang === "pt" ? "Erro ao associar" : "Error linking"); }
+            }} disabled={!linkPlatId || linkPlatform.isPending} className="w-full">
+              {lang === "pt" ? "Associar" : "Link"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
