@@ -1,11 +1,19 @@
 import React from "react";
 import { useApp, t } from "@/contexts/AppContext";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Satellite, Globe, AlertTriangle, X, LogOut } from "lucide-react";
+import { useCurrentUserProfile, useCurrentUserRoles } from "@/hooks/useUserRoles";
+import { Search, Satellite, Globe, AlertTriangle, X, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
+
+const roleLabels: Record<string, string> = {
+  steering_gcn: "Steering",
+  tecnico_departamento: "Técnico",
+  especialista_gcn: "Especialista",
+};
 
 const Header: React.FC = () => {
   const {
@@ -15,6 +23,8 @@ const Header: React.FC = () => {
     searchQuery, setSearchQuery,
   } = useApp();
   const { signOut, user } = useAuth();
+  const { data: profile } = useCurrentUserProfile();
+  const { data: roles = [] } = useCurrentUserRoles();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -26,6 +36,19 @@ const Header: React.FC = () => {
           <h1 className="text-sm font-bold tracking-wider uppercase hidden sm:block">
             GCN
           </h1>
+        </div>
+
+        {/* User info */}
+        <div className="flex items-center gap-1.5 mr-1 shrink-0 hidden md:flex">
+          <User className="h-3.5 w-3.5 text-muted-foreground sat-keep" />
+          <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+            {profile?.display_name || user?.email || "—"}
+          </span>
+          {roles.length > 0 && (
+            <Badge variant="outline" className="text-[9px] font-normal px-1.5 py-0">
+              {roleLabels[roles[0]] || roles[0]}
+            </Badge>
+          )}
         </div>
 
         {/* Search */}

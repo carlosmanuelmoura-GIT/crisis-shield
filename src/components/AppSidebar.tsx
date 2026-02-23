@@ -19,6 +19,7 @@ import {
   Video,
   ClipboardList,
   LayoutGrid,
+  Settings,
 } from "lucide-react";
 
 const sections = [
@@ -30,18 +31,20 @@ const sections = [
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" }, group: "operational" },
   { id: "meetings", icon: Video, label: { pt: "Reuniões", en: "Meetings" }, group: "warroom" },
   { id: "log", icon: ClipboardList, label: { pt: "Log Decisões", en: "Decision Log" }, group: "warroom" },
+  { id: "backoffice", icon: Settings, label: { pt: "Back Office", en: "Back Office" }, group: "admin" },
 ];
 
 const groupLabels: Record<string, { pt: string; en: string }> = {
   scenarios: { pt: "🎯 CENÁRIOS", en: "🎯 SCENARIOS" },
   operational: { pt: "⚙️ OPERACIONAL", en: "⚙️ OPERATIONAL" },
   warroom: { pt: "🏛️ WAR ROOM", en: "🏛️ WAR ROOM" },
+  admin: { pt: "🔧 ADMINISTRAÇÃO", en: "🔧 ADMINISTRATION" },
 };
 
 const AppSidebar: React.FC = () => {
   const { lang, activeSection, setActiveSection } = useApp();
 
-  const groups = ["scenarios", "operational", "warroom"];
+  const groups = ["scenarios", "operational", "warroom", "admin"];
 
   return (
     <Sidebar className="border-r border-border">

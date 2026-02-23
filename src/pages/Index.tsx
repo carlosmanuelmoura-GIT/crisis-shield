@@ -9,6 +9,7 @@ import ServicesSection from "@/components/sections/ServicesSection";
 import MeetingsSection from "@/components/sections/MeetingsSection";
 import DecisionLogSection from "@/components/sections/DecisionLogSection";
 import ScenariosSection from "@/components/sections/ScenariosSection";
+import BackOfficeSection from "@/components/sections/BackOfficeSection";
 
 const sectionMap: Record<string, React.FC> = {
   scenarios: ScenariosSection,
@@ -20,6 +21,7 @@ const sectionMap: Record<string, React.FC> = {
   services: ServicesSection,
   meetings: MeetingsSection,
   log: DecisionLogSection,
+  backoffice: BackOfficeSection,
 };
 
 const Index = () => {

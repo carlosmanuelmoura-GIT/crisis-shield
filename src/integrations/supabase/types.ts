@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       action_cards: {
         Row: {
+          business_process_id: string | null
           capability: string | null
           created_at: string
           icon: string
@@ -27,6 +28,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          business_process_id?: string | null
           capability?: string | null
           created_at?: string
           icon?: string
@@ -38,6 +40,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          business_process_id?: string | null
           capability?: string | null
           created_at?: string
           icon?: string
@@ -48,7 +51,15 @@ export type Database = {
           title_pt?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "action_cards_business_process_id_fkey"
+            columns: ["business_process_id"]
+            isOneToOne: false
+            referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bia_processes: {
         Row: {
@@ -85,6 +96,39 @@ export type Database = {
           owner_id?: string | null
           rpo?: number
           rto?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_processes: {
+        Row: {
+          created_at: string
+          description_en: string
+          description_pt: string
+          id: string
+          name_en: string
+          name_pt: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string
+          description_pt?: string
+          id?: string
+          name_en?: string
+          name_pt: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string
+          description_pt?: string
+          id?: string
+          name_en?: string
+          name_pt?: string
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: []
