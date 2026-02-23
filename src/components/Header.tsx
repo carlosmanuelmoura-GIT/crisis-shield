@@ -3,6 +3,7 @@ import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentUserProfile, useCurrentUserRoles } from "@/hooks/useUserRoles";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
+import { useClearAllChecklistStates } from "@/hooks/useActionCards";
 import { Search, Satellite, Globe, AlertTriangle, X, LogOut, Clock, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ const Header: React.FC = () => {
   const { data: profile } = useCurrentUserProfile();
   const { data: roles = [] } = useCurrentUserRoles();
   const createLog = useCreateDecisionLog();
+  const clearChecks = useClearAllChecklistStates();
 
   const handleClearCrisis = async () => {
     const author = profile?.display_name || user?.email || "Sistema";
@@ -66,6 +68,7 @@ const Header: React.FC = () => {
       : (lang === "pt" ? "REAL" : "REAL");
     const text = lang === "pt" ? `✅ FIM DA CRISE ${typeLabel}` : `✅ ${typeLabel} CRISIS ENDED`;
     try { await createLog.mutateAsync({ text, author }); } catch {}
+    try { await clearChecks.mutateAsync(); } catch {}
     clearCrisis();
   };
 
