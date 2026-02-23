@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       action_cards: {
         Row: {
+          capability: string | null
           created_at: string
           icon: string
           id: string
@@ -26,6 +27,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          capability?: string | null
           created_at?: string
           icon?: string
           id?: string
@@ -36,6 +38,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          capability?: string | null
           created_at?: string
           icon?: string
           id?: string
