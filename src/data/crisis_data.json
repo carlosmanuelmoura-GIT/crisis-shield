@@ -1,0 +1,156 @@
+{
+  "actionCards": [
+    {
+      "id": "fire",
+      "title": { "pt": "Incêndio", "en": "Fire" },
+      "severity": "critical",
+      "icon": "flame",
+      "checklist": [
+        { "id": "fire-1", "text": { "pt": "Ativar alarme de incêndio", "en": "Activate fire alarm" } },
+        { "id": "fire-2", "text": { "pt": "Contactar bombeiros (112)", "en": "Call fire department (112)" } },
+        { "id": "fire-3", "text": { "pt": "Evacuar edifício pela rota designada", "en": "Evacuate building via designated route" } },
+        { "id": "fire-4", "text": { "pt": "Confirmar contagem de pessoal no ponto de encontro", "en": "Confirm headcount at assembly point" } },
+        { "id": "fire-5", "text": { "pt": "Notificar Direção e equipa de crise", "en": "Notify Management and crisis team" } },
+        { "id": "fire-6", "text": { "pt": "Documentar danos iniciais", "en": "Document initial damages" } }
+      ]
+    },
+    {
+      "id": "cyber",
+      "title": { "pt": "Ciberataque", "en": "Cyber Attack" },
+      "severity": "critical",
+      "icon": "shield-alert",
+      "checklist": [
+        { "id": "cyber-1", "text": { "pt": "Isolar sistemas afetados da rede", "en": "Isolate affected systems from network" } },
+        { "id": "cyber-2", "text": { "pt": "Notificar equipa de segurança TI", "en": "Notify IT security team" } },
+        { "id": "cyber-3", "text": { "pt": "Preservar logs e evidências", "en": "Preserve logs and evidence" } },
+        { "id": "cyber-4", "text": { "pt": "Ativar plano de comunicação de crise", "en": "Activate crisis communication plan" } },
+        { "id": "cyber-5", "text": { "pt": "Avaliar extensão da violação de dados", "en": "Assess data breach extent" } },
+        { "id": "cyber-6", "text": { "pt": "Contactar autoridades (CNPD/PJ)", "en": "Contact authorities (DPA/Police)" } }
+      ]
+    },
+    {
+      "id": "flood",
+      "title": { "pt": "Inundação", "en": "Flood" },
+      "severity": "high",
+      "icon": "cloud-rain",
+      "checklist": [
+        { "id": "flood-1", "text": { "pt": "Desligar quadros elétricos das áreas afetadas", "en": "Shut down electrical panels in affected areas" } },
+        { "id": "flood-2", "text": { "pt": "Mover equipamentos críticos para andares superiores", "en": "Move critical equipment to upper floors" } },
+        { "id": "flood-3", "text": { "pt": "Ativar bombas de drenagem", "en": "Activate drainage pumps" } },
+        { "id": "flood-4", "text": { "pt": "Contactar serviços de emergência", "en": "Contact emergency services" } },
+        { "id": "flood-5", "text": { "pt": "Avaliar danos estruturais", "en": "Assess structural damage" } }
+      ]
+    },
+    {
+      "id": "pandemic",
+      "title": { "pt": "Pandemia", "en": "Pandemic" },
+      "severity": "high",
+      "icon": "heart-pulse",
+      "checklist": [
+        { "id": "pan-1", "text": { "pt": "Ativar plano de trabalho remoto", "en": "Activate remote work plan" } },
+        { "id": "pan-2", "text": { "pt": "Distribuir EPI ao pessoal essencial", "en": "Distribute PPE to essential staff" } },
+        { "id": "pan-3", "text": { "pt": "Estabelecer turnos rotativos", "en": "Establish rotating shifts" } },
+        { "id": "pan-4", "text": { "pt": "Comunicar protocolos de higiene", "en": "Communicate hygiene protocols" } },
+        { "id": "pan-5", "text": { "pt": "Monitorizar absentismo diariamente", "en": "Monitor absenteeism daily" } }
+      ]
+    },
+    {
+      "id": "power",
+      "title": { "pt": "Falha Elétrica", "en": "Power Failure" },
+      "severity": "high",
+      "icon": "zap-off",
+      "checklist": [
+        { "id": "pow-1", "text": { "pt": "Verificar estado do gerador de emergência", "en": "Check emergency generator status" } },
+        { "id": "pow-2", "text": { "pt": "Ativar UPS para sistemas críticos", "en": "Activate UPS for critical systems" } },
+        { "id": "pow-3", "text": { "pt": "Contactar fornecedor de energia", "en": "Contact power supplier" } },
+        { "id": "pow-4", "text": { "pt": "Comunicar estimativa de recuperação", "en": "Communicate recovery estimate" } },
+        { "id": "pow-5", "text": { "pt": "Desligar equipamentos não essenciais", "en": "Shut down non-essential equipment" } }
+      ]
+    },
+    {
+      "id": "telecom",
+      "title": { "pt": "Falha de Telecomunicações", "en": "Telecom Failure" },
+      "severity": "medium",
+      "icon": "wifi-off",
+      "checklist": [
+        { "id": "tel-1", "text": { "pt": "Ativar canais de comunicação alternativos", "en": "Activate alternative communication channels" } },
+        { "id": "tel-2", "text": { "pt": "Distribuir lista de contactos de emergência (papel)", "en": "Distribute emergency contact list (paper)" } },
+        { "id": "tel-3", "text": { "pt": "Verificar conectividade satélite/rádio", "en": "Check satellite/radio connectivity" } },
+        { "id": "tel-4", "text": { "pt": "Notificar operador de telecomunicações", "en": "Notify telecom operator" } },
+        { "id": "tel-5", "text": { "pt": "Redirecionar serviços para site alternativo", "en": "Redirect services to alternative site" } }
+      ]
+    }
+  ],
+  "contacts": [
+    { "id": "c1", "name": "Cmdt. Silva — Coord. Crise", "role": { "pt": "Coordenador de Crise", "en": "Crisis Coordinator" }, "phone": "+351912345001", "email": "silva@empresa.pt", "priority": "critical" },
+    { "id": "c2", "name": "Eng. Costa — Infraestruturas", "role": { "pt": "Resp. Infraestruturas", "en": "Infrastructure Lead" }, "phone": "+351912345002", "email": "costa@empresa.pt", "priority": "critical" },
+    { "id": "c3", "name": "Dr. Santos — TI/Ciber", "role": { "pt": "Resp. Segurança TI", "en": "IT Security Lead" }, "phone": "+351912345003", "email": "santos@empresa.pt", "priority": "critical" },
+    { "id": "c4", "name": "Dra. Ferreira — Comunicação", "role": { "pt": "Resp. Comunicação", "en": "Communications Lead" }, "phone": "+351912345004", "email": "ferreira@empresa.pt", "priority": "high" },
+    { "id": "c5", "name": "Eng. Oliveira — Operações", "role": { "pt": "Resp. Operações", "en": "Operations Lead" }, "phone": "+351912345005", "email": "oliveira@empresa.pt", "priority": "high" },
+    { "id": "c6", "name": "Dr. Rodrigues — Jurídico", "role": { "pt": "Assessor Jurídico", "en": "Legal Advisor" }, "phone": "+351912345006", "email": "rodrigues@empresa.pt", "priority": "medium" },
+    { "id": "c7", "name": "Bombeiros — 112", "role": { "pt": "Emergência Bombeiros", "en": "Fire Emergency" }, "phone": "112", "email": "", "priority": "critical" },
+    { "id": "c8", "name": "INEM — 112", "role": { "pt": "Emergência Médica", "en": "Medical Emergency" }, "phone": "112", "email": "", "priority": "critical" },
+    { "id": "c9", "name": "PSP/GNR — 112", "role": { "pt": "Autoridades Policiais", "en": "Police" }, "phone": "112", "email": "", "priority": "high" },
+    { "id": "c10", "name": "Fornecedor Energia — EDP", "role": { "pt": "Fornecedor Energia", "en": "Power Supplier" }, "phone": "+351210012123", "email": "emergencias@edp.pt", "priority": "medium" }
+  ],
+  "procedures": [
+    {
+      "id": "proc-1",
+      "title": { "pt": "Plano de Evacuação Geral", "en": "General Evacuation Plan" },
+      "category": { "pt": "Emergência", "en": "Emergency" },
+      "content": { "pt": "## Plano de Evacuação\n\n### Objetivo\nGarantir a evacuação segura de todas as pessoas do edifício.\n\n### Passos\n1. Ao ouvir o alarme, parar toda a atividade\n2. Seguir sinalética de evacuação verde\n3. NÃO utilizar elevadores\n4. Dirigir-se ao ponto de encontro designado (Parque Norte)\n5. Responsáveis de piso confirmam evacuação completa\n6. Aguardar autorização para reentrada\n\n### Pontos de Encontro\n- **Primário**: Parque de estacionamento Norte\n- **Secundário**: Jardim Municipal (500m)", "en": "## Evacuation Plan\n\n### Objective\nEnsure safe evacuation of all building occupants.\n\n### Steps\n1. Upon hearing the alarm, stop all activity\n2. Follow green evacuation signage\n3. DO NOT use elevators\n4. Proceed to designated assembly point (North Parking)\n5. Floor wardens confirm complete evacuation\n6. Wait for re-entry authorization\n\n### Assembly Points\n- **Primary**: North parking lot\n- **Secondary**: Municipal Garden (500m)" }
+    },
+    {
+      "id": "proc-2",
+      "title": { "pt": "Resposta a Incidente Cibernético", "en": "Cyber Incident Response" },
+      "category": { "pt": "TI/Ciber", "en": "IT/Cyber" },
+      "content": { "pt": "## Resposta a Incidente Cibernético\n\n### Fase 1 — Contenção\n- Isolar segmento de rede afetado\n- Bloquear contas comprometidas\n- Preservar estado dos sistemas (snapshots)\n\n### Fase 2 — Investigação\n- Analisar logs de acesso\n- Identificar vetor de ataque\n- Avaliar dados expostos\n\n### Fase 3 — Recuperação\n- Restaurar sistemas a partir de backups limpos\n- Monitorizar atividade anómala 72h\n- Relatório pós-incidente em 48h", "en": "## Cyber Incident Response\n\n### Phase 1 — Containment\n- Isolate affected network segment\n- Block compromised accounts\n- Preserve system state (snapshots)\n\n### Phase 2 — Investigation\n- Analyze access logs\n- Identify attack vector\n- Assess exposed data\n\n### Phase 3 — Recovery\n- Restore systems from clean backups\n- Monitor anomalous activity 72h\n- Post-incident report within 48h" }
+    },
+    {
+      "id": "proc-3",
+      "title": { "pt": "Ativação do Site Alternativo", "en": "Alternative Site Activation" },
+      "category": { "pt": "Continuidade", "en": "Continuity" },
+      "content": { "pt": "## Ativação do Site Alternativo\n\n### Critérios de Ativação\n- Indisponibilidade do site principal > 4 horas\n- Danos estruturais que impeçam acesso\n- Ordem da coordenação de crise\n\n### Procedimento\n1. Coordenador de crise autoriza ativação\n2. Equipa TI ativa VPN e serviços no site DR\n3. Pessoal essencial desloca-se para site alternativo\n4. Comunicar nova localização a todos os colaboradores\n5. Testar conectividade e sistemas críticos", "en": "## Alternative Site Activation\n\n### Activation Criteria\n- Primary site unavailable > 4 hours\n- Structural damage preventing access\n- Crisis coordination order\n\n### Procedure\n1. Crisis coordinator authorizes activation\n2. IT team activates VPN and services at DR site\n3. Essential personnel relocate to alternative site\n4. Communicate new location to all staff\n5. Test connectivity and critical systems" }
+    },
+    {
+      "id": "proc-4",
+      "title": { "pt": "Comunicação de Crise — Stakeholders", "en": "Crisis Communication — Stakeholders" },
+      "category": { "pt": "Comunicação", "en": "Communication" },
+      "content": { "pt": "## Comunicação de Crise\n\n### Princípios\n- Uma só voz (porta-voz designado)\n- Factos confirmados apenas\n- Atualizações regulares (mín. cada 2h)\n\n### Cadeia de Comunicação\n1. Equipa de crise → Direção\n2. Direção → Colaboradores\n3. Porta-voz → Media/Público\n4. Jurídico → Autoridades reguladoras\n\n### Templates\n- Comunicado interno inicial\n- Atualização de situação\n- Comunicado de resolução", "en": "## Crisis Communication\n\n### Principles\n- Single voice (designated spokesperson)\n- Confirmed facts only\n- Regular updates (min. every 2h)\n\n### Communication Chain\n1. Crisis team → Management\n2. Management → Staff\n3. Spokesperson → Media/Public\n4. Legal → Regulatory authorities\n\n### Templates\n- Initial internal communication\n- Situation update\n- Resolution communication" }
+    },
+    {
+      "id": "proc-5",
+      "title": { "pt": "Gestão de Fornecedores Críticos", "en": "Critical Supplier Management" },
+      "category": { "pt": "Operações", "en": "Operations" },
+      "content": { "pt": "## Gestão de Fornecedores Críticos\n\n### Classificação\n- **Tier 1**: Sem alternativa imediata (energia, telecom)\n- **Tier 2**: Alternativa disponível em 24-48h\n- **Tier 3**: Alternativa disponível em <24h\n\n### Em Situação de Crise\n1. Contactar fornecedores Tier 1 imediatamente\n2. Ativar contratos de SLA de emergência\n3. Documentar todas as comunicações\n4. Avaliar impacto financeiro", "en": "## Critical Supplier Management\n\n### Classification\n- **Tier 1**: No immediate alternative (power, telecom)\n- **Tier 2**: Alternative available in 24-48h\n- **Tier 3**: Alternative available in <24h\n\n### In Crisis Situation\n1. Contact Tier 1 suppliers immediately\n2. Activate emergency SLA contracts\n3. Document all communications\n4. Assess financial impact" }
+    }
+  ],
+  "bia": {
+    "processes": [
+      { "id": "bia-1", "name": { "pt": "Email Corporativo", "en": "Corporate Email" }, "rto": 2, "rpo": 1, "criticality": "critical", "dependencies": ["bia-4", "bia-5"] },
+      { "id": "bia-2", "name": { "pt": "ERP / Gestão", "en": "ERP / Management" }, "rto": 4, "rpo": 2, "criticality": "critical", "dependencies": ["bia-4", "bia-5", "bia-6"] },
+      { "id": "bia-3", "name": { "pt": "Website Público", "en": "Public Website" }, "rto": 8, "rpo": 4, "criticality": "high", "dependencies": ["bia-5"] },
+      { "id": "bia-4", "name": { "pt": "Active Directory", "en": "Active Directory" }, "rto": 1, "rpo": 0.5, "criticality": "critical", "dependencies": ["bia-5"] },
+      { "id": "bia-5", "name": { "pt": "Rede / Conectividade", "en": "Network / Connectivity" }, "rto": 0.5, "rpo": 0, "criticality": "critical", "dependencies": [] },
+      { "id": "bia-6", "name": { "pt": "Base de Dados Central", "en": "Central Database" }, "rto": 2, "rpo": 1, "criticality": "critical", "dependencies": ["bia-5"] },
+      { "id": "bia-7", "name": { "pt": "Telefonia VoIP", "en": "VoIP Telephony" }, "rto": 4, "rpo": 0, "criticality": "high", "dependencies": ["bia-5"] },
+      { "id": "bia-8", "name": { "pt": "Sistema de CCTV", "en": "CCTV System" }, "rto": 12, "rpo": 24, "criticality": "medium", "dependencies": ["bia-5"] }
+    ]
+  },
+  "services": [
+    { "id": "svc-1", "name": { "pt": "Email", "en": "Email" }, "status": "green", "lastUpdate": "2026-02-23T08:00:00Z" },
+    { "id": "svc-2", "name": { "pt": "ERP", "en": "ERP" }, "status": "green", "lastUpdate": "2026-02-23T08:00:00Z" },
+    { "id": "svc-3", "name": { "pt": "VPN", "en": "VPN" }, "status": "yellow", "lastUpdate": "2026-02-23T07:45:00Z" },
+    { "id": "svc-4", "name": { "pt": "Rede Interna", "en": "Internal Network" }, "status": "green", "lastUpdate": "2026-02-23T08:00:00Z" },
+    { "id": "svc-5", "name": { "pt": "Telefonia", "en": "Telephony" }, "status": "green", "lastUpdate": "2026-02-23T07:50:00Z" },
+    { "id": "svc-6", "name": { "pt": "Website", "en": "Website" }, "status": "red", "lastUpdate": "2026-02-23T06:30:00Z" },
+    { "id": "svc-7", "name": { "pt": "CCTV", "en": "CCTV" }, "status": "green", "lastUpdate": "2026-02-23T08:00:00Z" }
+  ],
+  "warRoom": {
+    "meetingLinks": [
+      { "id": "meet-1", "name": { "pt": "Sala de Crise — Jitsi", "en": "Crisis Room — Jitsi" }, "url": "https://meet.jit.si/GCN-CrisisRoom", "platform": "jitsi" },
+      { "id": "meet-2", "name": { "pt": "Sala de Crise — Teams", "en": "Crisis Room — Teams" }, "url": "https://teams.microsoft.com/l/meetup-join/crisis-room", "platform": "teams" },
+      { "id": "meet-3", "name": { "pt": "Briefing Diário", "en": "Daily Briefing" }, "url": "https://meet.jit.si/GCN-DailyBrief", "platform": "jitsi" }
+    ]
+  }
+}

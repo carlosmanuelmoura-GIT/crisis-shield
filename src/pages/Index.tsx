@@ -1,13 +1,33 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React from "react";
+import { useApp } from "@/contexts/AppContext";
+import EmergencySection from "@/components/sections/EmergencySection";
+import ContactsSection from "@/components/sections/ContactsSection";
+import SMSSection from "@/components/sections/SMSSection";
+import ProceduresSection from "@/components/sections/ProceduresSection";
+import BIASection from "@/components/sections/BIASection";
+import ServicesSection from "@/components/sections/ServicesSection";
+import MeetingsSection from "@/components/sections/MeetingsSection";
+import DecisionLogSection from "@/components/sections/DecisionLogSection";
+
+const sectionMap: Record<string, React.FC> = {
+  emergency: EmergencySection,
+  contacts: ContactsSection,
+  sms: SMSSection,
+  procedures: ProceduresSection,
+  bia: BIASection,
+  services: ServicesSection,
+  meetings: MeetingsSection,
+  log: DecisionLogSection,
+};
 
 const Index = () => {
+  const { activeSection } = useApp();
+  const Section = sectionMap[activeSection] || EmergencySection;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <main className="flex-1 overflow-auto p-4 max-w-3xl">
+      <Section />
+    </main>
   );
 };
 
