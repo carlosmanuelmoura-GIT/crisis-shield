@@ -52,7 +52,7 @@ const visaoGlobalItems = [
 const operationalItems = [
   { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" } },
   { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
-  { id: "procedures", icon: FileText, label: { pt: "Procedimentos", en: "Procedures" } },
+  { id: "procedures", icon: FileText, label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
   { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
 ];

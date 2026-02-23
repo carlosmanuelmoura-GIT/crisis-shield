@@ -221,10 +221,21 @@ const DecisionLogSection: React.FC = () => {
                       </span>
                     ) : (
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Shield className="h-4 w-4 text-crisis shrink-0" />
-                        <span className="text-sm font-semibold truncate">
-                          {lang === "pt" ? "Crise" : "Crisis"} — {formatCrisisDate(group.startedAt)}
-                        </span>
+                        {(() => {
+                          const startEntry = group.entries.find(e => e.text.startsWith("🚨"));
+                          const isSimulated = startEntry ? startEntry.text.includes("SIMULADA") || startEntry.text.includes("SIMULATED") : false;
+                          return (
+                            <>
+                              {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
+                              <span className="text-sm font-semibold truncate">
+                                {lang === "pt" ? "Crise" : "Crisis"} — {formatCrisisDate(group.startedAt)}
+                              </span>
+                              <Badge variant={isSimulated ? "secondary" : "destructive"} className="text-[10px] h-5 px-1.5 uppercase tracking-wider shrink-0">
+                                {isSimulated ? (lang === "pt" ? "Simulada" : "Simulated") : (lang === "pt" ? "Real" : "Real")}
+                              </Badge>
+                            </>
+                          );
+                        })()}
                       </div>
                     )}
 
