@@ -22,8 +22,9 @@ interface AppState {
   satelliteMode: boolean;
   toggleSatellite: () => void;
   crisisActive: boolean;
-  declareCrisis: () => void;
+  declareCrisis: (recursoIds?: string[]) => void;
   clearCrisis: () => void;
+  crisisRecursoIds: string[];
   actionCards: ActionCard[];
   contacts: Contact[];
   services: ServiceStatus[];
@@ -57,6 +58,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [lang, setLang] = useState<Lang>(() => loadJSON("gcn-lang", "pt"));
   const [satelliteMode, setSatellite] = useState(() => loadJSON("gcn-satellite", false));
   const [crisisActive, setCrisis] = useState(() => loadJSON("gcn-crisis", false));
+  const [crisisRecursoIds, setCrisisRecursoIds] = useState<string[]>(() => loadJSON("gcn-crisis-recursos", []));
   const [checklistState, setChecklist] = useState<Record<string, boolean>>(() => loadJSON("gcn-checklist", {}));
   const [crisisLog, setCrisisLog] = useState<CrisisLogEntry[]>(() => loadJSON("gcn-log", []));
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +70,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { localStorage.setItem("gcn-lang", JSON.stringify(lang)); }, [lang]);
   useEffect(() => { localStorage.setItem("gcn-satellite", JSON.stringify(satelliteMode)); }, [satelliteMode]);
   useEffect(() => { localStorage.setItem("gcn-crisis", JSON.stringify(crisisActive)); }, [crisisActive]);
+  useEffect(() => { localStorage.setItem("gcn-crisis-recursos", JSON.stringify(crisisRecursoIds)); }, [crisisRecursoIds]);
   useEffect(() => { localStorage.setItem("gcn-checklist", JSON.stringify(checklistState)); }, [checklistState]);
   useEffect(() => { localStorage.setItem("gcn-log", JSON.stringify(crisisLog)); }, [crisisLog]);
 
@@ -80,11 +83,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [crisisActive]);
 
   const toggleSatellite = useCallback(() => setSatellite(p => !p), []);
-  const declareCrisis = useCallback(() => {
+  const declareCrisis = useCallback((recursoIds?: string[]) => {
     setCrisis(true);
+    setCrisisRecursoIds(recursoIds || []);
     setActiveSection("emergency");
   }, []);
-  const clearCrisis = useCallback(() => setCrisis(false), []);
+  const clearCrisis = useCallback(() => {
+    setCrisis(false);
+    setCrisisRecursoIds([]);
+  }, []);
 
   const toggleCheckItem = useCallback((id: string) => {
     setChecklist(prev => ({ ...prev, [id]: !prev[id] }));
@@ -99,7 +106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       lang, setLang,
       satelliteMode, toggleSatellite,
-      crisisActive, declareCrisis, clearCrisis,
+      crisisActive, declareCrisis, clearCrisis, crisisRecursoIds,
       actionCards: data.actionCards,
       contacts: data.contacts,
       services: data.services,
