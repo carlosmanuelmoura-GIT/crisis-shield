@@ -44,6 +44,7 @@ const BIASection: React.FC = () => {
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
+  const [filterBPId, setFilterBPId] = useState<string>("__all");
 
   const t = (pt: string, en: string) => lang === "pt" ? pt : en;
 
@@ -117,9 +118,13 @@ const BIASection: React.FC = () => {
 
   if (isLoading) return <div className="text-sm text-muted-foreground">{t("A carregar...", "Loading...")}</div>;
 
-  // Group BIAs by business process
+  // Filter and group BIAs by business process
+  const filtered = filterBPId === "__all"
+    ? biaProcesses
+    : biaProcesses.filter(p => p.business_process_id === filterBPId);
+
   const grouped = new Map<string | null, DBBIAProcess[]>();
-  biaProcesses.forEach(p => {
+  filtered.forEach(p => {
     const key = p.business_process_id || null;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(p);
@@ -127,13 +132,28 @@ const BIASection: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {t("Análise de Impacto (BIA)", "Business Impact Analysis (BIA)")}
         </h2>
-        <Button size="sm" variant="outline" onClick={openNew}>
-          <Plus className="h-4 w-4 mr-1" /> {t("Nova BIA", "New BIA")}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={filterBPId} onValueChange={setFilterBPId}>
+            <SelectTrigger className="w-[220px] h-8 text-xs">
+              <SelectValue placeholder={t("Filtrar por processo...", "Filter by process...")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all">{t("Todos os processos", "All processes")}</SelectItem>
+              {businessProcesses.map(bp => (
+                <SelectItem key={bp.id} value={bp.id}>
+                  {bp.funcao} › {bp.processo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" onClick={openNew}>
+            <Plus className="h-4 w-4 mr-1" /> {t("Nova BIA", "New BIA")}
+          </Button>
+        </div>
       </div>
 
       {/* Chart */}
@@ -164,7 +184,7 @@ const BIASection: React.FC = () => {
             <CardHeader className="p-3 pb-1">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Database className="h-4 w-4 text-primary" />
-                {bp ? `${bp.funcao} › ${bp.processo}` : t("Sem processo associado", "No business process")}
+                {bp ? `${bp.funcao} › ${bp.processo}` : t("Processo não definido", "Process not set")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3 pt-1 space-y-2">
