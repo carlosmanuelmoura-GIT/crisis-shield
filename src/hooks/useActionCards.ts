@@ -86,6 +86,23 @@ export function useToggleChecklistState() {
   });
 }
 
+export function useClearAllChecklistStates() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("checklist_state")
+        .update({ checked: false })
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist_state"] }),
+  });
+}
+
 export function useCreateActionCard() {
   const qc = useQueryClient();
   const { user } = useAuth();
