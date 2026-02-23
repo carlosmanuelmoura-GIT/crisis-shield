@@ -8,8 +8,10 @@ import BIASection from "@/components/sections/BIASection";
 import ServicesSection from "@/components/sections/ServicesSection";
 import MeetingsSection from "@/components/sections/MeetingsSection";
 import DecisionLogSection from "@/components/sections/DecisionLogSection";
+import ScenariosSection from "@/components/sections/ScenariosSection";
 
 const sectionMap: Record<string, React.FC> = {
+  scenarios: ScenariosSection,
   emergency: EmergencySection,
   contacts: ContactsSection,
   sms: SMSSection,

@@ -64,7 +64,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [checklistState, setChecklist] = useState<Record<string, boolean>>(() => loadJSON("gcn-checklist", {}));
   const [crisisLog, setCrisisLog] = useState<CrisisLogEntry[]>(() => loadJSON("gcn-log", []));
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSection, setActiveSection] = useState("emergency");
+  const [activeSection, setActiveSection] = useState("scenarios");
 
   const data = crisisDataRaw as any;
 
