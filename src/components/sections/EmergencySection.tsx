@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,23 @@ const severityColors: Record<string, string> = {
   medium: "border-muted",
 };
 
+const capabilityLabels: Record<string, { pt: string; en: string; emoji: string }> = {
+  digital: { pt: "Capacidade Digital", en: "Digital Capability", emoji: "💻" },
+  fisica: { pt: "Presença Física", en: "Physical Presence", emoji: "🏢" },
+  rh: { pt: "Recursos Humanos", en: "Human Resources", emoji: "👥" },
+  eco: { pt: "Ecossistema", en: "Ecosystem", emoji: "🌐" },
+  energia: { pt: "Energética", en: "Energy", emoji: "⚡" },
+};
+
+const capabilityOptions = [
+  { value: "", label: "— Nenhuma —" },
+  { value: "digital", label: "💻 Capacidade Digital" },
+  { value: "fisica", label: "🏢 Presença Física" },
+  { value: "rh", label: "👥 Recursos Humanos" },
+  { value: "eco", label: "🌐 Ecossistema" },
+  { value: "energia", label: "⚡ Energética" },
+];
+
 const EmergencySection: React.FC = () => {
   const { lang, searchQuery } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
@@ -53,7 +71,7 @@ const EmergencySection: React.FC = () => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", icon: "flame" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
 
   const filtered = cards.filter(c => {
@@ -65,13 +83,13 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = () => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", icon: "flame" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (card: typeof cards[0]) => {
     setEditingCard(card.id);
-    setForm({ title_pt: card.title_pt, title_en: card.title_en, severity: card.severity, icon: card.icon });
+    setForm({ title_pt: card.title_pt, title_en: card.title_en, severity: card.severity, icon: card.icon, capability: card.capability || "" });
     setDialogOpen(true);
   };
 
@@ -150,15 +168,21 @@ const EmergencySection: React.FC = () => {
         const done = items.filter(i => statesMap[i.id]).length;
         const total = items.length;
         const title = lang === "pt" ? card.title_pt : card.title_en;
+        const cap = card.capability ? capabilityLabels[card.capability] : null;
 
         return (
           <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""}`}>
             <CardHeader className="p-3 cursor-pointer" onClick={() => toggle(card.id)}>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Icon className="h-5 w-5 sat-keep" />
                   <CardTitle className="text-base">{title}</CardTitle>
-                  <span className="text-xs text-muted-foreground ml-2">{done}/{total}</span>
+                  <span className="text-xs text-muted-foreground">{done}/{total}</span>
+                  {cap && (
+                    <Badge variant="outline" className="text-[10px] font-normal">
+                      {cap.emoji} {lang === "pt" ? cap.pt : cap.en}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -262,6 +286,17 @@ const EmergencySection: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 {iconOptions.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={form.capability || "none"} onValueChange={(v) => setForm(f => ({ ...f, capability: v === "none" ? "" : v }))}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder={lang === "pt" ? "Capacidade afetada" : "Affected capability"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{lang === "pt" ? "— Nenhuma —" : "— None —"}</SelectItem>
+                {capabilityOptions.filter(o => o.value).map(o => (
                   <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                 ))}
               </SelectContent>
