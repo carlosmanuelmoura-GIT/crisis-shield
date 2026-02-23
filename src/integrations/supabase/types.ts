@@ -282,6 +282,45 @@ export type Database = {
           },
         ]
       }
+      contacts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          owner_id: string | null
+          phone: string
+          priority: string
+          role_en: string
+          role_pt: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          phone?: string
+          priority?: string
+          role_en?: string
+          role_pt?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          phone?: string
+          priority?: string
+          role_en?: string
+          role_pt?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       decision_log: {
         Row: {
           author: string
