@@ -11,7 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   ChevronDown, ChevronUp, Filter,
   Plus, Pencil, Trash2, Copy, X, Loader2,
+  Monitor, Home, UserCheck, Network, Zap, Package,
 } from "lucide-react";
+
+const iconMap: Record<string, React.FC<{ className?: string }>> = {
+  Monitor, Home, UserCheck, Network, Zap,
+};
 import {
   useActionCards, useChecklistItems, useChecklistStates, useToggleChecklistState,
   useCreateActionCard, useUpdateActionCard, useDeleteActionCard,
@@ -255,7 +260,7 @@ const EmergencySection: React.FC = () => {
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.icon || "📦"} {r.name_pt}</SelectItem>)}
+                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -324,7 +329,7 @@ const EmergencySection: React.FC = () => {
               className="flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg cursor-pointer border border-border/50"
               onClick={() => toggleGroup(groupId)}
             >
-              <span className="text-xl">{recurso?.icon || "📋"}</span>
+              {React.createElement(iconMap[recurso?.icon || ""] || Package, { className: "h-5 w-5 text-muted-foreground shrink-0" })}
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold">
                   {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso associado" : "Unassigned")}
