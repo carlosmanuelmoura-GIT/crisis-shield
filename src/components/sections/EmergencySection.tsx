@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ChevronDown, ChevronUp, Filter,
-  Plus, Pencil, Trash2, X, Loader2,
+  Plus, Pencil, Trash2, Copy, X, Loader2,
 } from "lucide-react";
 import {
   useActionCards, useChecklistItems, useChecklistStates, useToggleChecklistState,
@@ -20,6 +20,8 @@ import {
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const severityColors: Record<string, string> = {
   critical: "border-crisis bg-crisis/10",
@@ -46,6 +48,7 @@ const EmergencySection: React.FC = () => {
   const createItem = useCreateChecklistItem();
   const deleteItem = useDeleteChecklistItem();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -163,6 +166,36 @@ const EmergencySection: React.FC = () => {
   const handleDelete = async (id: string) => {
     try { await deleteCard.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
+  const handleDuplicate = async (card: typeof cards[0]) => {
+    try {
+      const { data: newCard, error } = await supabase.from("action_cards").insert({
+        title_pt: `${card.title_pt} (cópia)`,
+        title_en: card.title_en ? `${card.title_en} (copy)` : "",
+        severity: card.severity,
+        capability: card.capability,
+        business_process_id: card.business_process_id,
+        recurso_id: card.recurso_id,
+        owner_id: card.owner_id,
+      }).select("id").single();
+      if (error) throw error;
+
+      // Copy checklist items
+      const items = allItems.filter(i => i.action_card_id === card.id);
+      if (items.length > 0 && newCard) {
+        const { error: itemsErr } = await supabase.from("checklist_items").insert(
+          items.map(i => ({ action_card_id: newCard.id, text_pt: i.text_pt, text_en: i.text_en, sort_order: i.sort_order }))
+        );
+        if (itemsErr) throw itemsErr;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["action_cards"] });
+      queryClient.invalidateQueries({ queryKey: ["checklist_items"] });
+      toast({ title: lang === "pt" ? "Action Card duplicado" : "Action Card duplicated" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
   };
 
   const handleAddItem = async (cardId: string) => {
@@ -324,6 +357,7 @@ const EmergencySection: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDuplicate(card); }} title={lang === "pt" ? "Duplicar" : "Duplicate"}><Copy className="h-3 w-3 sat-keep" /></Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(card); }}><Pencil className="h-3 w-3 sat-keep" /></Button>
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}><Trash2 className="h-3 w-3 sat-keep" /></Button>
                             {isOpen ? <ChevronUp className="h-3.5 w-3.5 sat-keep" /> : <ChevronDown className="h-3.5 w-3.5 sat-keep" />}
