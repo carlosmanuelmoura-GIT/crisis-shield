@@ -1,9 +1,9 @@
-import React from "react";
-import { useApp, t } from "@/contexts/AppContext";
+import React, { useState, useEffect } from "react";
+import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentUserProfile, useCurrentUserRoles } from "@/hooks/useUserRoles";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
-import { Search, Satellite, Globe, AlertTriangle, X, LogOut, User } from "lucide-react";
+import { Search, Satellite, Globe, AlertTriangle, X, LogOut, Clock, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -16,11 +16,42 @@ const roleLabels: Record<string, string> = {
   especialista_gcn: "Especialista",
 };
 
+function formatElapsed(startISO: string): string {
+  const diff = Math.max(0, Math.floor((Date.now() - new Date(startISO).getTime()) / 1000));
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+const CrisisTimer: React.FC<{ startTime: string; crisisType: "real" | "simulated" | null; lang: string }> = ({ startTime, crisisType, lang }) => {
+  const [elapsed, setElapsed] = useState(() => formatElapsed(startTime));
+
+  useEffect(() => {
+    setElapsed(formatElapsed(startTime));
+    const interval = setInterval(() => setElapsed(formatElapsed(startTime)), 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  const isSimulated = crisisType === "simulated";
+
+  return (
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 ${isSimulated ? "bg-alert/20 text-alert border border-alert/30" : "bg-crisis/20 text-crisis border border-crisis/30"}`}>
+      {isSimulated ? <FlaskConical className="h-3.5 w-3.5" /> : <Shield className="h-3.5 w-3.5" />}
+      <Clock className="h-3.5 w-3.5" />
+      <span>{elapsed}</span>
+      <span className="text-[10px] uppercase opacity-80">
+        {isSimulated ? (lang === "pt" ? "SIM" : "SIM") : (lang === "pt" ? "REAL" : "REAL")}
+      </span>
+    </div>
+  );
+};
+
 const Header: React.FC = () => {
   const {
     lang, setLang,
     satelliteMode, toggleSatellite,
-    crisisActive, clearCrisis,
+    crisisActive, clearCrisis, crisisType, crisisStartTime,
     searchQuery, setSearchQuery,
   } = useApp();
   const { signOut, user } = useAuth();
@@ -30,7 +61,10 @@ const Header: React.FC = () => {
 
   const handleClearCrisis = async () => {
     const author = profile?.display_name || user?.email || "Sistema";
-    const text = lang === "pt" ? "✅ FIM DA CRISE" : "✅ CRISIS ENDED";
+    const typeLabel = crisisType === "simulated"
+      ? (lang === "pt" ? "SIMULADA" : "SIMULATED")
+      : (lang === "pt" ? "REAL" : "REAL");
+    const text = lang === "pt" ? `✅ FIM DA CRISE ${typeLabel}` : `✅ ${typeLabel} CRISIS ENDED`;
     try { await createLog.mutateAsync({ text, author }); } catch {}
     clearCrisis();
   };
@@ -46,6 +80,11 @@ const Header: React.FC = () => {
             GCN
           </h1>
         </div>
+
+        {/* Crisis Timer - always visible when crisis active */}
+        {crisisActive && crisisStartTime && (
+          <CrisisTimer startTime={crisisStartTime} crisisType={crisisType} lang={lang} />
+        )}
 
         {/* Center: Search */}
         <div className="relative flex-1 max-w-md mx-auto">

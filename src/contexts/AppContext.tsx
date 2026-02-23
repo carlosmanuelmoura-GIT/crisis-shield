@@ -16,13 +16,17 @@ export interface ServiceStatus { id: string; name: I18nText; status: "green" | "
 export interface MeetingLink { id: string; name: I18nText; url: string; platform: string }
 export interface CrisisLogEntry { id: string; timestamp: string; text: string; author: string }
 
+export type CrisisType = "real" | "simulated" | null;
+
 interface AppState {
   lang: Lang;
   setLang: (l: Lang) => void;
   satelliteMode: boolean;
   toggleSatellite: () => void;
   crisisActive: boolean;
-  declareCrisis: (recursoIds?: string[]) => void;
+  crisisType: CrisisType;
+  crisisStartTime: string | null;
+  declareCrisis: (recursoIds?: string[], type?: "real" | "simulated") => void;
   clearCrisis: () => void;
   crisisRecursoIds: string[];
   actionCards: ActionCard[];
@@ -59,6 +63,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [satelliteMode, setSatellite] = useState(() => loadJSON("gcn-satellite", false));
   const [crisisActive, setCrisis] = useState(() => loadJSON("gcn-crisis", false));
   const [crisisRecursoIds, setCrisisRecursoIds] = useState<string[]>(() => loadJSON("gcn-crisis-recursos", []));
+  const [crisisType, setCrisisType] = useState<CrisisType>(() => loadJSON("gcn-crisis-type", null));
+  const [crisisStartTime, setCrisisStartTime] = useState<string | null>(() => loadJSON("gcn-crisis-start", null));
   const [checklistState, setChecklist] = useState<Record<string, boolean>>(() => loadJSON("gcn-checklist", {}));
   const [crisisLog, setCrisisLog] = useState<CrisisLogEntry[]>(() => loadJSON("gcn-log", []));
   const [searchQuery, setSearchQuery] = useState("");
@@ -71,6 +77,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { localStorage.setItem("gcn-satellite", JSON.stringify(satelliteMode)); }, [satelliteMode]);
   useEffect(() => { localStorage.setItem("gcn-crisis", JSON.stringify(crisisActive)); }, [crisisActive]);
   useEffect(() => { localStorage.setItem("gcn-crisis-recursos", JSON.stringify(crisisRecursoIds)); }, [crisisRecursoIds]);
+  useEffect(() => { localStorage.setItem("gcn-crisis-type", JSON.stringify(crisisType)); }, [crisisType]);
+  useEffect(() => { localStorage.setItem("gcn-crisis-start", JSON.stringify(crisisStartTime)); }, [crisisStartTime]);
   useEffect(() => { localStorage.setItem("gcn-checklist", JSON.stringify(checklistState)); }, [checklistState]);
   useEffect(() => { localStorage.setItem("gcn-log", JSON.stringify(crisisLog)); }, [crisisLog]);
 
@@ -83,14 +91,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [crisisActive]);
 
   const toggleSatellite = useCallback(() => setSatellite(p => !p), []);
-  const declareCrisis = useCallback((recursoIds?: string[]) => {
+  const declareCrisis = useCallback((recursoIds?: string[], type?: "real" | "simulated") => {
     setCrisis(true);
     setCrisisRecursoIds(recursoIds || []);
+    setCrisisType(type || "real");
+    setCrisisStartTime(new Date().toISOString());
     setActiveSection("emergency");
   }, []);
   const clearCrisis = useCallback(() => {
     setCrisis(false);
     setCrisisRecursoIds([]);
+    setCrisisType(null);
+    setCrisisStartTime(null);
   }, []);
 
   const toggleCheckItem = useCallback((id: string) => {
@@ -106,7 +118,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider value={{
       lang, setLang,
       satelliteMode, toggleSatellite,
-      crisisActive, declareCrisis, clearCrisis, crisisRecursoIds,
+      crisisActive, declareCrisis, clearCrisis, crisisRecursoIds, crisisType, crisisStartTime,
       actionCards: data.actionCards,
       contacts: data.contacts,
       services: data.services,
