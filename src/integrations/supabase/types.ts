@@ -224,6 +224,36 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          platform: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          platform?: string
+          updated_at?: string
+          url?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          platform?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           category_en: string

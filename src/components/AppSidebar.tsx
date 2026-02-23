@@ -29,7 +29,7 @@ const sections = [
   { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" }, group: "operational" },
   { id: "procedures", icon: FileText, label: { pt: "Procedimentos", en: "Procedures" }, group: "operational" },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" }, group: "operational" },
-  { id: "meetings", icon: Video, label: { pt: "Reuniões", en: "Meetings" }, group: "warroom" },
+  { id: "meetings", icon: Video, label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" }, group: "warroom" },
   { id: "log", icon: ClipboardList, label: { pt: "Log Decisões", en: "Decision Log" }, group: "warroom" },
   { id: "backoffice", icon: Settings, label: { pt: "Back Office", en: "Back Office" }, group: "admin" },
 ];
