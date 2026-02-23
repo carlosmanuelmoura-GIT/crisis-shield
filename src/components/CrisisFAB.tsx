@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { useCurrentUserRoles } from "@/hooks/useUserRoles";
-import { useCurrentUserProfile } from "@/hooks/useUserRoles";
+import { useCurrentUserRoles, useCurrentUserProfile } from "@/hooks/useUserRoles";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { AlertTriangle, Loader2, Shield, FlaskConical } from "lucide-react";
 
 const CrisisFAB: React.FC = () => {
   const { lang, crisisActive, declareCrisis } = useApp();
@@ -18,6 +19,7 @@ const CrisisFAB: React.FC = () => {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedRecursos, setSelectedRecursos] = useState<string[]>([]);
+  const [crisisTypeChoice, setCrisisTypeChoice] = useState<"real" | "simulated">("real");
 
   const isSteering = roles.includes("steering_gcn") || roles.includes("especialista_gcn");
 
@@ -36,18 +38,23 @@ const CrisisFAB: React.FC = () => {
       .map(r => r!.name_pt)
       .join(", ");
 
+    const typeLabel = crisisTypeChoice === "real"
+      ? (lang === "pt" ? "REAL" : "REAL")
+      : (lang === "pt" ? "SIMULADA" : "SIMULATED");
+
     const author = profile?.display_name || "Sistema";
     const text = lang === "pt"
-      ? `🚨 CRISE DECLARADA — Recursos perdidos: ${recursoNames || "Nenhum selecionado"}`
-      : `🚨 CRISIS DECLARED — Resources lost: ${recursoNames || "None selected"}`;
+      ? `🚨 CRISE ${typeLabel} DECLARADA — Recursos perdidos: ${recursoNames || "Nenhum selecionado"}`
+      : `🚨 ${typeLabel} CRISIS DECLARED — Resources lost: ${recursoNames || "None selected"}`;
 
     try {
       await createLog.mutateAsync({ text, author });
     } catch {}
 
-    declareCrisis(selectedRecursos);
+    declareCrisis(selectedRecursos, crisisTypeChoice);
     setDialogOpen(false);
     setSelectedRecursos([]);
+    setCrisisTypeChoice("real");
   };
 
   return (
@@ -68,27 +75,55 @@ const CrisisFAB: React.FC = () => {
               {lang === "pt" ? "Declarar Crise" : "Declare Crisis"}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {lang === "pt"
-              ? "Selecione o(s) recurso(s) que se perderam para filtrar os Action Cards de emergência:"
-              : "Select the resource(s) lost to filter emergency Action Cards:"}
-          </p>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {recursos.map(r => (
-              <label key={r.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary cursor-pointer">
-                <Checkbox
-                  checked={selectedRecursos.includes(r.id)}
-                  onCheckedChange={() => toggleRecurso(r.id)}
-                />
-                <span className="text-sm">{lang === "pt" ? r.name_pt : r.name_en || r.name_pt}</span>
+
+          {/* Crisis Type */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              {lang === "pt" ? "Tipo de Crise" : "Crisis Type"}
+            </Label>
+            <RadioGroup
+              value={crisisTypeChoice}
+              onValueChange={(v) => setCrisisTypeChoice(v as "real" | "simulated")}
+              className="flex gap-4"
+            >
+              <label className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-secondary flex-1 data-[state=checked]:border-crisis">
+                <RadioGroupItem value="real" id="real" />
+                <Shield className="h-4 w-4 text-crisis" />
+                <span className="text-sm font-medium">{lang === "pt" ? "REAL" : "REAL"}</span>
               </label>
-            ))}
-            {recursos.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                {lang === "pt" ? "Sem recursos configurados." : "No resources configured."}
-              </p>
-            )}
+              <label className="flex items-center gap-2 p-3 rounded-lg border cursor-pointer hover:bg-secondary flex-1">
+                <RadioGroupItem value="simulated" id="simulated" />
+                <FlaskConical className="h-4 w-4 text-alert" />
+                <span className="text-sm font-medium">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</span>
+              </label>
+            </RadioGroup>
           </div>
+
+          {/* Resources */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              {lang === "pt"
+                ? "Recurso(s) que se perderam"
+                : "Resource(s) lost"}
+            </Label>
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {recursos.map(r => (
+                <label key={r.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary cursor-pointer">
+                  <Checkbox
+                    checked={selectedRecursos.includes(r.id)}
+                    onCheckedChange={() => toggleRecurso(r.id)}
+                  />
+                  <span className="text-sm">{lang === "pt" ? r.name_pt : r.name_en || r.name_pt}</span>
+                </label>
+              ))}
+              {recursos.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  {lang === "pt" ? "Sem recursos configurados." : "No resources configured."}
+                </p>
+              )}
+            </div>
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               {lang === "pt" ? "Cancelar" : "Cancel"}
