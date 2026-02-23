@@ -93,7 +93,12 @@ export function useCreateActionCard() {
   return useMutation({
     mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; business_process_id?: string; recurso_id?: string }) => {
       const { error } = await supabase.from("action_cards").insert({
-        ...data,
+        title_pt: data.title_pt,
+        title_en: data.title_en,
+        severity: data.severity,
+        capability: data.capability || null,
+        business_process_id: data.business_process_id || null,
+        recurso_id: data.recurso_id || null,
         owner_id: user?.id,
       });
       if (error) throw error;
@@ -107,7 +112,14 @@ export function useUpdateActionCard() {
 
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; business_process_id?: string; recurso_id?: string }) => {
-      const { error } = await supabase.from("action_cards").update(data).eq("id", id);
+      const { error } = await supabase.from("action_cards").update({
+        title_pt: data.title_pt,
+        title_en: data.title_en,
+        severity: data.severity,
+        capability: data.capability || null,
+        business_process_id: data.business_process_id || null,
+        recurso_id: data.recurso_id || null,
+      }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["action_cards"] }),

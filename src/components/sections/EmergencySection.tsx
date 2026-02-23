@@ -150,11 +150,17 @@ const EmergencySection: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      const payload = {
+        ...form,
+        business_process_id: form.business_process_id || undefined,
+        recurso_id: form.recurso_id || undefined,
+        capability: form.capability || undefined,
+      };
       if (editingCard) {
-        await updateCard.mutateAsync({ id: editingCard, ...form });
+        await updateCard.mutateAsync({ id: editingCard, ...payload });
         toast({ title: lang === "pt" ? "Atualizado" : "Updated" });
       } else {
-        await createCard.mutateAsync(form);
+        await createCard.mutateAsync(payload);
         toast({ title: lang === "pt" ? "Criado" : "Created" });
       }
       setDialogOpen(false);
