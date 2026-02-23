@@ -1,55 +1,38 @@
 import React, { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Server, Building2, Users, Truck, MapPin, ShieldAlert,
-  Monitor, Home, UserCheck, Network, Zap, ChevronRight,
+  Monitor, Home, UserCheck, Network, Zap, ChevronRight, Loader2,
 } from "lucide-react";
+import { useCenarios, useCenarioRecursos } from "@/hooks/useCenarios";
+import { useRecursos } from "@/hooks/useRecursos";
 
-interface Capability {
-  id: string;
-  name: { pt: string; en: string };
-  icon: React.FC<{ className?: string }>;
-  scenarios: string[];
-}
-
-interface Scenario {
-  id: string;
-  roman: string;
-  name: { pt: string; en: string };
-  icon: React.FC<{ className?: string }>;
-  color: string;
-}
-
-const scenarios: Scenario[] = [
-  { id: "s1", roman: "I", name: { pt: "Indisponibilidade de sistemas", en: "Systems unavailability" }, icon: Server, color: "border-crisis bg-crisis/10" },
-  { id: "s2", roman: "II", name: { pt: "Indisponibilidade de edifícios", en: "Buildings unavailability" }, icon: Building2, color: "border-alert bg-alert/10" },
-  { id: "s3", roman: "III", name: { pt: "Indisponibilidade de recursos humanos", en: "Human resources unavailability" }, icon: Users, color: "border-alert bg-alert/10" },
-  { id: "s4", roman: "IV", name: { pt: "Indisponibilidade de fornecedores críticos", en: "Critical suppliers unavailability" }, icon: Truck, color: "border-muted" },
-  { id: "s5", roman: "V", name: { pt: "Desastre alargado na Área Metropolitana de Lisboa", en: "Large-scale disaster in Lisbon Metropolitan Area" }, icon: MapPin, color: "border-crisis bg-crisis/10" },
-  { id: "s6", roman: "VI", name: { pt: "Ciberataque", en: "Cyber attack" }, icon: ShieldAlert, color: "border-crisis bg-crisis/10" },
-];
-
-const capabilities: Capability[] = [
-  { id: "cap-digital", name: { pt: "Capacidade Digital", en: "Digital Capability" }, icon: Monitor, scenarios: ["s1", "s6"] },
-  { id: "cap-fisica", name: { pt: "Capacidade de Presença Física", en: "Physical Presence Capability" }, icon: Home, scenarios: ["s2", "s5"] },
-  { id: "cap-rh", name: { pt: "Capacidade Recursos Humanos", en: "Human Resources Capability" }, icon: UserCheck, scenarios: ["s3"] },
-  { id: "cap-eco", name: { pt: "Capacidade de Ecossistema", en: "Ecosystem Capability" }, icon: Network, scenarios: ["s4"] },
-  { id: "cap-energia", name: { pt: "Capacidade Energética", en: "Energy Capability" }, icon: Zap, scenarios: ["s5"] },
-];
+const iconMap: Record<string, React.FC<{ className?: string }>> = {
+  Server, Building2, Users, Truck, MapPin, ShieldAlert,
+  Monitor, Home, UserCheck, Network, Zap,
+};
 
 const ScenariosSection: React.FC = () => {
   const { lang } = useApp();
   const [selected, setSelected] = useState<string | null>(null);
 
-  const t = (text: { pt: string; en: string }) => text[lang] ?? text.pt;
+  const { data: cenarios, isLoading: loadingC } = useCenarios();
+  const { data: recursos, isLoading: loadingR } = useRecursos();
+  const { data: links, isLoading: loadingL } = useCenarioRecursos();
 
-  const activeCapabilities = selected
-    ? capabilities.filter(c => c.scenarios.includes(selected))
-    : capabilities;
+  const t = (pt: string, en: string) => (lang === "en" ? en : pt) || pt;
 
-  const selectedScenario = scenarios.find(s => s.id === selected);
+  if (loadingC || loadingR || loadingL) {
+    return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  }
+
+  const activeRecursos = selected
+    ? (recursos ?? []).filter(r => (links ?? []).some(l => l.cenario_id === selected && l.recurso_id === r.id))
+    : (recursos ?? []);
+
+  const selectedCenario = (cenarios ?? []).find(c => c.id === selected);
 
   return (
     <div className="space-y-5">
@@ -59,8 +42,7 @@ const ScenariosSection: React.FC = () => {
 
       {/* Scenario grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {scenarios.map(s => {
-          const Icon = s.icon;
+        {(cenarios ?? []).map(s => {
           const isActive = selected === s.id;
           return (
             <Card
@@ -71,13 +53,12 @@ const ScenariosSection: React.FC = () => {
               }`}
             >
               <CardContent className="p-3 flex items-center gap-3">
-                <Icon className={`h-5 w-5 shrink-0 sat-keep ${isActive ? "text-foreground" : "text-muted-foreground"}`} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-muted-foreground tracking-wider">
                     {lang === "pt" ? "CENÁRIO" : "SCENARIO"} {s.roman}
                   </p>
                   <p className={`text-sm font-medium ${isActive ? "text-foreground" : ""}`}>
-                    {t(s.name)}
+                    {t(s.name_pt, s.name_en)}
                   </p>
                 </div>
                 <ChevronRight className={`h-4 w-4 shrink-0 sat-keep transition-transform ${isActive ? "rotate-90 text-foreground" : "text-muted-foreground"}`} />
@@ -87,43 +68,45 @@ const ScenariosSection: React.FC = () => {
         })}
       </div>
 
-      {/* Capabilities section */}
+      {/* Recursos section */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
             {lang === "pt" ? "Recursos que se perdem" : "Lost Resources"}
           </h3>
-          {selectedScenario && (
+          {selectedCenario && (
             <Badge variant="outline" className="text-xs">
-              {lang === "pt" ? "Cenário" : "Scenario"} {selectedScenario.roman}
+              {lang === "pt" ? "Cenário" : "Scenario"} {selectedCenario.roman}
             </Badge>
           )}
         </div>
 
-        {activeCapabilities.length === 0 ? (
+        {activeRecursos.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">
-            {lang === "pt" ? "Nenhuma capacidade afetada neste cenário." : "No capabilities affected in this scenario."}
+            {lang === "pt" ? "Nenhum recurso afetado neste cenário." : "No resources affected in this scenario."}
           </p>
         ) : (
           <div className="grid gap-2">
-            {activeCapabilities.map(cap => {
-              const Icon = cap.icon;
-              const linkedScenarios = scenarios.filter(s => cap.scenarios.includes(s.id));
+            {activeRecursos.map(rec => {
+              const Icon = iconMap[rec.icon] || Monitor;
+              const linkedCenarios = (cenarios ?? []).filter(c =>
+                (links ?? []).some(l => l.cenario_id === c.id && l.recurso_id === rec.id)
+              );
               return (
-                <Card key={cap.id} className="border-l-4 border-accent">
+                <Card key={rec.id} className="border-l-4 border-accent">
                   <CardContent className="p-3 flex items-center gap-3">
                     <Icon className="h-5 w-5 text-muted-foreground shrink-0 sat-keep" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{t(cap.name)}</p>
+                      <p className="text-sm font-medium">{t(rec.name_pt, rec.name_en)}</p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {linkedScenarios.map(s => (
+                        {linkedCenarios.map(c => (
                           <Badge
-                            key={s.id}
+                            key={c.id}
                             variant="secondary"
-                            className={`text-[10px] cursor-pointer ${selected === s.id ? "bg-ring text-background" : ""}`}
-                            onClick={() => setSelected(selected === s.id ? null : s.id)}
+                            className={`text-[10px] cursor-pointer ${selected === c.id ? "bg-ring text-background" : ""}`}
+                            onClick={() => setSelected(selected === c.id ? null : c.id)}
                           >
-                            {s.roman}
+                            {c.roman}
                           </Badge>
                         ))}
                       </div>
