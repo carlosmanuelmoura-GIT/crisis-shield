@@ -16,26 +16,24 @@ import {
   MessageSquare,
   FileText,
   BarChart3,
-  Activity,
   Video,
   ClipboardList,
   LayoutGrid,
 } from "lucide-react";
 
 const sections = [
-  { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários", en: "Scenarios" }, group: "emergency" },
-  { id: "procedures", icon: FileText, label: { pt: "Procedimentos", en: "Procedures" }, group: "emergency" },
+  { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários", en: "Scenarios" }, group: "scenarios" },
   { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" }, group: "operational" },
   { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" }, group: "operational" },
   { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" }, group: "operational" },
+  { id: "procedures", icon: FileText, label: { pt: "Procedimentos", en: "Procedures" }, group: "operational" },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" }, group: "operational" },
-  { id: "services", icon: Activity, label: { pt: "Serviços", en: "Services" }, group: "operational" },
   { id: "meetings", icon: Video, label: { pt: "Reuniões", en: "Meetings" }, group: "warroom" },
   { id: "log", icon: ClipboardList, label: { pt: "Log Decisões", en: "Decision Log" }, group: "warroom" },
 ];
 
 const groupLabels: Record<string, { pt: string; en: string }> = {
-  emergency: { pt: "🚨 EMERGÊNCIA", en: "🚨 EMERGENCY" },
+  scenarios: { pt: "🎯 CENÁRIOS", en: "🎯 SCENARIOS" },
   operational: { pt: "⚙️ OPERACIONAL", en: "⚙️ OPERATIONAL" },
   warroom: { pt: "🏛️ WAR ROOM", en: "🏛️ WAR ROOM" },
 };
@@ -43,7 +41,7 @@ const groupLabels: Record<string, { pt: string; en: string }> = {
 const AppSidebar: React.FC = () => {
   const { lang, activeSection, setActiveSection } = useApp();
 
-  const groups = ["emergency", "operational", "warroom"];
+  const groups = ["scenarios", "operational", "warroom"];
 
   return (
     <Sidebar className="border-r border-border">
