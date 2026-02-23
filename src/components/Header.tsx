@@ -1,6 +1,7 @@
 import React from "react";
 import { useApp, t } from "@/contexts/AppContext";
-import { Search, Satellite, Globe, AlertTriangle, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Search, Satellite, Globe, AlertTriangle, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -13,6 +14,7 @@ const Header: React.FC = () => {
     crisisActive, clearCrisis,
     searchQuery, setSearchQuery,
   } = useApp();
+  const { signOut, user } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -70,6 +72,18 @@ const Header: React.FC = () => {
             {lang === "pt" ? "LIMPAR" : "CLEAR"}
           </Button>
         )}
+
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={signOut}
+          className="text-xs shrink-0 h-8 px-2 text-muted-foreground hover:text-foreground"
+          title={user?.email || ""}
+        >
+          <LogOut className="h-3.5 w-3.5 mr-1 sat-keep" />
+          {lang === "pt" ? "Sair" : "Logout"}
+        </Button>
       </div>
     </header>
   );
