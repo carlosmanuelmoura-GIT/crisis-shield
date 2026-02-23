@@ -32,12 +32,6 @@ const severityLabels: Record<string, { pt: string; en: string }> = {
   medium: { pt: "Médio", en: "Medium" },
 };
 
-const tipoFuncaoLabels: Record<string, string> = {
-  funcao: "Função",
-  macro_processo: "Macro Processo",
-  processo: "Processo",
-};
-
 const EmergencySection: React.FC = () => {
   const { lang, searchQuery } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
@@ -60,29 +54,54 @@ const EmergencySection: React.FC = () => {
 
   // Filters
   const [filterTipoFuncao, setFilterTipoFuncao] = useState<string>("all");
-  const [filterProcessId, setFilterProcessId] = useState<string>("all");
+  const [filterFuncao, setFilterFuncao] = useState<string>("all");
+  const [filterMacroProcesso, setFilterMacroProcesso] = useState<string>("all");
+  const [filterProcesso, setFilterProcesso] = useState<string>("all");
 
-  // Derived: processes filtered by tipo_funcao selection
-  const filteredProcessOptions = useMemo(() => {
+  // Unique values for filter dropdowns (cascading)
+  const uniqueTipoFuncao = useMemo(() => [...new Set(businessProcesses.map(bp => bp.tipo_funcao).filter(Boolean))], [businessProcesses]);
+
+  const filteredByTipo = useMemo(() => {
     if (filterTipoFuncao === "all") return businessProcesses;
     return businessProcesses.filter(bp => bp.tipo_funcao === filterTipoFuncao);
   }, [businessProcesses, filterTipoFuncao]);
+
+  const uniqueFuncao = useMemo(() => [...new Set(filteredByTipo.map(bp => bp.funcao).filter(Boolean))], [filteredByTipo]);
+
+  const filteredByFuncao = useMemo(() => {
+    if (filterFuncao === "all") return filteredByTipo;
+    return filteredByTipo.filter(bp => bp.funcao === filterFuncao);
+  }, [filteredByTipo, filterFuncao]);
+
+  const uniqueMacroProcesso = useMemo(() => [...new Set(filteredByFuncao.map(bp => bp.macro_processo).filter(Boolean))], [filteredByFuncao]);
+
+  const filteredByMacro = useMemo(() => {
+    if (filterMacroProcesso === "all") return filteredByFuncao;
+    return filteredByFuncao.filter(bp => bp.macro_processo === filterMacroProcesso);
+  }, [filteredByFuncao, filterMacroProcesso]);
+
+  const uniqueProcesso = useMemo(() => [...new Set(filteredByMacro.map(bp => bp.processo).filter(Boolean))], [filteredByMacro]);
+
+  const matchingBpIds = useMemo(() => {
+    let bps = filteredByMacro;
+    if (filterProcesso !== "all") {
+      bps = bps.filter(bp => bp.processo === filterProcesso);
+    }
+    return new Set(bps.map(bp => bp.id));
+  }, [filteredByMacro, filterProcesso]);
+
+  const hasActiveFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-
-      if (filterProcessId !== "all") {
-        if (c.business_process_id !== filterProcessId) return false;
-      } else if (filterTipoFuncao !== "all") {
-        const matchingBpIds = businessProcesses.filter(bp => bp.tipo_funcao === filterTipoFuncao).map(bp => bp.id);
-        if (!c.business_process_id || !matchingBpIds.includes(c.business_process_id)) return false;
+      if (hasActiveFilter) {
+        if (!c.business_process_id || !matchingBpIds.has(c.business_process_id)) return false;
       }
-
       return true;
     });
-  }, [cards, searchQuery, lang, filterTipoFuncao, filterProcessId, businessProcesses]);
+  }, [cards, searchQuery, lang, hasActiveFilter, matchingBpIds]);
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -139,6 +158,13 @@ const EmergencySection: React.FC = () => {
     }
   };
 
+  const resetFilters = () => {
+    setFilterTipoFuncao("all");
+    setFilterFuncao("all");
+    setFilterMacroProcesso("all");
+    setFilterProcesso("all");
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -163,40 +189,57 @@ const EmergencySection: React.FC = () => {
       {/* Filters */}
       <Card className="border-dashed">
         <CardContent className="p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {lang === "pt" ? "Filtros" : "Filters"}
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {lang === "pt" ? "Filtros" : "Filters"}
+              </span>
+            </div>
+            {hasActiveFilter && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={resetFilters}>
+                {lang === "pt" ? "Limpar" : "Clear"}
+              </Button>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo Função" : "Function Type"}</Label>
-              <Select value={filterTipoFuncao} onValueChange={(v) => { setFilterTipoFuncao(v); setFilterProcessId("all"); }}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border">
-                  <SelectValue />
-                </SelectTrigger>
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de Função" : "Function Type"}</Label>
+              <Select value={filterTipoFuncao} onValueChange={(v) => { setFilterTipoFuncao(v); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all"); }}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  <SelectItem value="funcao">Função</SelectItem>
-                  <SelectItem value="macro_processo">Macro Processo</SelectItem>
-                  <SelectItem value="processo">Processo</SelectItem>
+                  {uniqueTipoFuncao.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Processo de Negócio" : "Business Process"}</Label>
-              <Select value={filterProcessId} onValueChange={setFilterProcessId}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border">
-                  <SelectValue />
-                </SelectTrigger>
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Função" : "Function"}</Label>
+              <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v); setFilterMacroProcesso("all"); setFilterProcesso("all"); }}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {filteredProcessOptions.map(bp => (
-                    <SelectItem key={bp.id} value={bp.id}>
-                      {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
-                    </SelectItem>
-                  ))}
+                  {uniqueFuncao.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
+              <Select value={filterMacroProcesso} onValueChange={(v) => { setFilterMacroProcesso(v); setFilterProcesso("all"); }}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {uniqueMacroProcesso.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Processo" : "Process"}</Label>
+              <Select value={filterProcesso} onValueChange={setFilterProcesso}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {uniqueProcesso.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -235,34 +278,25 @@ const EmergencySection: React.FC = () => {
                         {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                       </Badge>
                       {bp && (
-                        <Badge variant="outline" className="text-[10px] font-normal">
-                          📋 {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
-                        </Badge>
-                      )}
-                      {bp && (
-                        <Badge variant="outline" className="text-[10px] font-normal bg-muted/50">
-                          {tipoFuncaoLabels[bp.tipo_funcao] || bp.tipo_funcao}
-                        </Badge>
+                        <>
+                          {bp.tipo_funcao && <Badge variant="outline" className="text-[10px] font-normal">{bp.tipo_funcao}</Badge>}
+                          {bp.funcao && <Badge variant="outline" className="text-[10px] font-normal">{bp.funcao}</Badge>}
+                          {bp.macro_processo && <Badge variant="outline" className="text-[10px] font-normal bg-muted/50">{bp.macro_processo}</Badge>}
+                          {bp.processo && <Badge variant="outline" className="text-[10px] font-normal bg-muted/50">{bp.processo}</Badge>}
+                        </>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <Button
-                      variant="ghost" size="icon" className="h-7 w-7"
-                      onClick={(e) => { e.stopPropagation(); openEdit(card); }}
-                    >
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEdit(card); }}>
                       <Pencil className="h-3.5 w-3.5 sat-keep" />
                     </Button>
-                    <Button
-                      variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}
-                    >
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}>
                       <Trash2 className="h-3.5 w-3.5 sat-keep" />
                     </Button>
                     {isOpen ? <ChevronUp className="h-4 w-4 sat-keep" /> : <ChevronDown className="h-4 w-4 sat-keep" />}
                   </div>
                 </div>
-                {/* Progress bar */}
                 <div className="flex items-center gap-2 mt-2">
                   <div className="flex-1 h-1.5 bg-secondary rounded-full">
                     <div className="h-1.5 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
@@ -278,17 +312,10 @@ const EmergencySection: React.FC = () => {
                     return (
                       <div key={item.id} className="flex items-start gap-2 py-1 group">
                         <label className="flex items-start gap-2 cursor-pointer flex-1">
-                          <Checkbox
-                            checked={checked}
-                            onCheckedChange={() => toggleCheck.mutate({ itemId: item.id, checked: !checked })}
-                            className="mt-0.5"
-                          />
+                          <Checkbox checked={checked} onCheckedChange={() => toggleCheck.mutate({ itemId: item.id, checked: !checked })} className="mt-0.5" />
                           <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                         </label>
-                        <Button
-                          variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
-                          onClick={() => deleteItem.mutate(item.id)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => deleteItem.mutate(item.id)}>
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
@@ -313,7 +340,7 @@ const EmergencySection: React.FC = () => {
         })}
       </div>
 
-      {/* Create/Edit Dialog with Labels */}
+      {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -326,26 +353,16 @@ const EmergencySection: React.FC = () => {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Título (PT)" : "Title (PT)"}</Label>
-              <Input
-                value={form.title_pt}
-                onChange={(e) => setForm(f => ({ ...f, title_pt: e.target.value }))}
-                className="bg-secondary border-border"
-              />
+              <Input value={form.title_pt} onChange={(e) => setForm(f => ({ ...f, title_pt: e.target.value }))} className="bg-secondary border-border" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Título (EN)" : "Title (EN)"}</Label>
-              <Input
-                value={form.title_en}
-                onChange={(e) => setForm(f => ({ ...f, title_en: e.target.value }))}
-                className="bg-secondary border-border"
-              />
+              <Input value={form.title_en} onChange={(e) => setForm(f => ({ ...f, title_en: e.target.value }))} className="bg-secondary border-border" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Severidade" : "Severity"}</Label>
               <Select value={form.severity} onValueChange={(v) => setForm(f => ({ ...f, severity: v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="critical">{lang === "pt" ? "Crítico" : "Critical"}</SelectItem>
                   <SelectItem value="high">{lang === "pt" ? "Alto" : "High"}</SelectItem>
@@ -363,10 +380,7 @@ const EmergencySection: React.FC = () => {
                   <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
                   {businessProcesses.map(bp => (
                     <SelectItem key={bp.id} value={bp.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-[10px]">[{tipoFuncaoLabels[bp.tipo_funcao] || bp.tipo_funcao}]</span>
-                        {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
-                      </span>
+                      {[bp.tipo_funcao, bp.funcao, bp.macro_processo, bp.processo].filter(Boolean).join(" › ")}
                     </SelectItem>
                   ))}
                 </SelectContent>
