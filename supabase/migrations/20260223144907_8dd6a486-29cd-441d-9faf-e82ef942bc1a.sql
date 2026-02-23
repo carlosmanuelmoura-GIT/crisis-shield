@@ -1,0 +1,1 @@
+ALTER TABLE public.action_cards DROP COLUMN icon;
