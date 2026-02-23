@@ -114,7 +114,7 @@ const AppSidebar: React.FC = () => {
         <SidebarContent className="pt-14 pb-6">
           {renderGroup(lang === "pt" ? "VISÃO GLOBAL" : "GLOBAL VIEW", Eye, visaoGlobalItems)}
           {renderGroup(lang === "pt" ? "OPERACIONAL" : "OPERATIONAL", null, operationalItems)}
-          {renderGroup("WAR ROOM", null, warRoomItems)}
+          {renderGroup(lang === "pt" ? "WAR ROOM / Gestão Crise" : "WAR ROOM / Crisis Mgmt", null, warRoomItems)}
           {renderGroup(lang === "pt" ? "LOGÍSTICA" : "LOGISTICS", Truck, logisticaItems)}
 
           <SidebarGroup>

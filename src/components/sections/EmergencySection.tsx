@@ -25,6 +25,8 @@ import {
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
+import { useCurrentUserProfile } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -54,6 +56,8 @@ const EmergencySection: React.FC = () => {
   const deleteItem = useDeleteChecklistItem();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const createLog = useCreateDecisionLog();
+  const { data: profile } = useCurrentUserProfile();
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -220,10 +224,40 @@ const EmergencySection: React.FC = () => {
     const text = newItemText[cardId]?.trim();
     if (!text) return;
     const items = allItems.filter(i => i.action_card_id === cardId);
+    const card = cards.find(c => c.id === cardId);
     try {
       await createItem.mutateAsync({ action_card_id: cardId, text_pt: text, text_en: text, sort_order: items.length + 1 });
       setNewItemText(prev => ({ ...prev, [cardId]: "" }));
+      if (crisisActive) {
+        const author = profile?.display_name || "Sistema";
+        const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
+        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author }).catch(() => {});
+      }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    const item = allItems.find(i => i.id === itemId);
+    const card = item ? cards.find(c => c.id === item.action_card_id) : null;
+    try {
+      await deleteItem.mutateAsync(itemId);
+      if (crisisActive && item) {
+        const author = profile?.display_name || "Sistema";
+        const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
+        const itemText = lang === "pt" ? item.text_pt : item.text_en;
+        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author }).catch(() => {});
+      }
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
+  const handleToggleCheck = async (itemId: string, checked: boolean, itemText: string, cardId: string) => {
+    if (!crisisActive) return;
+    const card = cards.find(c => c.id === cardId);
+    const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
+    const author = profile?.display_name || "Sistema";
+    toggleCheck.mutate({ itemId, checked });
+    const action = checked ? "✅" : "⬜";
+    await createLog.mutateAsync({ text: `${action} "${itemText}" em "${cardTitle}"`, author }).catch(() => {});
   };
 
   const resetFilters = () => {
@@ -409,11 +443,16 @@ const EmergencySection: React.FC = () => {
                             const text = lang === "pt" ? item.text_pt : item.text_en;
                             return (
                               <div key={item.id} className="flex items-start gap-2 py-0.5 group">
-                                <label className="flex items-start gap-2 cursor-pointer flex-1">
-                                  <Checkbox checked={checked} onCheckedChange={() => toggleCheck.mutate({ itemId: item.id, checked: !checked })} className="mt-0.5" />
+                                <label className={`flex items-start gap-2 flex-1 ${crisisActive ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                  <Checkbox
+                                    checked={checked}
+                                    onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)}
+                                    className="mt-0.5"
+                                    disabled={!crisisActive}
+                                  />
                                   <span className={`text-xs ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                 </label>
-                                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => deleteItem.mutate(item.id)}><X className="h-2.5 w-2.5" /></Button>
+                                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)}><X className="h-2.5 w-2.5" /></Button>
                               </div>
                             );
                           })}
