@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Plus, Pencil, Trash2, X, Server, Database, Link2 } from "lucide-react";
 import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
@@ -38,7 +38,6 @@ const BIASection: React.FC = () => {
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
   const [form, setForm] = useState({
     name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium",
-    dependencies: [] as string[],
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
   });
@@ -68,7 +67,7 @@ const BIASection: React.FC = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", dependencies: [], business_process_id: null, dr_type_id: null });
+    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null });
     setDialogOpen(true);
   };
 
@@ -76,7 +75,7 @@ const BIASection: React.FC = () => {
     setEditing(p);
     setForm({
       name_pt: p.name_pt, name_en: p.name_en, rto: p.rto, rpo: p.rpo,
-      criticality: p.criticality, dependencies: p.dependencies || [],
+      criticality: p.criticality,
       business_process_id: p.business_process_id || null,
       dr_type_id: p.dr_type_id || null,
     });
@@ -107,14 +106,6 @@ const BIASection: React.FC = () => {
     }
   };
 
-  const toggleDep = (depId: string) => {
-    setForm(f => ({
-      ...f,
-      dependencies: f.dependencies.includes(depId)
-        ? f.dependencies.filter(d => d !== depId)
-        : [...f.dependencies, depId],
-    }));
-  };
 
   if (isLoading) return <div className="text-sm text-muted-foreground">{t("A carregar...", "Loading...")}</div>;
 
@@ -323,18 +314,6 @@ const BIASection: React.FC = () => {
               </Select>
             </div>
 
-            {/* Dependencies on other BIA processes */}
-            <div>
-              <Label className="text-xs">{t("Dependências de outros processos BIA", "Dependencies on other BIA processes")}</Label>
-              <div className="space-y-1 mt-1 max-h-32 overflow-y-auto">
-                {biaProcesses.filter(bp => bp.id !== editing?.id).map(bp => (
-                  <div key={bp.id} className="flex items-center gap-2">
-                    <Checkbox checked={form.dependencies.includes(bp.id)} onCheckedChange={() => toggleDep(bp.id)} />
-                    <span className="text-sm">{t(bp.name_pt, bp.name_en)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("Cancelar", "Cancel")}</Button>

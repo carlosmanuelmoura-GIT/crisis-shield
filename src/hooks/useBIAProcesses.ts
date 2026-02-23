@@ -37,7 +37,7 @@ export function useCreateBIAProcess() {
   return useMutation({
     mutationFn: async (data: {
       name_pt: string; name_en: string; rto: number; rpo: number;
-      criticality: string; dependencies: string[];
+      criticality: string;
       business_process_id?: string | null; dr_type_id?: string | null;
     }) => {
       const { error } = await supabase.from("bia_processes").insert({ ...data, owner_id: user?.id });
@@ -52,7 +52,7 @@ export function useUpdateBIAProcess() {
   return useMutation({
     mutationFn: async ({ id, ...data }: {
       id: string; name_pt: string; name_en: string; rto: number; rpo: number;
-      criticality: string; dependencies: string[];
+      criticality: string;
       business_process_id?: string | null; dr_type_id?: string | null;
     }) => {
       const { error } = await supabase.from("bia_processes").update(data).eq("id", id);
