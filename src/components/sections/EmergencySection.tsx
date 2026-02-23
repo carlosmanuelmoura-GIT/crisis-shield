@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ChevronDown, ChevronUp, Flame, ShieldAlert, CloudRain, HeartPulse, ZapOff, WifiOff,
+  ChevronDown, ChevronUp,
   Plus, Pencil, Trash2, X, Loader2,
 } from "lucide-react";
 import {
@@ -18,20 +18,6 @@ import {
 } from "@/hooks/useActionCards";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useToast } from "@/hooks/use-toast";
-
-const iconMap: Record<string, React.FC<{ className?: string }>> = {
-  "flame": Flame, "shield-alert": ShieldAlert, "cloud-rain": CloudRain,
-  "heart-pulse": HeartPulse, "zap-off": ZapOff, "wifi-off": WifiOff,
-};
-
-const iconOptions = [
-  { value: "flame", label: "🔥 Incêndio" },
-  { value: "shield-alert", label: "🛡️ Ciber" },
-  { value: "cloud-rain", label: "🌧️ Inundação" },
-  { value: "heart-pulse", label: "💓 Saúde" },
-  { value: "zap-off", label: "⚡ Elétrica" },
-  { value: "wifi-off", label: "📡 Telecom" },
-];
 
 const severityColors: Record<string, string> = {
   critical: "border-crisis bg-crisis/10",
@@ -64,7 +50,7 @@ const EmergencySection: React.FC = () => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "", business_process_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", business_process_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
 
   const filtered = cards.filter(c => {
@@ -76,13 +62,13 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = () => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "", business_process_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", business_process_id: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (card: typeof cards[0]) => {
     setEditingCard(card.id);
-    setForm({ title_pt: card.title_pt, title_en: card.title_en, severity: card.severity, icon: card.icon, capability: card.capability || "", business_process_id: (card as any).business_process_id || "" });
+    setForm({ title_pt: card.title_pt, title_en: card.title_en, severity: card.severity, capability: card.capability || "", business_process_id: card.business_process_id || "" });
     setDialogOpen(true);
   };
 
@@ -154,7 +140,6 @@ const EmergencySection: React.FC = () => {
       )}
 
       {filtered.map(card => {
-        const Icon = iconMap[card.icon] || Flame;
         const isOpen = expanded[card.id];
         const items = allItems.filter(i => i.action_card_id === card.id);
         const statesMap = Object.fromEntries(allStates.map(s => [s.checklist_item_id, s.checked]));
@@ -162,8 +147,8 @@ const EmergencySection: React.FC = () => {
         const total = items.length;
         const title = lang === "pt" ? card.title_pt : card.title_en;
         const cap = card.capability ? capabilityLabels[card.capability] : null;
-        const bp = (card as any).business_process_id
-          ? businessProcesses.find(p => p.id === (card as any).business_process_id)
+        const bp = card.business_process_id
+          ? businessProcesses.find(p => p.id === card.business_process_id)
           : null;
 
         return (
@@ -171,7 +156,6 @@ const EmergencySection: React.FC = () => {
             <CardHeader className="p-3 cursor-pointer" onClick={() => toggle(card.id)}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Icon className="h-5 w-5 sat-keep" />
                   <CardTitle className="text-base">{title}</CardTitle>
                   <span className="text-xs text-muted-foreground">{done}/{total}</span>
                   {bp && (
@@ -279,16 +263,6 @@ const EmergencySection: React.FC = () => {
                 <SelectItem value="critical">{lang === "pt" ? "Crítico" : "Critical"}</SelectItem>
                 <SelectItem value="high">{lang === "pt" ? "Alto" : "High"}</SelectItem>
                 <SelectItem value="medium">{lang === "pt" ? "Médio" : "Medium"}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={form.icon} onValueChange={(v) => setForm(f => ({ ...f, icon: v }))}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {iconOptions.map(o => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
               </SelectContent>
             </Select>
             <Select value={form.business_process_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, business_process_id: v === "none" ? "" : v }))}>

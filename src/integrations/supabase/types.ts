@@ -19,7 +19,6 @@ export type Database = {
           business_process_id: string | null
           capability: string | null
           created_at: string
-          icon: string
           id: string
           owner_id: string | null
           severity: string
@@ -31,7 +30,6 @@ export type Database = {
           business_process_id?: string | null
           capability?: string | null
           created_at?: string
-          icon?: string
           id?: string
           owner_id?: string | null
           severity?: string
@@ -43,7 +41,6 @@ export type Database = {
           business_process_id?: string | null
           capability?: string | null
           created_at?: string
-          icon?: string
           id?: string
           owner_id?: string | null
           severity?: string
