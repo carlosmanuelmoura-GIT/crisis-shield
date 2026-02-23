@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           id: string
           owner_id: string | null
+          recurso_id: string | null
           severity: string
           title_en: string
           title_pt: string
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string
           id?: string
           owner_id?: string | null
+          recurso_id?: string | null
           severity?: string
           title_en?: string
           title_pt: string
@@ -43,6 +45,7 @@ export type Database = {
           created_at?: string
           id?: string
           owner_id?: string | null
+          recurso_id?: string | null
           severity?: string
           title_en?: string
           title_pt?: string
@@ -54,6 +57,13 @@ export type Database = {
             columns: ["business_process_id"]
             isOneToOne: false
             referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_cards_recurso_id_fkey"
+            columns: ["recurso_id"]
+            isOneToOne: false
+            referencedRelation: "recursos"
             referencedColumns: ["id"]
           },
         ]
@@ -126,6 +136,81 @@ export type Database = {
           owner_id?: string | null
           processo?: string
           tipo_funcao?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cenario_recursos: {
+        Row: {
+          cenario_id: string
+          created_at: string
+          id: string
+          recurso_id: string
+        }
+        Insert: {
+          cenario_id: string
+          created_at?: string
+          id?: string
+          recurso_id: string
+        }
+        Update: {
+          cenario_id?: string
+          created_at?: string
+          id?: string
+          recurso_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cenario_recursos_cenario_id_fkey"
+            columns: ["cenario_id"]
+            isOneToOne: false
+            referencedRelation: "cenarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cenario_recursos_recurso_id_fkey"
+            columns: ["recurso_id"]
+            isOneToOne: false
+            referencedRelation: "recursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cenarios: {
+        Row: {
+          color: string
+          created_at: string
+          description_en: string
+          description_pt: string
+          id: string
+          name_en: string
+          name_pt: string
+          owner_id: string | null
+          roman: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description_en?: string
+          description_pt?: string
+          id?: string
+          name_en?: string
+          name_pt: string
+          owner_id?: string | null
+          roman?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description_en?: string
+          description_pt?: string
+          id?: string
+          name_en?: string
+          name_pt?: string
+          owner_id?: string | null
+          roman?: string
           updated_at?: string
         }
         Relationships: []
@@ -314,6 +399,42 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      recursos: {
+        Row: {
+          created_at: string
+          description_en: string
+          description_pt: string
+          icon: string
+          id: string
+          name_en: string
+          name_pt: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string
+          description_pt?: string
+          icon?: string
+          id?: string
+          name_en?: string
+          name_pt: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string
+          description_pt?: string
+          icon?: string
+          id?: string
+          name_en?: string
+          name_pt?: string
+          owner_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
