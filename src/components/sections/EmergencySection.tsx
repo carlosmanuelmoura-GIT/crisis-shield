@@ -16,6 +16,7 @@ import {
   useCreateActionCard, useUpdateActionCard, useDeleteActionCard,
   useCreateChecklistItem, useDeleteChecklistItem,
 } from "@/hooks/useActionCards";
+import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useToast } from "@/hooks/use-toast";
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
@@ -46,20 +47,12 @@ const capabilityLabels: Record<string, { pt: string; en: string; emoji: string }
   energia: { pt: "Energética", en: "Energy", emoji: "⚡" },
 };
 
-const capabilityOptions = [
-  { value: "", label: "— Nenhuma —" },
-  { value: "digital", label: "💻 Capacidade Digital" },
-  { value: "fisica", label: "🏢 Presença Física" },
-  { value: "rh", label: "👥 Recursos Humanos" },
-  { value: "eco", label: "🌐 Ecossistema" },
-  { value: "energia", label: "⚡ Energética" },
-];
-
 const EmergencySection: React.FC = () => {
   const { lang, searchQuery } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
   const { data: allItems = [] } = useChecklistItems();
   const { data: allStates = [] } = useChecklistStates();
+  const { data: businessProcesses = [] } = useBusinessProcesses();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
   const updateCard = useUpdateActionCard();
@@ -71,7 +64,7 @@ const EmergencySection: React.FC = () => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "", business_process_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
 
   const filtered = cards.filter(c => {
@@ -83,13 +76,13 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = () => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", icon: "flame", capability: "", business_process_id: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (card: typeof cards[0]) => {
     setEditingCard(card.id);
-    setForm({ title_pt: card.title_pt, title_en: card.title_en, severity: card.severity, icon: card.icon, capability: card.capability || "" });
+    setForm({ title_pt: card.title_pt, title_en: card.title_en, severity: card.severity, icon: card.icon, capability: card.capability || "", business_process_id: (card as any).business_process_id || "" });
     setDialogOpen(true);
   };
 
@@ -169,6 +162,9 @@ const EmergencySection: React.FC = () => {
         const total = items.length;
         const title = lang === "pt" ? card.title_pt : card.title_en;
         const cap = card.capability ? capabilityLabels[card.capability] : null;
+        const bp = (card as any).business_process_id
+          ? businessProcesses.find(p => p.id === (card as any).business_process_id)
+          : null;
 
         return (
           <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""}`}>
@@ -178,6 +174,11 @@ const EmergencySection: React.FC = () => {
                   <Icon className="h-5 w-5 sat-keep" />
                   <CardTitle className="text-base">{title}</CardTitle>
                   <span className="text-xs text-muted-foreground">{done}/{total}</span>
+                  {bp && (
+                    <Badge variant="outline" className="text-[10px] font-normal">
+                      📋 {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
+                    </Badge>
+                  )}
                   {cap && (
                     <Badge variant="outline" className="text-[10px] font-normal">
                       {cap.emoji} {lang === "pt" ? cap.pt : cap.en}
@@ -290,14 +291,16 @@ const EmergencySection: React.FC = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={form.capability || "none"} onValueChange={(v) => setForm(f => ({ ...f, capability: v === "none" ? "" : v }))}>
+            <Select value={form.business_process_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, business_process_id: v === "none" ? "" : v }))}>
               <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder={lang === "pt" ? "Capacidade afetada" : "Affected capability"} />
+                <SelectValue placeholder={lang === "pt" ? "Processo de Negócio" : "Business Process"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">{lang === "pt" ? "— Nenhuma —" : "— None —"}</SelectItem>
-                {capabilityOptions.filter(o => o.value).map(o => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
+                {businessProcesses.map(bp => (
+                  <SelectItem key={bp.id} value={bp.id}>
+                    {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
