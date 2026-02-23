@@ -67,7 +67,7 @@ const Header: React.FC = () => {
       ? (lang === "pt" ? "SIMULADA" : "SIMULATED")
       : (lang === "pt" ? "REAL" : "REAL");
     const text = lang === "pt" ? `✅ FIM DA CRISE ${typeLabel}` : `✅ ${typeLabel} CRISIS ENDED`;
-    try { await createLog.mutateAsync({ text, author }); } catch {}
+    try { await createLog.mutateAsync({ text, author, crisis_started_at: crisisStartTime }); } catch {}
     try { await clearChecks.mutateAsync(); } catch {}
     clearCrisis();
   };
