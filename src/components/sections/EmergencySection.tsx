@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, Filter,
   Plus, Pencil, Trash2, X, Loader2,
 } from "lucide-react";
 import {
@@ -25,12 +26,16 @@ const severityColors: Record<string, string> = {
   medium: "border-muted",
 };
 
-const capabilityLabels: Record<string, { pt: string; en: string; emoji: string }> = {
-  digital: { pt: "Capacidade Digital", en: "Digital Capability", emoji: "💻" },
-  fisica: { pt: "Presença Física", en: "Physical Presence", emoji: "🏢" },
-  rh: { pt: "Recursos Humanos", en: "Human Resources", emoji: "👥" },
-  eco: { pt: "Ecossistema", en: "Ecosystem", emoji: "🌐" },
-  energia: { pt: "Energética", en: "Energy", emoji: "⚡" },
+const severityLabels: Record<string, { pt: string; en: string }> = {
+  critical: { pt: "Crítico", en: "Critical" },
+  high: { pt: "Alto", en: "High" },
+  medium: { pt: "Médio", en: "Medium" },
+};
+
+const tipoFuncaoLabels: Record<string, string> = {
+  funcao: "Função",
+  macro_processo: "Macro Processo",
+  processo: "Processo",
 };
 
 const EmergencySection: React.FC = () => {
@@ -53,10 +58,31 @@ const EmergencySection: React.FC = () => {
   const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", business_process_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
 
-  const filtered = cards.filter(c => {
-    const title = lang === "pt" ? c.title_pt : c.title_en;
-    return !searchQuery || title.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  // Filters
+  const [filterTipoFuncao, setFilterTipoFuncao] = useState<string>("all");
+  const [filterProcessId, setFilterProcessId] = useState<string>("all");
+
+  // Derived: processes filtered by tipo_funcao selection
+  const filteredProcessOptions = useMemo(() => {
+    if (filterTipoFuncao === "all") return businessProcesses;
+    return businessProcesses.filter(bp => bp.tipo_funcao === filterTipoFuncao);
+  }, [businessProcesses, filterTipoFuncao]);
+
+  const filtered = useMemo(() => {
+    return cards.filter(c => {
+      const title = lang === "pt" ? c.title_pt : c.title_en;
+      if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
+      if (filterProcessId !== "all") {
+        if (c.business_process_id !== filterProcessId) return false;
+      } else if (filterTipoFuncao !== "all") {
+        const matchingBpIds = businessProcesses.filter(bp => bp.tipo_funcao === filterTipoFuncao).map(bp => bp.id);
+        if (!c.business_process_id || !matchingBpIds.includes(c.business_process_id)) return false;
+      }
+
+      return true;
+    });
+  }, [cards, searchQuery, lang, filterTipoFuncao, filterProcessId, businessProcesses]);
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
 
@@ -122,7 +148,8 @@ const EmergencySection: React.FC = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {lang === "pt" ? "Action Cards de Emergência" : "Emergency Action Cards"}
@@ -133,106 +160,160 @@ const EmergencySection: React.FC = () => {
         </Button>
       </div>
 
+      {/* Filters */}
+      <Card className="border-dashed">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {lang === "pt" ? "Filtros" : "Filters"}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo Função" : "Function Type"}</Label>
+              <Select value={filterTipoFuncao} onValueChange={(v) => { setFilterTipoFuncao(v); setFilterProcessId("all"); }}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  <SelectItem value="funcao">Função</SelectItem>
+                  <SelectItem value="macro_processo">Macro Processo</SelectItem>
+                  <SelectItem value="processo">Processo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Processo de Negócio" : "Business Process"}</Label>
+              <Select value={filterProcessId} onValueChange={setFilterProcessId}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {filteredProcessOptions.map(bp => (
+                    <SelectItem key={bp.id} value={bp.id}>
+                      {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cards grid */}
       {filtered.length === 0 && (
         <p className="text-sm text-muted-foreground py-4 text-center">
           {lang === "pt" ? "Nenhum action card encontrado." : "No action cards found."}
         </p>
       )}
 
-      {filtered.map(card => {
-        const isOpen = expanded[card.id];
-        const items = allItems.filter(i => i.action_card_id === card.id);
-        const statesMap = Object.fromEntries(allStates.map(s => [s.checklist_item_id, s.checked]));
-        const done = items.filter(i => statesMap[i.id]).length;
-        const total = items.length;
-        const title = lang === "pt" ? card.title_pt : card.title_en;
-        const cap = card.capability ? capabilityLabels[card.capability] : null;
-        const bp = card.business_process_id
-          ? businessProcesses.find(p => p.id === card.business_process_id)
-          : null;
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filtered.map(card => {
+          const isOpen = expanded[card.id];
+          const items = allItems.filter(i => i.action_card_id === card.id);
+          const statesMap = Object.fromEntries(allStates.map(s => [s.checklist_item_id, s.checked]));
+          const done = items.filter(i => statesMap[i.id]).length;
+          const total = items.length;
+          const title = lang === "pt" ? card.title_pt : card.title_en;
+          const bp = card.business_process_id
+            ? businessProcesses.find(p => p.id === card.business_process_id)
+            : null;
+          const severity = severityLabels[card.severity];
 
-        return (
-          <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""}`}>
-            <CardHeader className="p-3 cursor-pointer" onClick={() => toggle(card.id)}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-base">{title}</CardTitle>
-                  <span className="text-xs text-muted-foreground">{done}/{total}</span>
-                  {bp && (
-                    <Badge variant="outline" className="text-[10px] font-normal">
-                      📋 {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
-                    </Badge>
-                  )}
-                  {cap && (
-                    <Badge variant="outline" className="text-[10px] font-normal">
-                      {cap.emoji} {lang === "pt" ? cap.pt : cap.en}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7"
-                    onClick={(e) => { e.stopPropagation(); openEdit(card); }}
-                  >
-                    <Pencil className="h-3.5 w-3.5 sat-keep" />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 sat-keep" />
-                  </Button>
-                  {isOpen ? <ChevronUp className="h-4 w-4 sat-keep" /> : <ChevronDown className="h-4 w-4 sat-keep" />}
-                </div>
-              </div>
-              <div className="w-full h-1 bg-secondary rounded mt-2">
-                <div className="h-1 bg-ok rounded transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-              </div>
-            </CardHeader>
-            {isOpen && (
-              <CardContent className="p-3 pt-0 space-y-2">
-                {items.map(item => {
-                  const checked = !!statesMap[item.id];
-                  const text = lang === "pt" ? item.text_pt : item.text_en;
-                  return (
-                    <div key={item.id} className="flex items-start gap-2 py-1 group">
-                      <label className="flex items-start gap-2 cursor-pointer flex-1">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleCheck.mutate({ itemId: item.id, checked: !checked })}
-                          className="mt-0.5"
-                        />
-                        <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                      </label>
-                      <Button
-                        variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
-                        onClick={() => deleteItem.mutate(item.id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
+          return (
+            <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
+              <CardHeader className="p-4 pb-2 cursor-pointer" onClick={() => toggle(card.id)}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <CardTitle className="text-base leading-tight">{title}</CardTitle>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                      </Badge>
+                      {bp && (
+                        <Badge variant="outline" className="text-[10px] font-normal">
+                          📋 {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
+                        </Badge>
+                      )}
+                      {bp && (
+                        <Badge variant="outline" className="text-[10px] font-normal bg-muted/50">
+                          {tipoFuncaoLabels[bp.tipo_funcao] || bp.tipo_funcao}
+                        </Badge>
+                      )}
                     </div>
-                  );
-                })}
-                {/* Add new checklist item */}
-                <div className="flex gap-2 pt-1">
-                  <Input
-                    value={newItemText[card.id] || ""}
-                    onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
-                    placeholder={lang === "pt" ? "Novo item..." : "New item..."}
-                    className="h-8 text-sm bg-secondary border-border"
-                    onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)}
-                  />
-                  <Button size="sm" variant="secondary" className="h-8" onClick={() => handleAddItem(card.id)}>
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7"
+                      onClick={(e) => { e.stopPropagation(); openEdit(card); }}
+                    >
+                      <Pencil className="h-3.5 w-3.5 sat-keep" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                      onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 sat-keep" />
+                    </Button>
+                    {isOpen ? <ChevronUp className="h-4 w-4 sat-keep" /> : <ChevronDown className="h-4 w-4 sat-keep" />}
+                  </div>
                 </div>
-              </CardContent>
-            )}
-          </Card>
-        );
-      })}
+                {/* Progress bar */}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex-1 h-1.5 bg-secondary rounded-full">
+                    <div className="h-1.5 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">{done}/{total}</span>
+                </div>
+              </CardHeader>
+              {isOpen && (
+                <CardContent className="p-4 pt-1 space-y-2 border-t border-border/50">
+                  {items.map(item => {
+                    const checked = !!statesMap[item.id];
+                    const text = lang === "pt" ? item.text_pt : item.text_en;
+                    return (
+                      <div key={item.id} className="flex items-start gap-2 py-1 group">
+                        <label className="flex items-start gap-2 cursor-pointer flex-1">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleCheck.mutate({ itemId: item.id, checked: !checked })}
+                            className="mt-0.5"
+                          />
+                          <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                        </label>
+                        <Button
+                          variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 text-destructive"
+                          onClick={() => deleteItem.mutate(item.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                  <div className="flex gap-2 pt-1">
+                    <Input
+                      value={newItemText[card.id] || ""}
+                      onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
+                      placeholder={lang === "pt" ? "Novo item..." : "New item..."}
+                      className="h-8 text-sm bg-secondary border-border"
+                      onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)}
+                    />
+                    <Button size="sm" variant="secondary" className="h-8" onClick={() => handleAddItem(card.id)}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+      </div>
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Dialog with Labels */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -242,42 +323,55 @@ const EmergencySection: React.FC = () => {
                 : (lang === "pt" ? "Novo Action Card" : "New Action Card")}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <Input
-              placeholder={lang === "pt" ? "Título (PT)" : "Title (PT)"}
-              value={form.title_pt}
-              onChange={(e) => setForm(f => ({ ...f, title_pt: e.target.value }))}
-              className="bg-secondary border-border"
-            />
-            <Input
-              placeholder={lang === "pt" ? "Título (EN)" : "Title (EN)"}
-              value={form.title_en}
-              onChange={(e) => setForm(f => ({ ...f, title_en: e.target.value }))}
-              className="bg-secondary border-border"
-            />
-            <Select value={form.severity} onValueChange={(v) => setForm(f => ({ ...f, severity: v }))}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="critical">{lang === "pt" ? "Crítico" : "Critical"}</SelectItem>
-                <SelectItem value="high">{lang === "pt" ? "Alto" : "High"}</SelectItem>
-                <SelectItem value="medium">{lang === "pt" ? "Médio" : "Medium"}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={form.business_process_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, business_process_id: v === "none" ? "" : v }))}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder={lang === "pt" ? "Processo de Negócio" : "Business Process"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                {businessProcesses.map(bp => (
-                  <SelectItem key={bp.id} value={bp.id}>
-                    {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Título (PT)" : "Title (PT)"}</Label>
+              <Input
+                value={form.title_pt}
+                onChange={(e) => setForm(f => ({ ...f, title_pt: e.target.value }))}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Título (EN)" : "Title (EN)"}</Label>
+              <Input
+                value={form.title_en}
+                onChange={(e) => setForm(f => ({ ...f, title_en: e.target.value }))}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Severidade" : "Severity"}</Label>
+              <Select value={form.severity} onValueChange={(v) => setForm(f => ({ ...f, severity: v }))}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">{lang === "pt" ? "Crítico" : "Critical"}</SelectItem>
+                  <SelectItem value="high">{lang === "pt" ? "Alto" : "High"}</SelectItem>
+                  <SelectItem value="medium">{lang === "pt" ? "Médio" : "Medium"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Processo de Negócio" : "Business Process"}</Label>
+              <Select value={form.business_process_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, business_process_id: v === "none" ? "" : v }))}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
+                  {businessProcesses.map(bp => (
+                    <SelectItem key={bp.id} value={bp.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-muted-foreground text-[10px]">[{tipoFuncaoLabels[bp.tipo_funcao] || bp.tipo_funcao}]</span>
+                        {lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button onClick={handleSave} disabled={!form.title_pt || createCard.isPending || updateCard.isPending} className="w-full">
               {(createCard.isPending || updateCard.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {lang === "pt" ? "Guardar" : "Save"}
