@@ -46,28 +46,41 @@ const AppSidebar: React.FC = () => {
   return (
     <Sidebar className="border-r border-border">
       <SidebarContent className="pt-2">
-        {groups.map(group => (
-          <SidebarGroup key={group}>
-            <SidebarGroupLabel className="text-xs font-bold tracking-wider text-muted-foreground">
-              {t(groupLabels[group], lang)}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {sections.filter(s => s.group === group).map(section => (
-                  <SidebarMenuItem key={section.id}>
-                    <SidebarMenuButton
-                      onClick={() => setActiveSection(section.id)}
-                      className={`${activeSection === section.id ? "bg-accent text-accent-foreground font-medium" : ""}`}
-                    >
-                      <section.icon className="h-4 w-4 mr-2 sat-keep" />
-                      <span>{t(section.label, lang)}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {groups.map(group => {
+          const groupSections = sections.filter(s => s.group === group);
+          // For single-item groups like scenarios, make the label clickable directly
+          const isSingleClickable = group === "scenarios";
+
+          return (
+            <SidebarGroup key={group}>
+              <SidebarGroupLabel
+                className={`text-xs font-bold tracking-wider text-muted-foreground ${
+                  isSingleClickable ? "cursor-pointer hover:text-foreground" : ""
+                } ${isSingleClickable && activeSection === "scenarios" ? "text-foreground" : ""}`}
+                onClick={isSingleClickable ? () => setActiveSection("scenarios") : undefined}
+              >
+                {t(groupLabels[group], lang)}
+              </SidebarGroupLabel>
+              {!isSingleClickable && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {groupSections.map(section => (
+                      <SidebarMenuItem key={section.id}>
+                        <SidebarMenuButton
+                          onClick={() => setActiveSection(section.id)}
+                          className={`${activeSection === section.id ? "bg-accent text-accent-foreground font-medium" : ""}`}
+                        >
+                          <section.icon className="h-4 w-4 mr-2 sat-keep" />
+                          <span>{t(section.label, lang)}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
     </Sidebar>
   );
