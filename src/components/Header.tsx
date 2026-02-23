@@ -2,6 +2,7 @@ import React from "react";
 import { useApp, t } from "@/contexts/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentUserProfile, useCurrentUserRoles } from "@/hooks/useUserRoles";
+import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { Search, Satellite, Globe, AlertTriangle, X, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,14 @@ const Header: React.FC = () => {
   const { signOut, user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
   const { data: roles = [] } = useCurrentUserRoles();
+  const createLog = useCreateDecisionLog();
+
+  const handleClearCrisis = async () => {
+    const author = profile?.display_name || user?.email || "Sistema";
+    const text = lang === "pt" ? "✅ FIM DA CRISE" : "✅ CRISIS ENDED";
+    try { await createLog.mutateAsync({ text, author }); } catch {}
+    clearCrisis();
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -51,7 +60,7 @@ const Header: React.FC = () => {
 
         {/* Crisis clear */}
         {crisisActive && (
-          <Button variant="destructive" size="sm" onClick={clearCrisis} className="h-8 text-xs animate-pulse-crisis shrink-0">
+          <Button variant="destructive" size="sm" onClick={handleClearCrisis} className="h-8 text-xs animate-pulse-crisis shrink-0">
             <X className="h-3.5 w-3.5 mr-1" />
             {lang === "pt" ? "LIMPAR" : "CLEAR"}
           </Button>

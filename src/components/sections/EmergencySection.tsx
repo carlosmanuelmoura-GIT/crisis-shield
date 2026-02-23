@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  ChevronDown, ChevronUp, Filter,
+  ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
 } from "lucide-react";
@@ -40,7 +40,7 @@ const severityLabels: Record<string, { pt: string; en: string }> = {
 };
 
 const EmergencySection: React.FC = () => {
-  const { lang, searchQuery } = useApp();
+  const { lang, searchQuery, crisisActive, crisisRecursoIds } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
   const { data: allItems = [] } = useChecklistItems();
   const { data: allStates = [] } = useChecklistStates();
@@ -85,17 +85,24 @@ const EmergencySection: React.FC = () => {
   }, [filteredByMacro, filterProcesso]);
 
   const hasBpFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
-  const hasActiveFilter = filterRecurso !== "all" || hasBpFilter;
+
+  // If crisis is active with selected recursos, override the recurso filter
+  const effectiveFilterRecurso = crisisActive && crisisRecursoIds.length > 0 ? "__crisis__" : filterRecurso;
+  const hasActiveFilter = effectiveFilterRecurso !== "all" || hasBpFilter;
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
+      if (effectiveFilterRecurso === "__crisis__") {
+        if (!c.recurso_id || !crisisRecursoIds.includes(c.recurso_id)) return false;
+      } else if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) {
+        return false;
+      }
       if (hasBpFilter && (!c.business_process_id || !matchingBpIds.has(c.business_process_id))) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterRecurso, hasBpFilter, matchingBpIds]);
+  }, [cards, searchQuery, lang, effectiveFilterRecurso, crisisRecursoIds, hasBpFilter, matchingBpIds]);
 
   // Group cards by recurso que se perde
   const groupedCards = useMemo(() => {
@@ -231,6 +238,20 @@ const EmergencySection: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Crisis banner */}
+      {crisisActive && crisisRecursoIds.length > 0 && (
+        <div className="p-3 rounded-lg bg-crisis/10 border border-crisis text-sm">
+          <div className="flex items-center gap-2 font-bold text-crisis">
+            <AlertTriangle className="h-4 w-4" />
+            {lang === "pt" ? "CRISE ATIVA" : "ACTIVE CRISIS"}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {lang === "pt" ? "Filtrado por recursos perdidos: " : "Filtered by lost resources: "}
+            {crisisRecursoIds.map(id => recursos.find(r => r.id === id)?.name_pt || id).join(", ")}
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold uppercase tracking-wider">
