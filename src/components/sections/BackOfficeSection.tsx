@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase } from "lucide-react";
 import {
   useAllUsersWithRoles, useAssignRole, useRemoveRole,
@@ -43,17 +45,17 @@ const BackOfficeSection: React.FC = () => {
   const deleteBP = useDeleteBusinessProcess();
   const [bpDialog, setBpDialog] = useState(false);
   const [editingBP, setEditingBP] = useState<string | null>(null);
-  const [bpForm, setBpForm] = useState({ name_pt: "", name_en: "", description_pt: "", description_en: "", tipo_funcao: "processo" });
+  const [bpForm, setBpForm] = useState({ tipo_funcao: "", funcao: "", macro_processo: "", processo: "" });
 
   const openCreateBP = () => {
     setEditingBP(null);
-    setBpForm({ name_pt: "", name_en: "", description_pt: "", description_en: "", tipo_funcao: "processo" });
+    setBpForm({ tipo_funcao: "", funcao: "", macro_processo: "", processo: "" });
     setBpDialog(true);
   };
 
   const openEditBP = (bp: typeof processes[0]) => {
     setEditingBP(bp.id);
-    setBpForm({ name_pt: bp.name_pt, name_en: bp.name_en, description_pt: bp.description_pt, description_en: bp.description_en, tipo_funcao: bp.tipo_funcao || "processo" });
+    setBpForm({ tipo_funcao: bp.tipo_funcao, funcao: bp.funcao, macro_processo: bp.macro_processo, processo: bp.processo });
     setBpDialog(true);
   };
 
@@ -103,9 +105,7 @@ const BackOfficeSection: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-bold uppercase tracking-wider">
-        {lang === "pt" ? "Back Office" : "Back Office"}
-      </h2>
+      <h2 className="text-lg font-bold uppercase tracking-wider">Back Office</h2>
 
       <Tabs defaultValue="roles">
         <TabsList className="bg-secondary">
@@ -139,12 +139,7 @@ const BackOfficeSection: React.FC = () => {
                         {u.roles.map(r => (
                           <Badge key={r} variant="secondary" className="text-[10px] gap-1">
                             {roleLabels[r] || r}
-                            <button
-                              onClick={() => handleRemoveRole(u.user_id, r)}
-                              className="ml-0.5 hover:text-destructive"
-                            >
-                              ×
-                            </button>
+                            <button onClick={() => handleRemoveRole(u.user_id, r)} className="ml-0.5 hover:text-destructive">×</button>
                           </Badge>
                         ))}
                       </div>
@@ -163,7 +158,7 @@ const BackOfficeSection: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Business Processes Tab */}
+        {/* Business Processes Tab - TABLE format */}
         <TabsContent value="bp" className="space-y-3 mt-3">
           <div className="flex justify-end">
             <Button size="sm" onClick={openCreateBP} className="h-8 text-xs">
@@ -179,33 +174,39 @@ const BackOfficeSection: React.FC = () => {
               {lang === "pt" ? "Nenhum processo configurado." : "No processes configured."}
             </p>
           ) : (
-            processes.map(bp => (
-              <Card key={bp.id}>
-                <CardContent className="p-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium">{lang === "pt" ? bp.name_pt : bp.name_en || bp.name_pt}</p>
-                      <Badge variant="outline" className="text-[10px]">
-                        {bp.tipo_funcao === "funcao" ? "Função" : bp.tipo_funcao === "macro_processo" ? "Macro Processo" : "Processo"}
-                      </Badge>
-                    </div>
-                    {(bp.description_pt || bp.description_en) && (
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {lang === "pt" ? bp.description_pt : bp.description_en || bp.description_pt}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBP(bp)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteBP(bp.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">{lang === "pt" ? "Tipo Função" : "Function Type"}</TableHead>
+                    <TableHead className="text-xs">{lang === "pt" ? "Função" : "Function"}</TableHead>
+                    <TableHead className="text-xs">{lang === "pt" ? "Macro Processo" : "Macro Process"}</TableHead>
+                    <TableHead className="text-xs">{lang === "pt" ? "Processo" : "Process"}</TableHead>
+                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {processes.map(bp => (
+                    <TableRow key={bp.id}>
+                      <TableCell className="text-sm">{bp.tipo_funcao || "—"}</TableCell>
+                      <TableCell className="text-sm">{bp.funcao || "—"}</TableCell>
+                      <TableCell className="text-sm">{bp.macro_processo || "—"}</TableCell>
+                      <TableCell className="text-sm">{bp.processo || "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBP(bp)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteBP(bp.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </TabsContent>
       </Tabs>
@@ -247,26 +248,28 @@ const BackOfficeSection: React.FC = () => {
                 : (lang === "pt" ? "Novo Processo de Negócio" : "New Business Process")}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <Select value={bpForm.tipo_funcao} onValueChange={(v) => setBpForm(f => ({ ...f, tipo_funcao: v }))}>
-              <SelectTrigger className="bg-secondary border-border">
-                <SelectValue placeholder="Tipo Função" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="funcao">Função</SelectItem>
-                <SelectItem value="macro_processo">Macro Processo</SelectItem>
-                <SelectItem value="processo">Processo</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input placeholder={lang === "pt" ? "Nome (PT)" : "Name (PT)"} value={bpForm.name_pt}
-              onChange={e => setBpForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" />
-            <Input placeholder={lang === "pt" ? "Nome (EN)" : "Name (EN)"} value={bpForm.name_en}
-              onChange={e => setBpForm(f => ({ ...f, name_en: e.target.value }))} className="bg-secondary border-border" />
-            <Input placeholder={lang === "pt" ? "Descrição (PT)" : "Description (PT)"} value={bpForm.description_pt}
-              onChange={e => setBpForm(f => ({ ...f, description_pt: e.target.value }))} className="bg-secondary border-border" />
-            <Input placeholder={lang === "pt" ? "Descrição (EN)" : "Description (EN)"} value={bpForm.description_en}
-              onChange={e => setBpForm(f => ({ ...f, description_en: e.target.value }))} className="bg-secondary border-border" />
-            <Button onClick={handleSaveBP} disabled={!bpForm.name_pt || createBP.isPending || updateBP.isPending} className="w-full">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de Função" : "Function Type"}</Label>
+              <Input value={bpForm.tipo_funcao}
+                onChange={e => setBpForm(f => ({ ...f, tipo_funcao: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Função" : "Function"}</Label>
+              <Input value={bpForm.funcao}
+                onChange={e => setBpForm(f => ({ ...f, funcao: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
+              <Input value={bpForm.macro_processo}
+                onChange={e => setBpForm(f => ({ ...f, macro_processo: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Processo" : "Process"}</Label>
+              <Input value={bpForm.processo}
+                onChange={e => setBpForm(f => ({ ...f, processo: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <Button onClick={handleSaveBP} disabled={!bpForm.tipo_funcao || createBP.isPending || updateBP.isPending} className="w-full">
               {(createBP.isPending || updateBP.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {lang === "pt" ? "Guardar" : "Save"}
             </Button>

@@ -100,34 +100,31 @@ export type Database = {
       business_processes: {
         Row: {
           created_at: string
-          description_en: string
-          description_pt: string
+          funcao: string
           id: string
-          name_en: string
-          name_pt: string
+          macro_processo: string
           owner_id: string | null
+          processo: string
           tipo_funcao: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          description_en?: string
-          description_pt?: string
+          funcao?: string
           id?: string
-          name_en?: string
-          name_pt: string
+          macro_processo?: string
           owner_id?: string | null
+          processo?: string
           tipo_funcao?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
-          description_en?: string
-          description_pt?: string
+          funcao?: string
           id?: string
-          name_en?: string
-          name_pt?: string
+          macro_processo?: string
           owner_id?: string | null
+          processo?: string
           tipo_funcao?: string
           updated_at?: string
         }
