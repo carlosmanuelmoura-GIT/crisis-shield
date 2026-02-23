@@ -50,6 +50,45 @@ export type Database = {
         }
         Relationships: []
       }
+      bia_processes: {
+        Row: {
+          created_at: string
+          criticality: string
+          dependencies: string[]
+          id: string
+          name_en: string
+          name_pt: string
+          owner_id: string | null
+          rpo: number
+          rto: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criticality?: string
+          dependencies?: string[]
+          id?: string
+          name_en?: string
+          name_pt: string
+          owner_id?: string | null
+          rpo?: number
+          rto?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criticality?: string
+          dependencies?: string[]
+          id?: string
+          name_en?: string
+          name_pt?: string
+          owner_id?: string | null
+          rpo?: number
+          rto?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checklist_items: {
         Row: {
           action_card_id: string
@@ -116,6 +155,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      procedures: {
+        Row: {
+          category_en: string
+          category_pt: string
+          content_en: string
+          content_pt: string
+          created_at: string
+          id: string
+          owner_id: string | null
+          title_en: string
+          title_pt: string
+          updated_at: string
+        }
+        Insert: {
+          category_en?: string
+          category_pt?: string
+          content_en?: string
+          content_pt?: string
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          title_en?: string
+          title_pt: string
+          updated_at?: string
+        }
+        Update: {
+          category_en?: string
+          category_pt?: string
+          content_en?: string
+          content_pt?: string
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          title_en?: string
+          title_pt?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
