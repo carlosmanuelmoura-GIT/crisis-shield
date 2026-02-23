@@ -97,7 +97,7 @@ const EmergencySection: React.FC = () => {
     });
   }, [cards, searchQuery, lang, filterRecurso, hasBpFilter, matchingBpIds]);
 
-  // Group cards by recurso
+  // Group cards by recurso que se perde
   const groupedCards = useMemo(() => {
     const groups: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
     const recursoMap = new Map(recursos.map(r => [r.id, r]));
@@ -255,7 +255,7 @@ const EmergencySection: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Recurso" : "Resource"}</Label>
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Recurso que se perde" : "Resource lost"}</Label>
               <Select value={filterRecurso} onValueChange={setFilterRecurso}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -332,7 +332,7 @@ const EmergencySection: React.FC = () => {
               {React.createElement(iconMap[recurso?.icon || ""] || Package, { className: "h-5 w-5 text-muted-foreground shrink-0" })}
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm font-bold">
-                  {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso associado" : "Unassigned")}
+                  {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso que se perde associado" : "No resource lost assigned")}
                 </h3>
                 {recurso?.description_pt && <p className="text-[10px] text-muted-foreground truncate">{recurso.description_pt}</p>}
               </div>
