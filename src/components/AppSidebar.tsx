@@ -24,10 +24,10 @@ import {
 
 const sections = [
   { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários", en: "Scenarios" }, group: "emergency" },
-  { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" }, group: "emergency" },
-  { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" }, group: "emergency" },
-  { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" }, group: "emergency" },
-  { id: "procedures", icon: FileText, label: { pt: "Procedimentos", en: "Procedures" }, group: "operational" },
+  { id: "procedures", icon: FileText, label: { pt: "Procedimentos", en: "Procedures" }, group: "emergency" },
+  { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" }, group: "operational" },
+  { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" }, group: "operational" },
+  { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" }, group: "operational" },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" }, group: "operational" },
   { id: "services", icon: Activity, label: { pt: "Serviços", en: "Services" }, group: "operational" },
   { id: "meetings", icon: Video, label: { pt: "Reuniões", en: "Meetings" }, group: "warroom" },
