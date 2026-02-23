@@ -12,8 +12,6 @@ export const t = (text: I18nText | string, lang: Lang): string => {
 export interface ChecklistItem { id: string; text: I18nText }
 export interface ActionCard { id: string; title: I18nText; severity: string; icon: string; checklist: ChecklistItem[] }
 export interface Contact { id: string; name: string; role: I18nText; phone: string; email: string; priority: string }
-export interface Procedure { id: string; title: I18nText; category: I18nText; content: I18nText }
-export interface BIAProcess { id: string; name: I18nText; rto: number; rpo: number; criticality: string; dependencies: string[] }
 export interface ServiceStatus { id: string; name: I18nText; status: "green" | "yellow" | "red"; lastUpdate: string }
 export interface MeetingLink { id: string; name: I18nText; url: string; platform: string }
 export interface CrisisLogEntry { id: string; timestamp: string; text: string; author: string }
@@ -28,8 +26,6 @@ interface AppState {
   clearCrisis: () => void;
   actionCards: ActionCard[];
   contacts: Contact[];
-  procedures: Procedure[];
-  biaProcesses: BIAProcess[];
   services: ServiceStatus[];
   meetingLinks: MeetingLink[];
   checklistState: Record<string, boolean>;
@@ -106,8 +102,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       crisisActive, declareCrisis, clearCrisis,
       actionCards: data.actionCards,
       contacts: data.contacts,
-      procedures: data.procedures,
-      biaProcesses: data.bia.processes,
       services: data.services,
       meetingLinks: data.warRoom.meetingLinks,
       checklistState, toggleCheckItem,
