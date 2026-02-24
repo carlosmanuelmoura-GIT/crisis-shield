@@ -37,7 +37,6 @@ import {
 const visaoGlobalItems = [
   { id: "politica-gcn", label: { pt: "Política GCN", en: "BCM Policy" }, icon: Shield },
   { id: "proc-normalidade", label: { pt: "Procedimentos Normalidade e Alerta", en: "Normal & Alert Procedures" }, icon: FileCheck },
-  { id: "scenarios", label: { pt: "Cenários Crise", en: "Crisis Scenarios" }, icon: LayoutGrid },
   { id: "glossario", label: { pt: "Glossário GCN", en: "BCM Glossary" }, icon: BookOpen },
   { id: "manual-bia", label: { pt: "Manual BIA", en: "BIA Manual" }, icon: BarChart3 },
   { id: "pcn-global", label: { pt: "Planos de Continuidade de Negócio", en: "Business Continuity Plans" }, icon: FileText },
@@ -45,16 +44,17 @@ const visaoGlobalItems = [
   { id: "plano-dsi", label: { pt: "Plano Recuperação Tecnológica (DSI)", en: "Tech Recovery Plan (DSI)" }, icon: Settings },
   { id: "plano-dli", label: { pt: "Plano Emergência Interno (DLI)", en: "Internal Emergency Plan (DLI)" }, icon: AlertTriangle },
   { id: "plano-dpe", label: { pt: "Plano Recursos Humanos (DPE)", en: "HR Plan (DPE)" }, icon: Users },
-  { id: "contacts", label: { pt: "Contactos", en: "Contacts" }, icon: Phone },
 ];
 
 /* ── Operacional ── */
 const operationalItems = [
+  { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
   { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" } },
   { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
   { id: "procedures", icon: FileText, label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
   { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
+  { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" } },
 ];
 
 /* ── War Room ── */
@@ -112,7 +112,7 @@ const AppSidebar: React.FC = () => {
     <Sidebar className="border-r border-sidebar-border">
       <ScrollArea className="h-full">
         <SidebarContent className="pt-14 pb-6">
-          {renderGroup(lang === "pt" ? "VISÃO GLOBAL" : "GLOBAL VIEW", Eye, visaoGlobalItems)}
+          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO" : "DOCUMENTATION", Eye, visaoGlobalItems)}
           {renderGroup(lang === "pt" ? "OPERACIONAL" : "OPERATIONAL", null, operationalItems)}
           {renderGroup(lang === "pt" ? "WAR ROOM / Gestão Crise" : "WAR ROOM / Crisis Mgmt", null, warRoomItems)}
           {renderGroup(lang === "pt" ? "LOGÍSTICA" : "LOGISTICS", Truck, logisticaItems)}
