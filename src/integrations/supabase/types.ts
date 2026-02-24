@@ -16,10 +16,11 @@ export type Database = {
     Tables: {
       action_cards: {
         Row: {
-          business_process_id: string | null
           capability: string | null
           created_at: string
+          funcao: string
           id: string
+          macro_processo: string
           owner_id: string | null
           recurso_id: string | null
           severity: string
@@ -28,10 +29,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          business_process_id?: string | null
           capability?: string | null
           created_at?: string
+          funcao?: string
           id?: string
+          macro_processo?: string
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
@@ -40,10 +42,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          business_process_id?: string | null
           capability?: string | null
           created_at?: string
+          funcao?: string
           id?: string
+          macro_processo?: string
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
@@ -52,13 +55,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "action_cards_business_process_id_fkey"
-            columns: ["business_process_id"]
-            isOneToOne: false
-            referencedRelation: "business_processes"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "action_cards_recurso_id_fkey"
             columns: ["recurso_id"]
