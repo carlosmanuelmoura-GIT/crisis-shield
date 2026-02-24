@@ -50,11 +50,11 @@ const visaoGlobalItems = [
 const operationalItems = [
   { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
   { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" } },
-  { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
   { id: "procedures", icon: FileText, label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
   { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
   { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" } },
+  { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
 ];
 
 /* ── War Room ── */
