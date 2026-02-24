@@ -7,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers, ChevronDown, Filter } from "lucide-react";
 import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
@@ -44,7 +47,13 @@ const BIASection: React.FC = () => {
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
-  const [filterPlatformId, setFilterPlatformId] = useState<string>("__all");
+  const [filterPlatformIds, setFilterPlatformIds] = useState<string[]>([]);
+
+  // List-level cascading filters
+  const [listTipoFuncao, setListTipoFuncao] = useState<string>("__all__");
+  const [listFuncao, setListFuncao] = useState<string>("__all__");
+  const [listMacro, setListMacro] = useState<string>("__all__");
+  const [listProcesso, setListProcesso] = useState<string>("__all__");
 
   // Cascading filters for business process selection in dialog
   const [selTipoFuncao, setSelTipoFuncao] = useState<string>("__all");
@@ -138,24 +147,58 @@ const BIASection: React.FC = () => {
 
   if (isLoading) return <div className="text-sm text-muted-foreground">{t("A carregar...", "Loading...")}</div>;
 
-  // Platform impact analysis
-  const platformImpact = filterPlatformId !== "__all" ? (() => {
+  // Platform impact analysis (multi-select)
+  const platformImpact = filterPlatformIds.length > 0 ? (() => {
     const affectedBiaIds = procPlatLinks
-      .filter(l => l.platform_id === filterPlatformId)
+      .filter(l => filterPlatformIds.includes(l.platform_id))
       .map(l => l.bia_process_id);
     const affectedBias = biaProcesses.filter(b => affectedBiaIds.includes(b.id));
     const affectedBpIds = [...new Set(affectedBias.map(b => b.business_process_id).filter(Boolean))];
     const affectedBps = businessProcesses.filter(bp => affectedBpIds.includes(bp.id));
     const affectedFuncoes = [...new Set(affectedBps.map(bp => bp.funcao))];
-    const platform = platforms.find(p => p.id === filterPlatformId);
-    const platDr = platform?.dr_type_id ? drTypes.find(d => d.id === platform.dr_type_id) : null;
-    return { affectedBias, affectedBps, affectedFuncoes, platform, platDr };
+    const selectedPlats = platforms.filter(p => filterPlatformIds.includes(p.id));
+    return { affectedBias, affectedBps, affectedFuncoes, selectedPlats };
   })() : null;
+
+  // List-level cascading filter options
+  const listTipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao))].sort();
+  const listFuncoes = [...new Set(businessProcesses
+    .filter(bp => listTipoFuncao === "__all__" || bp.tipo_funcao === listTipoFuncao)
+    .map(bp => bp.funcao))].sort();
+  const listMacros = [...new Set(businessProcesses
+    .filter(bp => (listTipoFuncao === "__all__" || bp.tipo_funcao === listTipoFuncao) &&
+                  (listFuncao === "__all__" || bp.funcao === listFuncao))
+    .map(bp => bp.macro_processo))].sort();
+  const listProcessos = businessProcesses.filter(bp =>
+    (listTipoFuncao === "__all__" || bp.tipo_funcao === listTipoFuncao) &&
+    (listFuncao === "__all__" || bp.funcao === listFuncao) &&
+    (listMacro === "__all__" || bp.macro_processo === listMacro)
+  );
+
+  // Filter BIAs by list-level cascading + platform filters
+  const filteredByListCascade = (() => {
+    let result = biaProcesses;
+    // Filter by business process hierarchy
+    if (listProcesso !== "__all__") {
+      result = result.filter(p => p.business_process_id === listProcesso);
+    } else if (listMacro !== "__all__" || listFuncao !== "__all__" || listTipoFuncao !== "__all__") {
+      const validBpIds = listProcessos.map(bp => bp.id);
+      result = result.filter(p => p.business_process_id && validBpIds.includes(p.business_process_id));
+    }
+    // Filter by platforms
+    if (filterPlatformIds.length > 0) {
+      const biaIdsWithPlatform = procPlatLinks
+        .filter(l => filterPlatformIds.includes(l.platform_id))
+        .map(l => l.bia_process_id);
+      result = result.filter(p => biaIdsWithPlatform.includes(p.id));
+    }
+    return result;
+  })();
 
   // Filter and group BIAs by business process
   const filtered = filterBPId === "__all"
-    ? biaProcesses
-    : biaProcesses.filter(p => p.business_process_id === filterBPId);
+    ? filteredByListCascade
+    : filteredByListCascade.filter(p => p.business_process_id === filterBPId);
 
   const grouped = new Map<string | null, DBBIAProcess[]>();
   filtered.forEach(p => {
@@ -170,49 +213,123 @@ const BIASection: React.FC = () => {
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {t("Análise de Impacto (BIA)", "Business Impact Analysis (BIA)")}
         </h2>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Select value={filterPlatformId} onValueChange={setFilterPlatformId}>
-            <SelectTrigger className="w-[200px] h-8 text-xs">
-              <Server className="h-3 w-3 mr-1 shrink-0" />
-              <SelectValue placeholder={t("Filtrar por plataforma...", "Filter by platform...")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all">{t("Todas plataformas", "All platforms")}</SelectItem>
-              {platforms.map(p => {
-                const dr = drTypes.find(d => d.id === p.dr_type_id);
-                return <SelectItem key={p.id} value={p.id}>{p.name} {dr ? `(${dr.code})` : ""}</SelectItem>;
-              })}
-            </SelectContent>
-          </Select>
-          <Select value={filterBPId} onValueChange={setFilterBPId}>
-            <SelectTrigger className="w-[220px] h-8 text-xs">
-              <SelectValue placeholder={t("Filtrar por processo...", "Filter by process...")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all">{t("Todos os processos", "All processes")}</SelectItem>
-              {businessProcesses.map(bp => (
-                <SelectItem key={bp.id} value={bp.id}>
-                  {bp.funcao} › {bp.processo}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant="outline" onClick={openNew}>
-            <Plus className="h-4 w-4 mr-1" /> {t("Nova BIA", "New BIA")}
-          </Button>
-        </div>
+        <Button size="sm" variant="outline" onClick={openNew}>
+          <Plus className="h-4 w-4 mr-1" /> {t("Nova BIA", "New BIA")}
+        </Button>
       </div>
+
+      {/* Filters bar */}
+      <Card className="border-border/50">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("Filtros", "Filters")}</span>
+            {(listTipoFuncao !== "__all__" || listFuncao !== "__all__" || listMacro !== "__all__" || listProcesso !== "__all__" || filterPlatformIds.length > 0) && (
+              <Button variant="ghost" size="sm" className="h-5 text-[10px] ml-auto" onClick={() => {
+                setListTipoFuncao("__all__"); setListFuncao("__all__"); setListMacro("__all__"); setListProcesso("__all__"); setFilterPlatformIds([]);
+              }}>
+                <X className="h-3 w-3 mr-0.5" />{t("Limpar filtros", "Clear filters")}
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">{t("Tipo Função", "Function Type")}</Label>
+              <Select value={listTipoFuncao} onValueChange={v => { setListTipoFuncao(v); setListFuncao("__all__"); setListMacro("__all__"); setListProcesso("__all__"); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">{t("Todos", "All")}</SelectItem>
+                  {listTipoFuncoes.map(tf => <SelectItem key={tf} value={tf}>{tf}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">{t("Função", "Function")}</Label>
+              <Select value={listFuncao} onValueChange={v => { setListFuncao(v); setListMacro("__all__"); setListProcesso("__all__"); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">{t("Todas", "All")}</SelectItem>
+                  {listFuncoes.map(fn => <SelectItem key={fn} value={fn}>{fn}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">{t("Macro Processo", "Macro Process")}</Label>
+              <Select value={listMacro} onValueChange={v => { setListMacro(v); setListProcesso("__all__"); }}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">{t("Todos", "All")}</SelectItem>
+                  {listMacros.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">{t("Processo", "Process")}</Label>
+              <Select value={listProcesso} onValueChange={setListProcesso}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__all__">{t("Todos", "All")}</SelectItem>
+                  {listProcessos.map(bp => <SelectItem key={bp.id} value={bp.id}>{bp.processo}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">{t("Plataformas", "Platforms")}</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="h-8 w-full text-xs justify-between font-normal">
+                    <span className="truncate">
+                      {filterPlatformIds.length === 0
+                        ? t("Todas", "All")
+                        : `${filterPlatformIds.length} ${t("selecionadas", "selected")}`}
+                    </span>
+                    <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2 bg-popover z-50" align="start">
+                  <ScrollArea className="max-h-52">
+                    <div className="space-y-1">
+                      {platforms.map(p => {
+                        const dr = drTypes.find(d => d.id === p.dr_type_id);
+                        const checked = filterPlatformIds.includes(p.id);
+                        return (
+                          <label key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(c) => {
+                                setFilterPlatformIds(prev =>
+                                  c ? [...prev, p.id] : prev.filter(id => id !== p.id)
+                                );
+                              }}
+                            />
+                            <span className="truncate">{p.name} {dr ? `(${dr.code})` : ""}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                  {filterPlatformIds.length > 0 && (
+                    <Button variant="ghost" size="sm" className="w-full mt-1 h-7 text-[10px]" onClick={() => setFilterPlatformIds([])}>
+                      {t("Limpar seleção", "Clear selection")}
+                    </Button>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Platform Impact Panel */}
       {platformImpact && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
               <Server className="h-4 w-4 text-primary" />
-              {t("Impacto da Plataforma", "Platform Impact")}: <span className="text-primary font-bold">{platformImpact.platform?.name}</span>
-              {platformImpact.platDr && (
-                <Badge variant="outline" className="text-[10px] h-5 ml-1">{platformImpact.platDr.code}</Badge>
-              )}
+              {t("Impacto das Plataformas", "Platform Impact")}:
+              {platformImpact.selectedPlats.map(p => (
+                <Badge key={p.id} variant="secondary" className="text-[10px]">{p.name}</Badge>
+              ))}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
