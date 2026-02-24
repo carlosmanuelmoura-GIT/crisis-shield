@@ -112,10 +112,10 @@ const AppSidebar: React.FC = () => {
     <Sidebar className="border-r border-sidebar-border">
       <ScrollArea className="h-full">
         <SidebarContent className="pt-14 pb-6">
-          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO" : "DOCUMENTATION", Eye, visaoGlobalItems)}
           {renderGroup(lang === "pt" ? "OPERACIONAL" : "OPERATIONAL", null, operationalItems)}
           {renderGroup(lang === "pt" ? "WAR ROOM / Gestão Crise" : "WAR ROOM / Crisis Mgmt", null, warRoomItems)}
           {renderGroup(lang === "pt" ? "LOGÍSTICA" : "LOGISTICS", Truck, logisticaItems)}
+          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO" : "DOCUMENTATION", Eye, visaoGlobalItems)}
 
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-bold tracking-wider text-sidebar-primary">
