@@ -63,7 +63,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", business_process_id: "", recurso_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
 
   // Filters
@@ -82,13 +82,17 @@ const EmergencySection: React.FC = () => {
   const filteredByMacro = useMemo(() => filterMacroProcesso === "all" ? filteredByFuncao : filteredByFuncao.filter(bp => bp.macro_processo === filterMacroProcesso), [filteredByFuncao, filterMacroProcesso]);
   const uniqueProcesso = useMemo(() => [...new Set(filteredByMacro.map(bp => bp.processo).filter(Boolean))], [filteredByMacro]);
 
-  const matchingBpIds = useMemo(() => {
+  const hasBpFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
+
+  // Derive the set of funcao/macro_processo values that match current BP filters
+  const matchingBpValues = useMemo(() => {
     let bps = filteredByMacro;
     if (filterProcesso !== "all") bps = bps.filter(bp => bp.processo === filterProcesso);
-    return new Set(bps.map(bp => bp.id));
+    return {
+      funcaoSet: new Set(bps.map(bp => bp.funcao)),
+      macroSet: new Set(bps.map(bp => bp.macro_processo)),
+    };
   }, [filteredByMacro, filterProcesso]);
-
-  const hasBpFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
 
   // If crisis is active with selected recursos, override the recurso filter
   const effectiveFilterRecurso = crisisActive && crisisRecursoIds.length > 0 ? "__crisis__" : filterRecurso;
@@ -103,10 +107,14 @@ const EmergencySection: React.FC = () => {
       } else if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) {
         return false;
       }
-      if (hasBpFilter && (!c.business_process_id || !matchingBpIds.has(c.business_process_id))) return false;
+      if (hasBpFilter) {
+        const funcaoMatch = !c.funcao || matchingBpValues.funcaoSet.has(c.funcao);
+        const macroMatch = !c.macro_processo || matchingBpValues.macroSet.has(c.macro_processo);
+        if (!funcaoMatch || !macroMatch) return false;
+      }
       return true;
     });
-  }, [cards, searchQuery, lang, effectiveFilterRecurso, crisisRecursoIds, hasBpFilter, matchingBpIds]);
+  }, [cards, searchQuery, lang, effectiveFilterRecurso, crisisRecursoIds, hasBpFilter, matchingBpValues]);
 
   // Group cards by recurso que se perde
   const groupedCards = useMemo(() => {
@@ -150,7 +158,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", business_process_id: "", recurso_id: recursoId || "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "" });
     setDialogOpen(true);
   };
 
@@ -158,8 +166,8 @@ const EmergencySection: React.FC = () => {
     setEditingCard(card.id);
     setForm({
       title_pt: card.title_pt, title_en: card.title_en, severity: card.severity,
-      capability: card.capability || "", business_process_id: card.business_process_id || "",
-      recurso_id: card.recurso_id || "",
+      capability: card.capability || "", funcao: card.funcao || "",
+      macro_processo: card.macro_processo || "", recurso_id: card.recurso_id || "",
     });
     setDialogOpen(true);
   };
@@ -168,7 +176,8 @@ const EmergencySection: React.FC = () => {
     try {
       const payload = {
         ...form,
-        business_process_id: form.business_process_id || undefined,
+        funcao: form.funcao || undefined,
+        macro_processo: form.macro_processo || undefined,
         recurso_id: form.recurso_id || undefined,
         capability: form.capability || undefined,
       };
@@ -197,7 +206,8 @@ const EmergencySection: React.FC = () => {
         title_en: card.title_en ? `${card.title_en} (copy)` : "",
         severity: card.severity,
         capability: card.capability,
-        business_process_id: card.business_process_id,
+        funcao: card.funcao,
+        macro_processo: card.macro_processo,
         recurso_id: card.recurso_id,
         owner_id: card.owner_id,
       }).select("id").single();
@@ -406,7 +416,7 @@ const EmergencySection: React.FC = () => {
                   const done = items.filter(i => statesMap[i.id]).length;
                   const total = items.length;
                   const title = lang === "pt" ? card.title_pt : card.title_en;
-                  const bp = card.business_process_id ? businessProcesses.find(p => p.id === card.business_process_id) : null;
+                  const bpLabel = [card.funcao, card.macro_processo].filter(Boolean).join(" › ");
                   const severity = severityLabels[card.severity];
 
                   return (
@@ -419,7 +429,7 @@ const EmergencySection: React.FC = () => {
                               <Badge variant="secondary" className="text-[9px]">
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                               </Badge>
-                              {bp && <Badge variant="outline" className="text-[9px] font-normal">{[bp.funcao, bp.processo].filter(Boolean).join(" › ") || bp.tipo_funcao}</Badge>}
+                              {bpLabel && <Badge variant="outline" className="text-[9px] font-normal">{bpLabel}</Badge>}
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
@@ -514,17 +524,29 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Processo de Negócio" : "Business Process"}</Label>
-              <Select value={form.business_process_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, business_process_id: v === "none" ? "" : v }))}>
+              <Label className="text-sm font-medium">{lang === "pt" ? "Função" : "Function"}</Label>
+              <Select value={form.funcao || "none"} onValueChange={(v) => setForm(f => ({ ...f, funcao: v === "none" ? "" : v, macro_processo: "" }))}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{lang === "pt" ? "— Nenhuma —" : "— None —"}</SelectItem>
+                  {[...new Set(businessProcesses.map(bp => bp.funcao).filter(Boolean))].map(f => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
+              <Select value={form.macro_processo || "none"} onValueChange={(v) => setForm(f => ({ ...f, macro_processo: v === "none" ? "" : v }))}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {businessProcesses.map(bp => (
-                    <SelectItem key={bp.id} value={bp.id}>
-                      {[bp.tipo_funcao, bp.funcao, bp.macro_processo, bp.processo].filter(Boolean).join(" › ")}
-                    </SelectItem>
+                  {[...new Set(businessProcesses.filter(bp => !form.funcao || bp.funcao === form.funcao).map(bp => bp.macro_processo).filter(Boolean))].map(m => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
