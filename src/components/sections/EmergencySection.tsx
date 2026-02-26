@@ -42,7 +42,7 @@ const severityLabels: Record<string, { pt: string; en: string }> = {
 };
 
 const EmergencySection: React.FC = () => {
-  const { lang, searchQuery, crisisActive, crisisRecursoIds } = useApp();
+  const { lang, searchQuery, crisisActive, crisisRecursoIds, crisisStartTime } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
   const { data: allItems = [] } = useChecklistItems();
   const { data: allStates = [] } = useChecklistStates();
@@ -94,17 +94,15 @@ const EmergencySection: React.FC = () => {
     };
   }, [filteredByMacro, filterProcesso]);
 
-  // If crisis is active with selected recursos, override the recurso filter
-  const effectiveFilterRecurso = crisisActive && crisisRecursoIds.length > 0 ? "__crisis__" : filterRecurso;
+  // During crisis, do NOT force filter — allow user to see all cards
+  const effectiveFilterRecurso = filterRecurso;
   const hasActiveFilter = effectiveFilterRecurso !== "all" || hasBpFilter;
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (effectiveFilterRecurso === "__crisis__") {
-        if (!c.recurso_id || !crisisRecursoIds.includes(c.recurso_id)) return false;
-      } else if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) {
+      if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) {
         return false;
       }
       if (hasBpFilter) {
@@ -114,7 +112,7 @@ const EmergencySection: React.FC = () => {
       }
       return true;
     });
-  }, [cards, searchQuery, lang, effectiveFilterRecurso, crisisRecursoIds, hasBpFilter, matchingBpValues]);
+  }, [cards, searchQuery, lang, effectiveFilterRecurso, hasBpFilter, matchingBpValues]);
 
   // Group cards by recurso que se perde
   const groupedCards = useMemo(() => {
@@ -241,7 +239,7 @@ const EmergencySection: React.FC = () => {
       if (crisisActive) {
         const author = profile?.display_name || "Sistema";
         const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
-        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author }).catch(() => {});
+        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author, crisis_started_at: crisisStartTime }).catch(() => {});
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
@@ -255,7 +253,7 @@ const EmergencySection: React.FC = () => {
         const author = profile?.display_name || "Sistema";
         const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
         const itemText = lang === "pt" ? item.text_pt : item.text_en;
-        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author }).catch(() => {});
+        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author, crisis_started_at: crisisStartTime }).catch(() => {});
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
@@ -267,7 +265,7 @@ const EmergencySection: React.FC = () => {
     const author = profile?.display_name || "Sistema";
     toggleCheck.mutate({ itemId, checked });
     const action = checked ? "✅" : "⬜";
-    await createLog.mutateAsync({ text: `${action} "${itemText}" em "${cardTitle}"`, author }).catch(() => {});
+    await createLog.mutateAsync({ text: `${action} "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime }).catch(() => {});
   };
 
   const resetFilters = () => {
