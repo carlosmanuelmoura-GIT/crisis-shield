@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrentUserProfile, useCurrentUserRoles } from "@/hooks/useUserRoles";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { useClearAllChecklistStates } from "@/hooks/useActionCards";
-import { Search, Satellite, Globe, AlertTriangle, X, LogOut, Clock, Shield, FlaskConical } from "lucide-react";
+import { Search, Satellite, Globe, X, LogOut, Clock, Shield, FlaskConical, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -78,9 +78,9 @@ const Header: React.FC = () => {
         {/* Left: sidebar trigger + logo */}
         <SidebarTrigger className="shrink-0" />
         <div className="flex items-center gap-1.5">
-          <AlertTriangle className="h-5 w-5 text-alert sat-keep" />
+          <ShieldCheck className="h-5 w-5 text-primary sat-keep" />
           <h1 className="text-sm font-bold tracking-wider uppercase hidden sm:block">
-            GCN
+            {lang === "pt" ? "Continuidade" : "Continuity"}
           </h1>
         </div>
 
