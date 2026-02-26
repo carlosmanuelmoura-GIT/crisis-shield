@@ -60,7 +60,7 @@ const operationalItems = [
 /* ── War Room ── */
 const warRoomItems = [
   { id: "meetings", icon: Video, label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" } },
-  { id: "log", icon: ClipboardList, label: { pt: "Log Decisões", en: "Decision Log" } },
+  { id: "log", icon: ClipboardList, label: { pt: "Log das Acções", en: "Action Log" } },
 ];
 
 /* ── Logística ── */
