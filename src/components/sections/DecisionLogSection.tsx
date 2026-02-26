@@ -117,7 +117,7 @@ const DecisionLogSection: React.FC = () => {
           author,
           crisis_started_at: crisisStartTime,
         });
-        toast({ title: lang === "pt" ? "Decisão registada" : "Decision logged" });
+        toast({ title: lang === "pt" ? "Acção registada" : "Action logged" });
       }
       setDialogOpen(false);
     } catch (err: any) {
@@ -155,18 +155,18 @@ const DecisionLogSection: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold uppercase tracking-wider">
-            {lang === "pt" ? "Log de Decisões" : "Decision Log"}
+            {lang === "pt" ? "Log das Acções" : "Action Log"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {lang === "pt"
-              ? "Registo cronológico de decisões por crise"
-              : "Chronological decision record by crisis"}
+              ? "Registo cronológico de acções por crise"
+              : "Chronological action record by crisis"}
           </p>
         </div>
         {crisisActive && (
           <Button size="sm" onClick={openCreate} className="h-9 text-xs gap-1.5">
             <Plus className="h-3.5 w-3.5" />
-            {lang === "pt" ? "Nova Decisão" : "New Decision"}
+            {lang === "pt" ? "Nova Acção" : "New Action"}
           </Button>
         )}
       </div>
@@ -186,8 +186,8 @@ const DecisionLogSection: React.FC = () => {
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {lang === "pt"
-                  ? "O registo de decisões só está disponível durante uma crise ativa. Declare uma crise para começar a registar decisões."
-                  : "Decision logging is only available during an active crisis. Declare a crisis to start logging decisions."}
+                   ? "O registo de acções só está disponível durante uma crise ativa. Declare uma crise para começar a registar."
+                   : "Action logging is only available during an active crisis. Declare a crisis to start logging."}
               </p>
             </div>
           </CardContent>
@@ -246,7 +246,7 @@ const DecisionLogSection: React.FC = () => {
                         </Badge>
                       )}
                       <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                        {decisionEntries.length} {lang === "pt" ? "decisões" : "decisions"}
+                        {decisionEntries.length} {lang === "pt" ? "acções" : "actions"}
                       </Badge>
                     </div>
                   </div>
@@ -269,7 +269,7 @@ const DecisionLogSection: React.FC = () => {
                   {/* Decision entries */}
                   {decisionEntries.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-3">
-                      {lang === "pt" ? "Sem decisões registadas nesta crise." : "No decisions logged for this crisis."}
+                      {lang === "pt" ? "Sem acções registadas nesta crise." : "No actions logged for this crisis."}
                     </p>
                   )}
 
@@ -323,8 +323,8 @@ const DecisionLogSection: React.FC = () => {
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
               {editingId
-                ? (lang === "pt" ? "Editar Decisão" : "Edit Decision")
-                : (lang === "pt" ? "Registar Decisão" : "Log Decision")}
+                ? (lang === "pt" ? "Editar Acção" : "Edit Action")
+                : (lang === "pt" ? "Registar Acção" : "Log Action")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -336,13 +336,13 @@ const DecisionLogSection: React.FC = () => {
                 <Input
                   value={form.author}
                   onChange={e => setForm(f => ({ ...f, author: e.target.value }))}
-                  placeholder={lang === "pt" ? "Nome do decisor" : "Decision maker"}
+                  placeholder={lang === "pt" ? "Nome do autor" : "Author name"}
                   className="bg-secondary border-border h-9"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {lang === "pt" ? "Nome da Decisão" : "Decision Name"}
+                  {lang === "pt" ? "Nome da Acção" : "Action Name"}
                 </Label>
                 <Input
                   value={form.title}
@@ -375,7 +375,7 @@ const DecisionLogSection: React.FC = () => {
               {(createEntry.isPending || updateEntry.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingId
                 ? (lang === "pt" ? "Guardar Alterações" : "Save Changes")
-                : (lang === "pt" ? "Registar Decisão" : "Log Decision")}
+                : (lang === "pt" ? "Registar Acção" : "Log Action")}
             </Button>
           </div>
         </DialogContent>
