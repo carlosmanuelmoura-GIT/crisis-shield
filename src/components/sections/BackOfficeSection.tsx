@@ -15,7 +15,9 @@ import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProces
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
 import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso } from "@/hooks/useCenarios";
 import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
+import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/useBuildings";
 import { useToast } from "@/hooks/use-toast";
+import { Building2 as BuildingIcon } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
   steering_gcn: "Steering GCN",
@@ -83,6 +85,29 @@ const BackOfficeSection: React.FC = () => {
   const [platDialog, setPlatDialog] = useState(false);
   const [editingPlat, setEditingPlat] = useState<string | null>(null);
   const [platForm, setPlatForm] = useState({ name: "", dr_type_id: "" });
+
+  // --- Buildings ---
+  const { data: buildingsList = [], isLoading: bldLoading } = useBuildings();
+  const createBld = useCreateBuilding();
+  const updateBld = useUpdateBuilding();
+  const deleteBld = useDeleteBuilding();
+  const [bldDialog, setBldDialog] = useState(false);
+  const [editingBld, setEditingBld] = useState<string | null>(null);
+  const [bldName, setBldName] = useState("");
+
+  const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
+  const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
+  const handleSaveBld = async () => {
+    try {
+      if (editingBld) await updateBld.mutateAsync({ id: editingBld, name: bldName });
+      else await createBld.mutateAsync(bldName);
+      setBldDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+  const handleDeleteBld = async (id: string) => {
+    try { await deleteBld.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
 
   // --- Handlers ---
   const handleAssignRole = async () => {
@@ -188,6 +213,7 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="cenarios" className="text-xs"><Link2 className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Cenários" : "Scenarios"}</TabsTrigger>
           <TabsTrigger value="platforms" className="text-xs"><Server className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Plataformas" : "Platforms"}</TabsTrigger>
           <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
+          <TabsTrigger value="buildings" className="text-xs"><BuildingIcon className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Edifícios" : "Buildings"}</TabsTrigger>
         </TabsList>
 
         {/* ===== USER ROLES ===== */}
@@ -440,6 +466,40 @@ const BackOfficeSection: React.FC = () => {
             </div>
           )}
         </TabsContent>
+
+        {/* ===== BUILDINGS ===== */}
+        <TabsContent value="buildings" className="space-y-3 mt-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={openCreateBld} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
+          </div>
+          {bldLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : buildingsList.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum edifício configurado." : "No buildings configured."}</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
+                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {buildingsList.map(b => (
+                    <TableRow key={b.id}>
+                      <TableCell className="text-sm font-medium">{b.name}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBld(b)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteBld(b.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* ===== DIALOGS ===== */}
@@ -555,6 +615,20 @@ const BackOfficeSection: React.FC = () => {
             </div>
             <Button onClick={handleSavePlat} disabled={!platForm.name || createPlat.isPending || updatePlat.isPending} className="w-full">
               {(createPlat.isPending || updatePlat.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Building */}
+      <Dialog open={bldDialog} onOpenChange={setBldDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingBld ? (lang === "pt" ? "Editar Edifício" : "Edit Building") : (lang === "pt" ? "Novo Edifício" : "New Building")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
+              <Input value={bldName} onChange={e => setBldName(e.target.value)} className="bg-secondary border-border" /></div>
+            <Button onClick={handleSaveBld} disabled={!bldName || createBld.isPending || updateBld.isPending} className="w-full">
+              {(createBld.isPending || updateBld.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
         </DialogContent>
