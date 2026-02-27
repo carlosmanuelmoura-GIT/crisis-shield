@@ -160,6 +160,30 @@ export type Database = {
           },
         ]
       }
+      buildings: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_processes: {
         Row: {
           created_at: string
@@ -600,6 +624,141 @@ export type Database = {
           name_en?: string
           name_pt?: string
           owner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      test_buildings: {
+        Row: {
+          building_id: string
+          created_at: string
+          id: string
+          test_id: string
+        }
+        Insert: {
+          building_id: string
+          created_at?: string
+          id?: string
+          test_id: string
+        }
+        Update: {
+          building_id?: string
+          created_at?: string
+          id?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_buildings_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_buildings_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_business_processes: {
+        Row: {
+          business_process_id: string
+          created_at: string
+          id: string
+          test_id: string
+        }
+        Insert: {
+          business_process_id: string
+          created_at?: string
+          id?: string
+          test_id: string
+        }
+        Update: {
+          business_process_id?: string
+          created_at?: string
+          id?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_business_processes_business_process_id_fkey"
+            columns: ["business_process_id"]
+            isOneToOne: false
+            referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_business_processes_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_platforms: {
+        Row: {
+          created_at: string
+          id: string
+          platform_id: string
+          test_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          platform_id: string
+          test_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          platform_id?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_platforms_platform_id_fkey"
+            columns: ["platform_id"]
+            isOneToOne: false
+            referencedRelation: "cmdb_platforms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_platforms_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          test_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          test_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          test_date?: string
           updated_at?: string
         }
         Relationships: []

@@ -55,6 +55,7 @@ const operationalItems = [
   { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
   { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" } },
   { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
+  { id: "test-calendar", icon: ClipboardList, label: { pt: "Calendário de Testes", en: "Test Calendar" } },
 ];
 
 /* ── War Room ── */
