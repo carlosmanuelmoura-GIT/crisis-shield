@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, isSameMonth, parseISO } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Pencil, Trash2, Loader2, CalendarIcon, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Pencil, Trash2, Loader2, CalendarIcon, List, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useTests, useCreateTest, useUpdateTest, useDeleteTest, useAllTestRelations } from "@/hooks/useTests";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useCMDBPlatforms } from "@/hooks/useCMDBPlatforms";
@@ -40,9 +41,15 @@ const TestCalendarSection: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", test_date: undefined as Date | undefined, building_ids: [] as string[], platform_ids: [] as string[], bp_ids: [] as string[] });
 
+  // Filters for business processes
+  const [filterFuncao, setFilterFuncao] = useState<string>("__all__");
+  const [filterMacro, setFilterMacro] = useState<string>("__all__");
+  const [filterProcesso, setFilterProcesso] = useState<string>("");
+
   const openCreate = () => {
     setEditingId(null);
     setForm({ name: "", test_date: undefined, building_ids: [], platform_ids: [], bp_ids: [] });
+    setFilterFuncao("__all__"); setFilterMacro("__all__"); setFilterProcesso("");
     setDialogOpen(true);
   };
 
@@ -53,6 +60,7 @@ const TestCalendarSection: React.FC = () => {
     const pIds = rel?.platforms.filter(r => r.test_id === t.id).map(r => r.platform_id) || [];
     const bpIds = rel?.bps.filter(r => r.test_id === t.id).map(r => r.business_process_id) || [];
     setForm({ name: t.name, test_date: parseISO(t.test_date), building_ids: bIds, platform_ids: pIds, bp_ids: bpIds });
+    setFilterFuncao("__all__"); setFilterMacro("__all__"); setFilterProcesso("");
     setDialogOpen(true);
   };
 
@@ -83,6 +91,21 @@ const TestCalendarSection: React.FC = () => {
 
   const toggleMulti = (arr: string[], id: string) => arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
 
+  // Unique values for filters
+  const uniqueFuncoes = useMemo(() => [...new Set(bps.map(b => b.funcao))].sort(), [bps]);
+  const uniqueMacros = useMemo(() => {
+    const filtered = filterFuncao !== "__all__" ? bps.filter(b => b.funcao === filterFuncao) : bps;
+    return [...new Set(filtered.map(b => b.macro_processo))].sort();
+  }, [bps, filterFuncao]);
+
+  const filteredBPs = useMemo(() => {
+    let list = bps;
+    if (filterFuncao !== "__all__") list = list.filter(b => b.funcao === filterFuncao);
+    if (filterMacro !== "__all__") list = list.filter(b => b.macro_processo === filterMacro);
+    if (filterProcesso) list = list.filter(b => b.processo.toLowerCase().includes(filterProcesso.toLowerCase()));
+    return list;
+  }, [bps, filterFuncao, filterMacro, filterProcesso]);
+
   // Calendar grid
   const days = useMemo(() => {
     const start = startOfMonth(month);
@@ -90,7 +113,7 @@ const TestCalendarSection: React.FC = () => {
     return eachDayOfInterval({ start, end });
   }, [month]);
 
-  const startDow = getDay(days[0]); // 0=Sun
+  const startDow = getDay(days[0]);
 
   const testsByDate = useMemo(() => {
     const map: Record<string, typeof tests> = {};
@@ -116,6 +139,11 @@ const TestCalendarSection: React.FC = () => {
     const ids = relations?.bps.filter(r => r.test_id === testId).map(r => r.business_process_id) || [];
     return bps.filter(b => ids.includes(b.id)).map(b => `${b.funcao} > ${b.macro_processo}`);
   };
+
+  // Selected BPs info for badges
+  const selectedBPsInfo = useMemo(() => {
+    return bps.filter(b => form.bp_ids.includes(b.id));
+  }, [bps, form.bp_ids]);
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
@@ -154,7 +182,6 @@ const TestCalendarSection: React.FC = () => {
               {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(d => (
                 <div key={d} className="bg-muted p-1.5 text-center text-[10px] font-medium text-muted-foreground">{d}</div>
               ))}
-              {/* offset for start of month (Mon=0) */}
               {Array.from({ length: (startDow + 6) % 7 }).map((_, i) => (
                 <div key={`empty-${i}`} className="bg-background p-1 min-h-[70px]" />
               ))}
@@ -217,70 +244,126 @@ const TestCalendarSection: React.FC = () => {
 
       {/* CRUD Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? (lang === "pt" ? "Editar Teste" : "Edit Test") : (lang === "pt" ? "Novo Teste" : "New Test")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div>
-              <Label className="text-xs">{lang === "pt" ? "Nome do Teste" : "Test Name"}</Label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={lang === "pt" ? "Ex: Teste DRP Anual" : "E.g. Annual DRP Test"} />
-            </div>
-            <div>
-              <Label className="text-xs">{lang === "pt" ? "Data do Teste" : "Test Date"}</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.test_date && "text-muted-foreground")}>
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {form.test_date ? format(form.test_date, "dd/MM/yyyy") : (lang === "pt" ? "Selecionar data" : "Pick a date")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={form.test_date} onSelect={d => setForm(f => ({ ...f, test_date: d }))} initialFocus className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Buildings multi-select */}
-            <div>
-              <Label className="text-xs">{lang === "pt" ? "Edifícios Envolvidos" : "Buildings Involved"}</Label>
-              <ScrollArea className="max-h-32 border rounded-md p-2 mt-1">
-                {buildings.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure edifícios no Back Office." : "Configure buildings in Back Office."}</p>
-                ) : buildings.map(b => (
-                  <label key={b.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                    <Checkbox checked={form.building_ids.includes(b.id)} onCheckedChange={() => setForm(f => ({ ...f, building_ids: toggleMulti(f.building_ids, b.id) }))} />
-                    <span className="text-xs">{b.name}</span>
-                  </label>
-                ))}
-              </ScrollArea>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs">{lang === "pt" ? "Nome do Teste" : "Test Name"}</Label>
+                <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={lang === "pt" ? "Ex: Teste DRP Anual" : "E.g. Annual DRP Test"} />
+              </div>
+              <div>
+                <Label className="text-xs">{lang === "pt" ? "Data do Teste" : "Test Date"}</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.test_date && "text-muted-foreground")}>
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {form.test_date ? format(form.test_date, "dd/MM/yyyy") : (lang === "pt" ? "Selecionar data" : "Pick a date")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={form.test_date} onSelect={d => setForm(f => ({ ...f, test_date: d }))} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
 
-            {/* Platforms multi-select */}
-            <div>
-              <Label className="text-xs">{lang === "pt" ? "Plataformas Envolvidas" : "Platforms Involved"}</Label>
-              <ScrollArea className="max-h-32 border rounded-md p-2 mt-1">
-                {platforms.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure plataformas no Back Office." : "Configure platforms in Back Office."}</p>
-                ) : platforms.map(p => (
-                  <label key={p.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                    <Checkbox checked={form.platform_ids.includes(p.id)} onCheckedChange={() => setForm(f => ({ ...f, platform_ids: toggleMulti(f.platform_ids, p.id) }))} />
-                    <span className="text-xs">{p.name}</span>
-                  </label>
-                ))}
-              </ScrollArea>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Buildings multi-select */}
+              <div>
+                <Label className="text-xs">{lang === "pt" ? "Edifícios Envolvidos" : "Buildings Involved"}</Label>
+                <ScrollArea className="max-h-32 border rounded-md p-2 mt-1">
+                  {buildings.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure edifícios no Back Office." : "Configure buildings in Back Office."}</p>
+                  ) : buildings.map(b => (
+                    <label key={b.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
+                      <Checkbox checked={form.building_ids.includes(b.id)} onCheckedChange={() => setForm(f => ({ ...f, building_ids: toggleMulti(f.building_ids, b.id) }))} />
+                      <span className="text-xs">{b.name}</span>
+                    </label>
+                  ))}
+                </ScrollArea>
+              </div>
+
+              {/* Platforms multi-select */}
+              <div>
+                <Label className="text-xs">{lang === "pt" ? "Plataformas Envolvidas" : "Platforms Involved"}</Label>
+                <ScrollArea className="max-h-32 border rounded-md p-2 mt-1">
+                  {platforms.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure plataformas no Back Office." : "Configure platforms in Back Office."}</p>
+                  ) : platforms.map(p => (
+                    <label key={p.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
+                      <Checkbox checked={form.platform_ids.includes(p.id)} onCheckedChange={() => setForm(f => ({ ...f, platform_ids: toggleMulti(f.platform_ids, p.id) }))} />
+                      <span className="text-xs">{p.name}</span>
+                    </label>
+                  ))}
+                </ScrollArea>
+              </div>
             </div>
 
-            {/* Business Processes multi-select */}
+            {/* Business Processes with filters */}
             <div>
-              <Label className="text-xs">{lang === "pt" ? "Processos de Negócio" : "Business Processes"}</Label>
-              <ScrollArea className="max-h-40 border rounded-md p-2 mt-1">
-                {bps.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure processos no Back Office." : "Configure processes in Back Office."}</p>
-                ) : bps.map(bp => (
+              <Label className="text-xs font-semibold">{lang === "pt" ? "Processos de Negócio" : "Business Processes"}</Label>
+              
+              {/* Selected processes badges */}
+              {selectedBPsInfo.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1 mb-2">
+                  {selectedBPsInfo.map(bp => (
+                    <Badge key={bp.id} variant="secondary" className="text-[10px] gap-1 pr-1">
+                      {bp.funcao} &gt; {bp.macro_processo} &gt; {bp.processo}
+                      <button onClick={() => setForm(f => ({ ...f, bp_ids: f.bp_ids.filter(id => id !== bp.id) }))} className="ml-0.5 hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Filters row */}
+              <div className="grid grid-cols-3 gap-2 mt-1 mb-2">
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Função" : "Function"}</Label>
+                  <Select value={filterFuncao} onValueChange={v => { setFilterFuncao(v); setFilterMacro("__all__"); }}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder={lang === "pt" ? "Todas" : "All"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">{lang === "pt" ? "Todas" : "All"}</SelectItem>
+                      {uniqueFuncoes.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
+                  <Select value={filterMacro} onValueChange={setFilterMacro}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder={lang === "pt" ? "Todos" : "All"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                      {uniqueMacros.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Pesquisar Processo" : "Search Process"}</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    <Input value={filterProcesso} onChange={e => setFilterProcesso(e.target.value)} className="h-8 text-xs pl-7" placeholder={lang === "pt" ? "Filtrar..." : "Filter..."} />
+                  </div>
+                </div>
+              </div>
+
+              <ScrollArea className="max-h-48 border rounded-md p-2">
+                {filteredBPs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-2">{lang === "pt" ? "Nenhum processo encontrado." : "No processes found."}</p>
+                ) : filteredBPs.map(bp => (
                   <label key={bp.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
                     <Checkbox checked={form.bp_ids.includes(bp.id)} onCheckedChange={() => setForm(f => ({ ...f, bp_ids: toggleMulti(f.bp_ids, bp.id) }))} />
-                    <span className="text-xs">{bp.funcao} &gt; {bp.macro_processo} &gt; {bp.processo}</span>
+                    <span className="text-xs">
+                      <span className="text-muted-foreground">{bp.funcao} &gt; {bp.macro_processo} &gt;</span> {bp.processo}
+                    </span>
                   </label>
                 ))}
               </ScrollArea>
