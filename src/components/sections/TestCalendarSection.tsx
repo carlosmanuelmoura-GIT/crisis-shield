@@ -40,16 +40,19 @@ const TestCalendarSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", test_date: undefined as Date | undefined, building_ids: [] as string[], platform_ids: [] as string[], bp_ids: [] as string[] });
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
-  // Filters for business processes
+  // Filters for macro processos
+  const [filterTipoFuncao, setFilterTipoFuncao] = useState<string>("__all__");
   const [filterFuncao, setFilterFuncao] = useState<string>("__all__");
-  const [filterMacro, setFilterMacro] = useState<string>("__all__");
-  const [filterProcesso, setFilterProcesso] = useState<string>("");
+  const [filterSearch, setFilterSearch] = useState<string>("");
+
+  const resetFilters = () => { setFilterTipoFuncao("__all__"); setFilterFuncao("__all__"); setFilterSearch(""); };
 
   const openCreate = () => {
     setEditingId(null);
     setForm({ name: "", test_date: undefined, building_ids: [], platform_ids: [], bp_ids: [] });
-    setFilterFuncao("__all__"); setFilterMacro("__all__"); setFilterProcesso("");
+    resetFilters();
     setDialogOpen(true);
   };
 
@@ -60,7 +63,7 @@ const TestCalendarSection: React.FC = () => {
     const pIds = rel?.platforms.filter(r => r.test_id === t.id).map(r => r.platform_id) || [];
     const bpIds = rel?.bps.filter(r => r.test_id === t.id).map(r => r.business_process_id) || [];
     setForm({ name: t.name, test_date: parseISO(t.test_date), building_ids: bIds, platform_ids: pIds, bp_ids: bpIds });
-    setFilterFuncao("__all__"); setFilterMacro("__all__"); setFilterProcesso("");
+    resetFilters();
     setDialogOpen(true);
   };
 
@@ -91,20 +94,49 @@ const TestCalendarSection: React.FC = () => {
 
   const toggleMulti = (arr: string[], id: string) => arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
 
-  // Unique values for filters
-  const uniqueFuncoes = useMemo(() => [...new Set(bps.map(b => b.funcao))].sort(), [bps]);
-  const uniqueMacros = useMemo(() => {
-    const filtered = filterFuncao !== "__all__" ? bps.filter(b => b.funcao === filterFuncao) : bps;
-    return [...new Set(filtered.map(b => b.macro_processo))].sort();
-  }, [bps, filterFuncao]);
+  // Toggle all BPs of a macro_processo
+  const toggleMacroProcesso = (macroKey: string) => {
+    const macroIDs = bps.filter(b => `${b.tipo_funcao}|${b.funcao}|${b.macro_processo}` === macroKey).map(b => b.id);
+    const allSelected = macroIDs.every(id => form.bp_ids.includes(id));
+    if (allSelected) {
+      setForm(f => ({ ...f, bp_ids: f.bp_ids.filter(id => !macroIDs.includes(id)) }));
+    } else {
+      setForm(f => ({ ...f, bp_ids: [...new Set([...f.bp_ids, ...macroIDs])] }));
+    }
+  };
 
-  const filteredBPs = useMemo(() => {
+  // Unique filter values
+  const uniqueTipoFuncoes = useMemo(() => [...new Set(bps.map(b => b.tipo_funcao))].filter(Boolean).sort(), [bps]);
+  const uniqueFuncoes = useMemo(() => {
+    const filtered = filterTipoFuncao !== "__all__" ? bps.filter(b => b.tipo_funcao === filterTipoFuncao) : bps;
+    return [...new Set(filtered.map(b => b.funcao))].filter(Boolean).sort();
+  }, [bps, filterTipoFuncao]);
+
+  // Unique macro processos for selection
+  const filteredMacros = useMemo(() => {
     let list = bps;
+    if (filterTipoFuncao !== "__all__") list = list.filter(b => b.tipo_funcao === filterTipoFuncao);
     if (filterFuncao !== "__all__") list = list.filter(b => b.funcao === filterFuncao);
-    if (filterMacro !== "__all__") list = list.filter(b => b.macro_processo === filterMacro);
-    if (filterProcesso) list = list.filter(b => b.processo.toLowerCase().includes(filterProcesso.toLowerCase()));
-    return list;
-  }, [bps, filterFuncao, filterMacro, filterProcesso]);
+    const macroMap = new Map<string, { key: string; tipo_funcao: string; funcao: string; macro_processo: string; bp_ids: string[] }>();
+    list.forEach(b => {
+      const k = `${b.tipo_funcao}|${b.funcao}|${b.macro_processo}`;
+      if (!macroMap.has(k)) macroMap.set(k, { key: k, tipo_funcao: b.tipo_funcao, funcao: b.funcao, macro_processo: b.macro_processo, bp_ids: [] });
+      macroMap.get(k)!.bp_ids.push(b.id);
+    });
+    let macros = [...macroMap.values()];
+    if (filterSearch) macros = macros.filter(m => m.macro_processo.toLowerCase().includes(filterSearch.toLowerCase()));
+    return macros.sort((a, b) => a.macro_processo.localeCompare(b.macro_processo));
+  }, [bps, filterTipoFuncao, filterFuncao, filterSearch]);
+
+  // Selected macro processos info for badges
+  const selectedMacrosInfo = useMemo(() => {
+    const selected = new Map<string, { key: string; funcao: string; macro_processo: string }>();
+    bps.filter(b => form.bp_ids.includes(b.id)).forEach(b => {
+      const k = `${b.tipo_funcao}|${b.funcao}|${b.macro_processo}`;
+      if (!selected.has(k)) selected.set(k, { key: k, funcao: b.funcao, macro_processo: b.macro_processo });
+    });
+    return [...selected.values()];
+  }, [bps, form.bp_ids]);
 
   // Calendar grid
   const days = useMemo(() => {
@@ -137,13 +169,10 @@ const TestCalendarSection: React.FC = () => {
 
   const getBPNames = (testId: string) => {
     const ids = relations?.bps.filter(r => r.test_id === testId).map(r => r.business_process_id) || [];
-    return bps.filter(b => ids.includes(b.id)).map(b => `${b.funcao} > ${b.macro_processo}`);
+    const matched = bps.filter(b => ids.includes(b.id));
+    const macros = new Set(matched.map(b => `${b.funcao} > ${b.macro_processo}`));
+    return [...macros];
   };
-
-  // Selected BPs info for badges
-  const selectedBPsInfo = useMemo(() => {
-    return bps.filter(b => form.bp_ids.includes(b.id));
-  }, [bps, form.bp_ids]);
 
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
@@ -215,7 +244,7 @@ const TestCalendarSection: React.FC = () => {
                 <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
                 <TableHead className="text-xs">{lang === "pt" ? "Edifícios" : "Buildings"}</TableHead>
                 <TableHead className="text-xs">{lang === "pt" ? "Plataformas" : "Platforms"}</TableHead>
-                <TableHead className="text-xs">{lang === "pt" ? "Processos" : "Processes"}</TableHead>
+                <TableHead className="text-xs">{lang === "pt" ? "Macro Processos" : "Macro Processes"}</TableHead>
                 <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
               </TableRow>
             </TableHeader>
@@ -244,7 +273,7 @@ const TestCalendarSection: React.FC = () => {
 
       {/* CRUD Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? (lang === "pt" ? "Editar Teste" : "Edit Test") : (lang === "pt" ? "Novo Teste" : "New Test")}</DialogTitle>
           </DialogHeader>
@@ -256,15 +285,15 @@ const TestCalendarSection: React.FC = () => {
               </div>
               <div>
                 <Label className="text-xs">{lang === "pt" ? "Data do Teste" : "Test Date"}</Label>
-                <Popover>
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.test_date && "text-muted-foreground")}>
+                    <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !form.test_date && "text-muted-foreground")}>
                       <CalendarIcon className="h-4 w-4 mr-2" />
                       {form.test_date ? format(form.test_date, "dd/MM/yyyy") : (lang === "pt" ? "Selecionar data" : "Pick a date")}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={form.test_date} onSelect={d => setForm(f => ({ ...f, test_date: d }))} initialFocus className="p-3 pointer-events-auto" />
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <Calendar mode="single" selected={form.test_date} onSelect={d => { setForm(f => ({ ...f, test_date: d || f.test_date })); if (d) setDatePickerOpen(false); }} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -274,7 +303,7 @@ const TestCalendarSection: React.FC = () => {
               {/* Buildings multi-select */}
               <div>
                 <Label className="text-xs">{lang === "pt" ? "Edifícios Envolvidos" : "Buildings Involved"}</Label>
-                <ScrollArea className="max-h-32 border rounded-md p-2 mt-1">
+                <ScrollArea className="h-32 border rounded-md p-2 mt-1">
                   {buildings.length === 0 ? (
                     <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure edifícios no Back Office." : "Configure buildings in Back Office."}</p>
                   ) : buildings.map(b => (
@@ -289,7 +318,7 @@ const TestCalendarSection: React.FC = () => {
               {/* Platforms multi-select */}
               <div>
                 <Label className="text-xs">{lang === "pt" ? "Plataformas Envolvidas" : "Platforms Involved"}</Label>
-                <ScrollArea className="max-h-32 border rounded-md p-2 mt-1">
+                <ScrollArea className="h-32 border rounded-md p-2 mt-1">
                   {platforms.length === 0 ? (
                     <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure plataformas no Back Office." : "Configure platforms in Back Office."}</p>
                   ) : platforms.map(p => (
@@ -302,17 +331,20 @@ const TestCalendarSection: React.FC = () => {
               </div>
             </div>
 
-            {/* Business Processes with filters */}
+            {/* Macro Processos with filters */}
             <div>
-              <Label className="text-xs font-semibold">{lang === "pt" ? "Processos de Negócio" : "Business Processes"}</Label>
+              <Label className="text-xs font-semibold">{lang === "pt" ? "Macro Processos" : "Macro Processes"}</Label>
               
-              {/* Selected processes badges */}
-              {selectedBPsInfo.length > 0 && (
+              {/* Selected macro processos badges */}
+              {selectedMacrosInfo.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-1 mb-2">
-                  {selectedBPsInfo.map(bp => (
-                    <Badge key={bp.id} variant="secondary" className="text-[10px] gap-1 pr-1">
-                      {bp.funcao} &gt; {bp.macro_processo} &gt; {bp.processo}
-                      <button onClick={() => setForm(f => ({ ...f, bp_ids: f.bp_ids.filter(id => id !== bp.id) }))} className="ml-0.5 hover:text-destructive">
+                  {selectedMacrosInfo.map(m => (
+                    <Badge key={m.key} variant="secondary" className="text-[10px] gap-1 pr-1">
+                      {m.funcao} &gt; {m.macro_processo}
+                      <button onClick={() => {
+                        const macroIDs = bps.filter(b => `${b.tipo_funcao}|${b.funcao}|${b.macro_processo}` === m.key).map(b => b.id);
+                        setForm(f => ({ ...f, bp_ids: f.bp_ids.filter(id => !macroIDs.includes(id)) }));
+                      }} className="ml-0.5 hover:text-destructive">
                         <X className="h-3 w-3" />
                       </button>
                     </Badge>
@@ -323,8 +355,20 @@ const TestCalendarSection: React.FC = () => {
               {/* Filters row */}
               <div className="grid grid-cols-3 gap-2 mt-1 mb-2">
                 <div>
+                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Tipo de Função" : "Function Type"}</Label>
+                  <Select value={filterTipoFuncao} onValueChange={v => { setFilterTipoFuncao(v); setFilterFuncao("__all__"); }}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder={lang === "pt" ? "Todos" : "All"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                      {uniqueTipoFuncoes.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Função" : "Function"}</Label>
-                  <Select value={filterFuncao} onValueChange={v => { setFilterFuncao(v); setFilterMacro("__all__"); }}>
+                  <Select value={filterFuncao} onValueChange={setFilterFuncao}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder={lang === "pt" ? "Todas" : "All"} />
                     </SelectTrigger>
@@ -335,41 +379,33 @@ const TestCalendarSection: React.FC = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
-                  <Select value={filterMacro} onValueChange={setFilterMacro}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder={lang === "pt" ? "Todos" : "All"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                      {uniqueMacros.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Pesquisar Processo" : "Search Process"}</Label>
+                  <Label className="text-[10px] text-muted-foreground">{lang === "pt" ? "Pesquisar Macro Processo" : "Search Macro Process"}</Label>
                   <div className="relative">
                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                    <Input value={filterProcesso} onChange={e => setFilterProcesso(e.target.value)} className="h-8 text-xs pl-7" placeholder={lang === "pt" ? "Filtrar..." : "Filter..."} />
+                    <Input value={filterSearch} onChange={e => setFilterSearch(e.target.value)} className="h-8 text-xs pl-7" placeholder={lang === "pt" ? "Filtrar..." : "Filter..."} />
                   </div>
                 </div>
               </div>
 
-              <ScrollArea className="max-h-48 border rounded-md p-2">
-                {filteredBPs.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-2">{lang === "pt" ? "Nenhum processo encontrado." : "No processes found."}</p>
-                ) : filteredBPs.map(bp => (
-                  <label key={bp.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
-                    <Checkbox checked={form.bp_ids.includes(bp.id)} onCheckedChange={() => setForm(f => ({ ...f, bp_ids: toggleMulti(f.bp_ids, bp.id) }))} />
-                    <span className="text-xs">
-                      <span className="text-muted-foreground">{bp.funcao} &gt; {bp.macro_processo} &gt;</span> {bp.processo}
-                    </span>
-                  </label>
-                ))}
+              <ScrollArea className="h-52 border rounded-md p-2">
+                {filteredMacros.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-2">{lang === "pt" ? "Nenhum macro processo encontrado." : "No macro processes found."}</p>
+                ) : filteredMacros.map(m => {
+                  const allSelected = m.bp_ids.every(id => form.bp_ids.includes(id));
+                  return (
+                    <label key={m.key} className="flex items-center gap-2 py-1 cursor-pointer">
+                      <Checkbox checked={allSelected} onCheckedChange={() => toggleMacroProcesso(m.key)} />
+                      <span className="text-xs">
+                        <span className="text-muted-foreground">{m.funcao} &gt;</span> {m.macro_processo}
+                      </span>
+                    </label>
+                  );
+                })}
               </ScrollArea>
             </div>
 
-            <Button onClick={handleSave} className="w-full" disabled={!form.name || !form.test_date}>
+            <Button type="button" onClick={handleSave} className="w-full" disabled={!form.name || !form.test_date || createTest.isPending || updateTest.isPending}>
+              {(createTest.isPending || updateTest.isPending) ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               {lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
