@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, 
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
+import { useSubCapacidades, useCreateSubCapacidade, useUpdateSubCapacidade, useDeleteSubCapacidade } from "@/hooks/useSubCapacidades";
 import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso } from "@/hooks/useCenarios";
 import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
 import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/useBuildings";
@@ -54,6 +55,15 @@ const BackOfficeSection: React.FC = () => {
   const [recDialog, setRecDialog] = useState(false);
   const [editingRec, setEditingRec] = useState<string | null>(null);
   const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "", icon: "" });
+
+  // --- Sub-Capacidades ---
+  const { data: subCapacidades = [] } = useSubCapacidades();
+  const createSubCap = useCreateSubCapacidade();
+  const updateSubCap = useUpdateSubCapacidade();
+  const deleteSubCap = useDeleteSubCapacidade();
+  const [subCapDialog, setSubCapDialog] = useState(false);
+  const [editingSubCap, setEditingSubCap] = useState<string | null>(null);
+  const [subCapForm, setSubCapForm] = useState({ name_pt: "", name_en: "", recurso_id: "" });
 
   // --- Cenários ---
   const { data: cenarios = [], isLoading: cenLoading } = useCenarios();
@@ -150,6 +160,21 @@ const BackOfficeSection: React.FC = () => {
   };
   const handleDeleteRec = async (id: string) => {
     try { await deleteRec.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
+  // Sub-Capacidades handlers
+  const openCreateSubCap = (recursoId: string) => { setEditingSubCap(null); setSubCapForm({ name_pt: "", name_en: "", recurso_id: recursoId }); setSubCapDialog(true); };
+  const openEditSubCap = (sc: typeof subCapacidades[0]) => { setEditingSubCap(sc.id); setSubCapForm({ name_pt: sc.name_pt, name_en: sc.name_en, recurso_id: sc.recurso_id }); setSubCapDialog(true); };
+  const handleSaveSubCap = async () => {
+    try {
+      if (editingSubCap) await updateSubCap.mutateAsync({ id: editingSubCap, ...subCapForm });
+      else await createSubCap.mutateAsync(subCapForm);
+      setSubCapDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+  const handleDeleteSubCap = async (id: string) => {
+    try { await deleteSubCap.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
@@ -289,40 +314,52 @@ const BackOfficeSection: React.FC = () => {
         {/* ===== RECURSOS ===== */}
         <TabsContent value="recursos" className="space-y-3 mt-3">
           <div className="flex justify-end">
-            <Button size="sm" onClick={openCreateRec} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
+            <Button size="sm" onClick={openCreateRec} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo Recurso" : "New Resource"}</Button>
           </div>
           {recLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : recursos.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum recurso configurado." : "No resources configured."}</p>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">{lang === "pt" ? "Ícone" : "Icon"}</TableHead>
-                    <TableHead className="text-xs">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</TableHead>
-                    <TableHead className="text-xs">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</TableHead>
-                    <TableHead className="text-xs">{lang === "pt" ? "Descrição" : "Description"}</TableHead>
-                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recursos.map(r => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-lg">{r.icon || "📦"}</TableCell>
-                      <TableCell className="text-sm font-medium">{r.name_pt}</TableCell>
-                      <TableCell className="text-sm">{r.name_en || "—"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground truncate max-w-[200px]">{r.description_pt || "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditRec(r)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteRec(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            recursos.map(r => {
+              const recSubCaps = subCapacidades.filter(sc => sc.recurso_id === r.id);
+              return (
+                <Card key={r.id}>
+                  <CardContent className="p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-lg">{r.icon || "📦"}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{r.name_pt}</p>
+                          {r.name_en && <p className="text-xs text-muted-foreground">{r.name_en}</p>}
+                          {r.description_pt && <p className="text-[10px] text-muted-foreground">{r.description_pt}</p>}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditRec(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteRec(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </div>
+                    {/* Sub-capacidades */}
+                    <div className="pl-2 border-l-2 border-border space-y-1">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                        {lang === "pt" ? "Sub-capacidades" : "Sub-capabilities"}
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {recSubCaps.map(sc => (
+                          <Badge key={sc.id} variant="outline" className="text-[10px] gap-1 pr-1">
+                            {sc.name_pt}
+                            <button onClick={() => openEditSubCap(sc)} className="ml-0.5 hover:text-primary"><Pencil className="h-2 w-2" /></button>
+                            <button onClick={() => handleDeleteSubCap(sc.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                          </Badge>
+                        ))}
+                        <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => openCreateSubCap(r.id)}>
+                          <Plus className="h-2.5 w-2.5 mr-0.5" />{lang === "pt" ? "Adicionar" : "Add"}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </TabsContent>
 
@@ -629,6 +666,22 @@ const BackOfficeSection: React.FC = () => {
               <Input value={bldName} onChange={e => setBldName(e.target.value)} className="bg-secondary border-border" /></div>
             <Button onClick={handleSaveBld} disabled={!bldName || createBld.isPending || updateBld.isPending} className="w-full">
               {(createBld.isPending || updateBld.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sub-Capacidade */}
+      <Dialog open={subCapDialog} onOpenChange={setSubCapDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingSubCap ? (lang === "pt" ? "Editar Sub-capacidade" : "Edit Sub-capability") : (lang === "pt" ? "Nova Sub-capacidade" : "New Sub-capability")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
+              <Input value={subCapForm.name_pt} onChange={e => setSubCapForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" /></div>
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
+              <Input value={subCapForm.name_en} onChange={e => setSubCapForm(f => ({ ...f, name_en: e.target.value }))} className="bg-secondary border-border" /></div>
+            <Button onClick={handleSaveSubCap} disabled={!subCapForm.name_pt || createSubCap.isPending || updateSubCap.isPending} className="w-full">
+              {(createSubCap.isPending || updateSubCap.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
         </DialogContent>
