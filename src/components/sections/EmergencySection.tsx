@@ -12,7 +12,9 @@ import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
+  LayoutList, Columns3, GripVertical,
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
   Monitor, Home, UserCheck, Network, Zap,
@@ -65,6 +67,9 @@ const EmergencySection: React.FC = () => {
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+  const [dragCardId, setDragCardId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   // Filters
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
@@ -272,6 +277,29 @@ const EmergencySection: React.FC = () => {
     setFilterRecurso("all"); setFilterTipoFuncao("all"); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all");
   };
 
+  const handleDragStart = (cardId: string) => setDragCardId(cardId);
+  const handleDragEnd = () => { setDragCardId(null); setDragOverCol(null); };
+  const handleDragOver = (e: React.DragEvent, colId: string) => { e.preventDefault(); setDragOverCol(colId); };
+  const handleDrop = async (e: React.DragEvent, targetRecursoId: string | null) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    if (!dragCardId) return;
+    const card = cards.find(c => c.id === dragCardId);
+    if (!card || card.recurso_id === targetRecursoId) { setDragCardId(null); return; }
+    try {
+      await updateCard.mutateAsync({
+        id: card.id, title_pt: card.title_pt, title_en: card.title_en,
+        severity: card.severity, capability: card.capability || undefined,
+        funcao: card.funcao || undefined, macro_processo: card.macro_processo || undefined,
+        recurso_id: targetRecursoId || undefined,
+      });
+      toast({ title: lang === "pt" ? "Card movido" : "Card moved" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+    setDragCardId(null);
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -299,9 +327,15 @@ const EmergencySection: React.FC = () => {
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {lang === "pt" ? "Action Cards de Emergência" : "Emergency Action Cards"}
         </h2>
-        <Button size="sm" onClick={() => openCreate()} className="h-8 text-xs">
-          <Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md border border-border overflow-hidden">
+            <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("list")}><LayoutList className="h-3.5 w-3.5" /></Button>
+            <Button variant={viewMode === "kanban" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("kanban")}><Columns3 className="h-3.5 w-3.5" /></Button>
+          </div>
+          <Button size="sm" onClick={() => openCreate()} className="h-8 text-xs">
+            <Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -371,12 +405,12 @@ const EmergencySection: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Grouped cards by Recurso */}
+      {/* Grouped cards by Recurso - LIST VIEW */}
       {filtered.length === 0 && (
         <p className="text-sm text-muted-foreground py-4 text-center">{lang === "pt" ? "Nenhum action card encontrado." : "No action cards found."}</p>
       )}
 
-      {groupedCards.map(({ recurso, cards: groupCards }) => {
+      {viewMode === "list" && groupedCards.map(({ recurso, cards: groupCards }) => {
         const groupId = recurso?.id || "__unassigned";
         const isGroupCollapsed = collapsedGroups[groupId];
         const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
@@ -480,6 +514,92 @@ const EmergencySection: React.FC = () => {
           </div>
         );
       })}
+
+      {/* KANBAN VIEW */}
+      {viewMode === "kanban" && filtered.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
+          {/* One column per recurso + unassigned */}
+          {[...recursos, null].map(recurso => {
+            const colId = recurso?.id || "__unassigned";
+            const colCards = filtered.filter(c => recurso ? c.recurso_id === recurso.id : !c.recurso_id || !recursos.some(r => r.id === c.recurso_id));
+            const Icon = recurso ? (iconMap[recurso.icon] || Package) : Package;
+            const isDragOver = dragOverCol === colId;
+
+            return (
+              <div
+                key={colId}
+                className={`flex-shrink-0 w-64 flex flex-col rounded-lg border transition-colors ${isDragOver ? "border-primary bg-primary/5" : "border-border bg-secondary/30"}`}
+                onDragOver={(e) => handleDragOver(e, colId)}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={(e) => handleDrop(e, recurso?.id || null)}
+              >
+                {/* Column header */}
+                <div className="p-3 border-b border-border/50 flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-muted-foreground shrink-0 sat-keep" />
+                  <span className="text-xs font-bold truncate flex-1">
+                    {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso" : "No resource")}
+                  </span>
+                  <Badge variant="secondary" className="text-[9px]">{colCards.length}</Badge>
+                </div>
+
+                {/* Column cards */}
+                <ScrollArea className="flex-1 p-2">
+                  <div className="space-y-2">
+                    {colCards.map(card => {
+                      const items = allItems.filter(i => i.action_card_id === card.id);
+                      const done = items.filter(i => statesMap[i.id]).length;
+                      const total = items.length;
+                      const title = lang === "pt" ? card.title_pt : card.title_en;
+                      const bpLabel = [card.funcao, card.macro_processo].filter(Boolean).join(" › ");
+                      const severity = severityLabels[card.severity];
+                      const isDragging = dragCardId === card.id;
+
+                      return (
+                        <Card
+                          key={card.id}
+                          draggable
+                          onDragStart={() => handleDragStart(card.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`border-l-4 ${severityColors[card.severity] || ""} cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? "opacity-40" : ""}`}
+                        >
+                          <CardContent className="p-2.5 space-y-1.5">
+                            <div className="flex items-start gap-1.5">
+                              <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium leading-tight">{title}</p>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  <Badge variant="secondary" className="text-[8px]">
+                                    {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                                  </Badge>
+                                  {bpLabel && <Badge variant="outline" className="text-[8px] font-normal">{bpLabel}</Badge>}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1 bg-secondary rounded-full">
+                                <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                              </div>
+                              <span className="text-[8px] text-muted-foreground">{done}/{total}</span>
+                            </div>
+                            <div className="flex justify-end gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(card)}><Pencil className="h-2.5 w-2.5 sat-keep" /></Button>
+                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(card)}><Copy className="h-2.5 w-2.5 sat-keep" /></Button>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(card.id)}><Trash2 className="h-2.5 w-2.5 sat-keep" /></Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                    {colCards.length === 0 && (
+                      <p className="text-[10px] text-muted-foreground text-center py-6">{lang === "pt" ? "Arraste cards para aqui" : "Drag cards here"}</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
