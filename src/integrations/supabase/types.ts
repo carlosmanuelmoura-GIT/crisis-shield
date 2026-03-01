@@ -24,6 +24,7 @@ export type Database = {
           owner_id: string | null
           recurso_id: string | null
           severity: string
+          sub_capacidade_id: string | null
           title_en: string
           title_pt: string
           updated_at: string
@@ -37,6 +38,7 @@ export type Database = {
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
+          sub_capacidade_id?: string | null
           title_en?: string
           title_pt: string
           updated_at?: string
@@ -50,6 +52,7 @@ export type Database = {
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
+          sub_capacidade_id?: string | null
           title_en?: string
           title_pt?: string
           updated_at?: string
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["recurso_id"]
             isOneToOne: false
             referencedRelation: "recursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_cards_sub_capacidade_id_fkey"
+            columns: ["sub_capacidade_id"]
+            isOneToOne: false
+            referencedRelation: "sub_capacidades"
             referencedColumns: ["id"]
           },
         ]
@@ -627,6 +637,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      sub_capacidades: {
+        Row: {
+          created_at: string
+          id: string
+          name_en: string
+          name_pt: string
+          owner_id: string | null
+          recurso_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_pt: string
+          owner_id?: string | null
+          recurso_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_pt?: string
+          owner_id?: string | null
+          recurso_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_capacidades_recurso_id_fkey"
+            columns: ["recurso_id"]
+            isOneToOne: false
+            referencedRelation: "recursos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_buildings: {
         Row: {

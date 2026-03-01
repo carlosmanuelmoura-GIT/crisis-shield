@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useActionCards";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
+import { useSubCapacidades } from "@/hooks/useSubCapacidades";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { useCurrentUserProfile } from "@/hooks/useUserRoles";
@@ -50,6 +51,7 @@ const EmergencySection: React.FC = () => {
   const { data: allStates = [] } = useChecklistStates();
   const { data: businessProcesses = [] } = useBusinessProcesses();
   const { data: recursos = [] } = useRecursos();
+  const { data: subCapacidades = [] } = useSubCapacidades();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
   const updateCard = useUpdateActionCard();
@@ -65,7 +67,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "", sub_capacidade_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const [dragCardId, setDragCardId] = useState<string | null>(null);
@@ -73,6 +75,7 @@ const EmergencySection: React.FC = () => {
 
   // Filters
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
+  const [filterSubCapacidade, setFilterSubCapacidade] = useState<string>("all");
   const [filterTipoFuncao, setFilterTipoFuncao] = useState<string>("all");
   const [filterFuncao, setFilterFuncao] = useState<string>("all");
   const [filterMacroProcesso, setFilterMacroProcesso] = useState<string>("all");
@@ -89,7 +92,6 @@ const EmergencySection: React.FC = () => {
 
   const hasBpFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
 
-  // Derive the set of funcao/macro_processo values that match current BP filters
   const matchingBpValues = useMemo(() => {
     let bps = filteredByMacro;
     if (filterProcesso !== "all") bps = bps.filter(bp => bp.processo === filterProcesso);
@@ -99,17 +101,27 @@ const EmergencySection: React.FC = () => {
     };
   }, [filteredByMacro, filterProcesso]);
 
-  // During crisis, do NOT force filter — allow user to see all cards
+  // Sub-capacidades for current recurso filter
+  const filteredSubCaps = useMemo(() => {
+    if (filterRecurso === "all") return subCapacidades;
+    return subCapacidades.filter(sc => sc.recurso_id === filterRecurso);
+  }, [subCapacidades, filterRecurso]);
+
+  // Sub-capacidades for form (based on selected recurso)
+  const formSubCaps = useMemo(() => {
+    if (!form.recurso_id) return [];
+    return subCapacidades.filter(sc => sc.recurso_id === form.recurso_id);
+  }, [subCapacidades, form.recurso_id]);
+
   const effectiveFilterRecurso = filterRecurso;
-  const hasActiveFilter = effectiveFilterRecurso !== "all" || hasBpFilter;
+  const hasActiveFilter = effectiveFilterRecurso !== "all" || filterSubCapacidade !== "all" || hasBpFilter;
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) {
-        return false;
-      }
+      if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) return false;
+      if (filterSubCapacidade !== "all" && (c as any).sub_capacidade_id !== filterSubCapacidade) return false;
       if (hasBpFilter) {
         const funcaoMatch = !c.funcao || matchingBpValues.funcaoSet.has(c.funcao);
         const macroMatch = !c.macro_processo || matchingBpValues.macroSet.has(c.macro_processo);
@@ -117,51 +129,57 @@ const EmergencySection: React.FC = () => {
       }
       return true;
     });
-  }, [cards, searchQuery, lang, effectiveFilterRecurso, hasBpFilter, matchingBpValues]);
+  }, [cards, searchQuery, lang, effectiveFilterRecurso, filterSubCapacidade, hasBpFilter, matchingBpValues]);
 
-  // Group cards by recurso que se perde
+  // Group cards by sub_capacidade (within recurso)
   const groupedCards = useMemo(() => {
-    const groups: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
+    const groups: { subCap: typeof subCapacidades[0] | null; recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
+    const subCapMap = new Map(subCapacidades.map(sc => [sc.id, sc]));
     const recursoMap = new Map(recursos.map(r => [r.id, r]));
 
-    // Group by recurso_id
-    const byRecurso = new Map<string, typeof filtered>();
+    const bySubCap = new Map<string, typeof filtered>();
     const unassigned: typeof filtered = [];
 
     filtered.forEach(card => {
-      if (card.recurso_id) {
-        const existing = byRecurso.get(card.recurso_id) || [];
+      const scId = (card as any).sub_capacidade_id;
+      if (scId && subCapMap.has(scId)) {
+        const existing = bySubCap.get(scId) || [];
         existing.push(card);
-        byRecurso.set(card.recurso_id, existing);
+        bySubCap.set(scId, existing);
       } else {
         unassigned.push(card);
       }
     });
 
-    // Sort recursos by name
-    const sortedRecursoIds = [...byRecurso.keys()].sort((a, b) => {
-      const ra = recursoMap.get(a);
-      const rb = recursoMap.get(b);
-      return (ra?.name_pt || "").localeCompare(rb?.name_pt || "");
+    // Sort by recurso then sub-cap name
+    const sortedKeys = [...bySubCap.keys()].sort((a, b) => {
+      const sa = subCapMap.get(a);
+      const sb = subCapMap.get(b);
+      const ra = sa ? recursoMap.get(sa.recurso_id) : null;
+      const rb = sb ? recursoMap.get(sb.recurso_id) : null;
+      const cmp = (ra?.name_pt || "").localeCompare(rb?.name_pt || "");
+      if (cmp !== 0) return cmp;
+      return (sa?.name_pt || "").localeCompare(sb?.name_pt || "");
     });
 
-    sortedRecursoIds.forEach(id => {
-      groups.push({ recurso: recursoMap.get(id) || null, cards: byRecurso.get(id)! });
+    sortedKeys.forEach(id => {
+      const sc = subCapMap.get(id)!;
+      groups.push({ subCap: sc, recurso: recursoMap.get(sc.recurso_id) || null, cards: bySubCap.get(id)! });
     });
 
     if (unassigned.length > 0) {
-      groups.push({ recurso: null, cards: unassigned });
+      groups.push({ subCap: null, recurso: null, cards: unassigned });
     }
 
     return groups;
-  }, [filtered, recursos]);
+  }, [filtered, subCapacidades, recursos]);
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "", sub_capacidade_id: "" });
     setDialogOpen(true);
   };
 
@@ -171,6 +189,7 @@ const EmergencySection: React.FC = () => {
       title_pt: card.title_pt, title_en: card.title_en, severity: card.severity,
       capability: card.capability || "", funcao: card.funcao || "",
       macro_processo: card.macro_processo || "", recurso_id: card.recurso_id || "",
+      sub_capacidade_id: (card as any).sub_capacidade_id || "",
     });
     setDialogOpen(true);
   };
@@ -183,6 +202,7 @@ const EmergencySection: React.FC = () => {
         macro_processo: form.macro_processo || undefined,
         recurso_id: form.recurso_id || undefined,
         capability: form.capability || undefined,
+        sub_capacidade_id: form.sub_capacidade_id || undefined,
       };
       if (editingCard) {
         await updateCard.mutateAsync({ id: editingCard, ...payload });
@@ -212,11 +232,11 @@ const EmergencySection: React.FC = () => {
         funcao: card.funcao,
         macro_processo: card.macro_processo,
         recurso_id: card.recurso_id,
+        sub_capacidade_id: (card as any).sub_capacidade_id,
         owner_id: card.owner_id,
-      }).select("id").single();
+      } as any).select("id").single();
       if (error) throw error;
 
-      // Copy checklist items
       const items = allItems.filter(i => i.action_card_id === card.id);
       if (items.length > 0 && newCard) {
         const { error: itemsErr } = await supabase.from("checklist_items").insert(
@@ -274,24 +294,27 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterRecurso("all"); setFilterTipoFuncao("all"); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all");
+    setFilterRecurso("all"); setFilterSubCapacidade("all"); setFilterTipoFuncao("all"); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
   const handleDragEnd = () => { setDragCardId(null); setDragOverCol(null); };
   const handleDragOver = (e: React.DragEvent, colId: string) => { e.preventDefault(); setDragOverCol(colId); };
-  const handleDrop = async (e: React.DragEvent, targetRecursoId: string | null) => {
+  const handleDrop = async (e: React.DragEvent, targetSubCapId: string | null) => {
     e.preventDefault();
     setDragOverCol(null);
     if (!dragCardId) return;
     const card = cards.find(c => c.id === dragCardId);
-    if (!card || card.recurso_id === targetRecursoId) { setDragCardId(null); return; }
+    if (!card || (card as any).sub_capacidade_id === targetSubCapId) { setDragCardId(null); return; }
     try {
+      // When dropping to a sub-cap, also update recurso_id to match
+      const targetSc = targetSubCapId ? subCapacidades.find(sc => sc.id === targetSubCapId) : null;
       await updateCard.mutateAsync({
         id: card.id, title_pt: card.title_pt, title_en: card.title_en,
         severity: card.severity, capability: card.capability || undefined,
         funcao: card.funcao || undefined, macro_processo: card.macro_processo || undefined,
-        recurso_id: targetRecursoId || undefined,
+        recurso_id: targetSc?.recurso_id || card.recurso_id || undefined,
+        sub_capacidade_id: targetSubCapId || undefined,
       });
       toast({ title: lang === "pt" ? "Card movido" : "Card moved" });
     } catch (err: any) {
@@ -305,6 +328,14 @@ const EmergencySection: React.FC = () => {
   }
 
   const statesMap = Object.fromEntries(allStates.map(s => [s.checklist_item_id, s.checked]));
+
+  // Helper to get sub-cap label for a card
+  const getSubCapLabel = (card: typeof cards[0]) => {
+    const scId = (card as any).sub_capacidade_id;
+    if (!scId) return null;
+    const sc = subCapacidades.find(s => s.id === scId);
+    return sc ? (lang === "pt" ? sc.name_pt : sc.name_en || sc.name_pt) : null;
+  };
 
   return (
     <div className="space-y-4">
@@ -350,14 +381,24 @@ const EmergencySection: React.FC = () => {
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={resetFilters}>{lang === "pt" ? "Limpar" : "Clear"}</Button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Recurso que se perde" : "Resource lost"}</Label>
-              <Select value={filterRecurso} onValueChange={setFilterRecurso}>
+              <Select value={filterRecurso} onValueChange={(v) => { setFilterRecurso(v); setFilterSubCapacidade("all"); }}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
                   {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Sub-capacidade" : "Sub-capability"}</Label>
+              <Select value={filterSubCapacidade} onValueChange={setFilterSubCapacidade}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todas" : "All"}</SelectItem>
+                  {filteredSubCaps.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name_pt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -405,13 +446,14 @@ const EmergencySection: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Grouped cards by Recurso - LIST VIEW */}
+      {/* Empty state */}
       {filtered.length === 0 && (
         <p className="text-sm text-muted-foreground py-4 text-center">{lang === "pt" ? "Nenhum action card encontrado." : "No action cards found."}</p>
       )}
 
-      {viewMode === "list" && groupedCards.map(({ recurso, cards: groupCards }) => {
-        const groupId = recurso?.id || "__unassigned";
+      {/* LIST VIEW - grouped by sub-capacidade */}
+      {viewMode === "list" && groupedCards.map(({ subCap, recurso, cards: groupCards }) => {
+        const groupId = subCap?.id || "__unassigned";
         const isGroupCollapsed = collapsedGroups[groupId];
         const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
         const groupDone = groupCards.reduce((sum, card) => {
@@ -419,19 +461,19 @@ const EmergencySection: React.FC = () => {
           return sum + items.filter(i => statesMap[i.id]).length;
         }, 0);
 
+        const groupLabel = subCap
+          ? `${recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) + " › " : ""}${lang === "pt" ? subCap.name_pt : subCap.name_en || subCap.name_pt}`
+          : (lang === "pt" ? "Sem sub-capacidade associada" : "No sub-capability assigned");
+
         return (
           <div key={groupId} className="space-y-3">
-            {/* Group header */}
             <div
               className="flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg cursor-pointer border border-border/50"
               onClick={() => toggleGroup(groupId)}
             >
-              {React.createElement(iconMap[recurso?.icon || ""] || Package, { className: "h-5 w-5 text-muted-foreground shrink-0" })}
+              {React.createElement(recurso ? (iconMap[recurso.icon] || Package) : Package, { className: "h-5 w-5 text-muted-foreground shrink-0" })}
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold">
-                  {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso que se perde associado" : "No resource lost assigned")}
-                </h3>
-                {recurso?.description_pt && <p className="text-[10px] text-muted-foreground truncate">{recurso.description_pt}</p>}
+                <h3 className="text-sm font-bold">{groupLabel}</h3>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <Badge variant="secondary" className="text-[10px]">{groupCards.length} cards</Badge>
@@ -450,6 +492,7 @@ const EmergencySection: React.FC = () => {
                   const title = lang === "pt" ? card.title_pt : card.title_en;
                   const bpLabel = [card.funcao, card.macro_processo].filter(Boolean).join(" › ");
                   const severity = severityLabels[card.severity];
+                  const scLabel = getSubCapLabel(card);
 
                   return (
                     <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
@@ -462,6 +505,7 @@ const EmergencySection: React.FC = () => {
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                               </Badge>
                               {bpLabel && <Badge variant="outline" className="text-[9px] font-normal">{bpLabel}</Badge>}
+                              {scLabel && <Badge variant="outline" className="text-[9px] font-normal bg-accent/30">{scLabel}</Badge>}
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
@@ -486,12 +530,7 @@ const EmergencySection: React.FC = () => {
                             return (
                               <div key={item.id} className="flex items-start gap-2 py-0.5 group">
                                 <label className={`flex items-start gap-2 flex-1 ${crisisActive ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                  <Checkbox
-                                    checked={checked}
-                                    onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)}
-                                    className="mt-0.5"
-                                    disabled={!crisisActive}
-                                  />
+                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!crisisActive} />
                                   <span className={`text-xs ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                 </label>
                                 <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)}><X className="h-2.5 w-2.5" /></Button>
@@ -515,13 +554,13 @@ const EmergencySection: React.FC = () => {
         );
       })}
 
-      {/* KANBAN VIEW */}
+      {/* KANBAN VIEW - columns by sub-capacidade */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
-          {/* One column per recurso + unassigned */}
-          {[...recursos, null].map(recurso => {
-            const colId = recurso?.id || "__unassigned";
-            const colCards = filtered.filter(c => recurso ? c.recurso_id === recurso.id : !c.recurso_id || !recursos.some(r => r.id === c.recurso_id));
+          {[...subCapacidades, null].map(subCap => {
+            const colId = subCap?.id || "__unassigned";
+            const colCards = filtered.filter(c => subCap ? (c as any).sub_capacidade_id === subCap.id : !(c as any).sub_capacidade_id || !subCapacidades.some(sc => sc.id === (c as any).sub_capacidade_id));
+            const recurso = subCap ? recursos.find(r => r.id === subCap.recurso_id) : null;
             const Icon = recurso ? (iconMap[recurso.icon] || Package) : Package;
             const isDragOver = dragOverCol === colId;
 
@@ -531,18 +570,19 @@ const EmergencySection: React.FC = () => {
                 className={`flex-shrink-0 w-64 flex flex-col rounded-lg border transition-colors ${isDragOver ? "border-primary bg-primary/5" : "border-border bg-secondary/30"}`}
                 onDragOver={(e) => handleDragOver(e, colId)}
                 onDragLeave={() => setDragOverCol(null)}
-                onDrop={(e) => handleDrop(e, recurso?.id || null)}
+                onDrop={(e) => handleDrop(e, subCap?.id || null)}
               >
-                {/* Column header */}
                 <div className="p-3 border-b border-border/50 flex items-center gap-2">
                   <Icon className="h-4 w-4 text-muted-foreground shrink-0 sat-keep" />
-                  <span className="text-xs font-bold truncate flex-1">
-                    {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso" : "No resource")}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold truncate block">
+                      {subCap ? (lang === "pt" ? subCap.name_pt : subCap.name_en || subCap.name_pt) : (lang === "pt" ? "Sem sub-capacidade" : "No sub-capability")}
+                    </span>
+                    {recurso && <span className="text-[9px] text-muted-foreground truncate block">{lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt}</span>}
+                  </div>
                   <Badge variant="secondary" className="text-[9px]">{colCards.length}</Badge>
                 </div>
 
-                {/* Column cards */}
                 <ScrollArea className="flex-1 p-2">
                   <div className="space-y-2">
                     {colCards.map(card => {
@@ -631,7 +671,7 @@ const EmergencySection: React.FC = () => {
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Recurso que se perde" : "Resource lost"}</Label>
-              <Select value={form.recurso_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, recurso_id: v === "none" ? "" : v }))}>
+              <Select value={form.recurso_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, recurso_id: v === "none" ? "" : v, sub_capacidade_id: "" }))}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
                 </SelectTrigger>
@@ -641,6 +681,20 @@ const EmergencySection: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            {formSubCaps.length > 0 && (
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{lang === "pt" ? "Sub-capacidade perdida" : "Sub-capability lost"}</Label>
+                <Select value={form.sub_capacidade_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, sub_capacidade_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{lang === "pt" ? "— Nenhuma —" : "— None —"}</SelectItem>
+                    {formSubCaps.map(sc => <SelectItem key={sc.id} value={sc.id}>{sc.name_pt}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Função" : "Function"}</Label>
               <Select value={form.funcao || "none"} onValueChange={(v) => setForm(f => ({ ...f, funcao: v === "none" ? "" : v, macro_processo: "" }))}>
