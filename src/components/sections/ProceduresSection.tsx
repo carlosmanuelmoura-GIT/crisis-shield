@@ -91,7 +91,7 @@ const ProceduresSection: React.FC = () => {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold uppercase tracking-wider">
-          {lang === "pt" ? "Procedimentos Críticos" : "Critical Procedures"}
+          {lang === "pt" ? "Procedimentos Críticos GCN" : "Critical Procedures GCN"}
         </h2>
         <Button size="sm" variant="outline" onClick={openNew}>
           <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Novo" : "New"}
@@ -126,7 +126,7 @@ const ProceduresSection: React.FC = () => {
       ))}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? (lang === "pt" ? "Editar Procedimento" : "Edit Procedure") : (lang === "pt" ? "Novo Procedimento" : "New Procedure")}</DialogTitle>
           </DialogHeader>
@@ -139,8 +139,8 @@ const ProceduresSection: React.FC = () => {
               <div><Label>Categoria (PT)</Label><Input value={form.category_pt} onChange={e => setForm(f => ({ ...f, category_pt: e.target.value }))} /></div>
               <div><Label>Category (EN)</Label><Input value={form.category_en} onChange={e => setForm(f => ({ ...f, category_en: e.target.value }))} /></div>
             </div>
-            <div><Label>Conteúdo (PT) — Markdown</Label><Textarea rows={8} value={form.content_pt} onChange={e => setForm(f => ({ ...f, content_pt: e.target.value }))} /></div>
-            <div><Label>Content (EN) — Markdown</Label><Textarea rows={8} value={form.content_en} onChange={e => setForm(f => ({ ...f, content_en: e.target.value }))} /></div>
+            <div><Label>Conteúdo (PT) — Markdown</Label><Textarea rows={14} className="min-h-[200px]" value={form.content_pt} onChange={e => setForm(f => ({ ...f, content_pt: e.target.value }))} /></div>
+            <div><Label>Content (EN) — Markdown</Label><Textarea rows={14} className="min-h-[200px]" value={form.content_en} onChange={e => setForm(f => ({ ...f, content_en: e.target.value }))} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{lang === "pt" ? "Cancelar" : "Cancel"}</Button>
