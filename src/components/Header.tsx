@@ -80,7 +80,7 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-1.5">
           <ShieldCheck className="h-5 w-5 text-primary sat-keep" />
           <h1 className="text-sm font-bold tracking-wider uppercase hidden sm:block">
-            {lang === "pt" ? "Continuidade" : "Continuity"}
+            Portal GCN
           </h1>
         </div>
 
