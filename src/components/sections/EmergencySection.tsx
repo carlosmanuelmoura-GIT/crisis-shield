@@ -69,7 +69,8 @@ const EmergencySection: React.FC = () => {
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "", sub_capacidade_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
-  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
+  const [expandedKanban, setExpandedKanban] = useState<Record<string, boolean>>({});
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
@@ -360,8 +361,8 @@ const EmergencySection: React.FC = () => {
         </h2>
         <div className="flex items-center gap-2">
           <div className="flex rounded-md border border-border overflow-hidden">
-            <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("list")}><LayoutList className="h-3.5 w-3.5" /></Button>
             <Button variant={viewMode === "kanban" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("kanban")}><Columns3 className="h-3.5 w-3.5" /></Button>
+            <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("list")}><LayoutList className="h-3.5 w-3.5" /></Button>
           </div>
           <Button size="sm" onClick={() => openCreate()} className="h-8 text-xs">
             <Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}
@@ -554,80 +555,137 @@ const EmergencySection: React.FC = () => {
         );
       })}
 
-      {/* KANBAN VIEW - columns by sub-capacidade */}
+      {/* KANBAN VIEW - columns by recurso (capacidade), grouped by sub-capacidade inside */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
-          {[...subCapacidades, null].map(subCap => {
-            const colId = subCap?.id || "__unassigned";
-            const colCards = filtered.filter(c => subCap ? (c as any).sub_capacidade_id === subCap.id : !(c as any).sub_capacidade_id || !subCapacidades.some(sc => sc.id === (c as any).sub_capacidade_id));
-            const recurso = subCap ? recursos.find(r => r.id === subCap.recurso_id) : null;
-            const Icon = recurso ? (iconMap[recurso.icon] || Package) : Package;
+          {[...recursos, null].map(recurso => {
+            const colId = recurso?.id || "__unassigned";
+            const colCards = filtered.filter(c => recurso ? c.recurso_id === recurso.id : !c.recurso_id || !recursos.some(r => r.id === c.recurso_id));
+            if (colCards.length === 0 && recurso) return null;
             const isDragOver = dragOverCol === colId;
+
+            // Group cards within this column by sub-capacidade
+            const colSubCaps = recurso ? subCapacidades.filter(sc => sc.recurso_id === recurso.id) : [];
+            const cardsBySubCap = new Map<string | null, typeof colCards>();
+            colCards.forEach(card => {
+              const scId = (card as any).sub_capacidade_id;
+              const key = scId && colSubCaps.some(sc => sc.id === scId) ? scId : null;
+              const arr = cardsBySubCap.get(key) || [];
+              arr.push(card);
+              cardsBySubCap.set(key, arr);
+            });
 
             return (
               <div
                 key={colId}
-                className={`flex-shrink-0 w-64 flex flex-col rounded-lg border transition-colors ${isDragOver ? "border-primary bg-primary/5" : "border-border bg-secondary/30"}`}
+                className={`flex-shrink-0 w-72 flex flex-col rounded-lg border transition-colors ${isDragOver ? "border-primary bg-primary/5" : "border-border bg-secondary/30"}`}
                 onDragOver={(e) => handleDragOver(e, colId)}
                 onDragLeave={() => setDragOverCol(null)}
-                onDrop={(e) => handleDrop(e, subCap?.id || null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOverCol(null);
+                  if (!dragCardId) return;
+                  const card = cards.find(c => c.id === dragCardId);
+                  if (!card || card.recurso_id === (recurso?.id || null)) { setDragCardId(null); return; }
+                  updateCard.mutateAsync({
+                    id: card.id, title_pt: card.title_pt, title_en: card.title_en,
+                    severity: card.severity, capability: card.capability || undefined,
+                    funcao: card.funcao || undefined, macro_processo: card.macro_processo || undefined,
+                    recurso_id: recurso?.id || undefined,
+                    sub_capacidade_id: undefined,
+                  }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
+                    .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
+                  setDragCardId(null);
+                }}
               >
                 <div className="p-3 border-b border-border/50 flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-muted-foreground shrink-0 sat-keep" />
                   <div className="flex-1 min-w-0">
                     <span className="text-xs font-bold truncate block">
-                      {subCap ? (lang === "pt" ? subCap.name_pt : subCap.name_en || subCap.name_pt) : (lang === "pt" ? "Sem sub-capacidade" : "No sub-capability")}
+                      {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso" : "No resource")}
                     </span>
-                    {recurso && <span className="text-[9px] text-muted-foreground truncate block">{lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt}</span>}
                   </div>
                   <Badge variant="secondary" className="text-[9px]">{colCards.length}</Badge>
                 </div>
 
                 <ScrollArea className="flex-1 p-2">
-                  <div className="space-y-2">
-                    {colCards.map(card => {
-                      const items = allItems.filter(i => i.action_card_id === card.id);
-                      const done = items.filter(i => statesMap[i.id]).length;
-                      const total = items.length;
-                      const title = lang === "pt" ? card.title_pt : card.title_en;
-                      const bpLabel = [card.funcao, card.macro_processo].filter(Boolean).join(" › ");
-                      const severity = severityLabels[card.severity];
-                      const isDragging = dragCardId === card.id;
+                  <div className="space-y-3">
+                    {/* Render groups by sub-capacidade */}
+                    {[...colSubCaps, null].map(sc => {
+                      const scId = sc?.id || null;
+                      const scCards = cardsBySubCap.get(scId);
+                      if (!scCards || scCards.length === 0) return null;
+                      const scLabel = sc ? (lang === "pt" ? sc.name_pt : sc.name_en || sc.name_pt) : (lang === "pt" ? "Sem sub-capacidade" : "No sub-capability");
 
                       return (
-                        <Card
-                          key={card.id}
-                          draggable
-                          onDragStart={() => handleDragStart(card.id)}
-                          onDragEnd={handleDragEnd}
-                          className={`border-l-4 ${severityColors[card.severity] || ""} cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? "opacity-40" : ""}`}
-                        >
-                          <CardContent className="p-2.5 space-y-1.5">
-                            <div className="flex items-start gap-1.5">
-                              <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium leading-tight">{title}</p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  <Badge variant="secondary" className="text-[8px]">
-                                    {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
-                                  </Badge>
-                                  {bpLabel && <Badge variant="outline" className="text-[8px] font-normal">{bpLabel}</Badge>}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-secondary rounded-full">
-                                <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-                              </div>
-                              <span className="text-[8px] text-muted-foreground">{done}/{total}</span>
-                            </div>
-                            <div className="flex justify-end gap-0.5">
-                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(card)}><Pencil className="h-2.5 w-2.5 sat-keep" /></Button>
-                              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(card)}><Copy className="h-2.5 w-2.5 sat-keep" /></Button>
-                              <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(card.id)}><Trash2 className="h-2.5 w-2.5 sat-keep" /></Button>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div key={scId || "__none"} className="space-y-1.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">{scLabel}</p>
+                          <div className="space-y-2">
+                            {scCards.map(card => {
+                              const items = allItems.filter(i => i.action_card_id === card.id);
+                              const done = items.filter(i => statesMap[i.id]).length;
+                              const total = items.length;
+                              const title = lang === "pt" ? card.title_pt : card.title_en;
+                              const severity = severityLabels[card.severity];
+                              const isDragging = dragCardId === card.id;
+                              const isCardExpanded = expandedKanban[card.id];
+
+                              return (
+                                <Card
+                                  key={card.id}
+                                  draggable
+                                  onDragStart={() => handleDragStart(card.id)}
+                                  onDragEnd={handleDragEnd}
+                                  className={`border-l-4 ${severityColors[card.severity] || ""} cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? "opacity-40" : ""}`}
+                                >
+                                  <CardContent className="p-2.5 space-y-1.5">
+                                    <div className="flex items-start gap-1.5">
+                                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
+                                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))}>
+                                        <p className="text-xs font-medium leading-tight">{title}</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          <Badge variant="secondary" className="text-[8px]">
+                                            {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-0.5 shrink-0">
+                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(card)}><Pencil className="h-2.5 w-2.5 sat-keep" /></Button>
+                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(card)}><Copy className="h-2.5 w-2.5 sat-keep" /></Button>
+                                        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(card.id)}><Trash2 className="h-2.5 w-2.5 sat-keep" /></Button>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex-1 h-1 bg-secondary rounded-full">
+                                        <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                                      </div>
+                                      <span className="text-[8px] text-muted-foreground">{done}/{total}</span>
+                                      {total > 0 && (
+                                        <button onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))} className="text-muted-foreground">
+                                          {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                        </button>
+                                      )}
+                                    </div>
+                                    {/* Checklist items */}
+                                    {isCardExpanded && items.length > 0 && (
+                                      <div className="space-y-1 pt-1 border-t border-border/50">
+                                        {items.map(item => {
+                                          const checked = !!statesMap[item.id];
+                                          const text = lang === "pt" ? item.text_pt : item.text_en;
+                                          return (
+                                            <label key={item.id} className={`flex items-start gap-1.5 ${crisisActive ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                              <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!crisisActive} />
+                                              <span className={`text-[10px] leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                            </label>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
                     {colCards.length === 0 && (
@@ -677,7 +735,7 @@ const EmergencySection: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.icon || "📦"} {r.name_pt}</SelectItem>)}
+                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

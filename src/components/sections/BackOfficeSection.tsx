@@ -54,7 +54,7 @@ const BackOfficeSection: React.FC = () => {
   const deleteRec = useDeleteRecurso();
   const [recDialog, setRecDialog] = useState(false);
   const [editingRec, setEditingRec] = useState<string | null>(null);
-  const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "", icon: "" });
+  const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "" });
 
   // --- Sub-Capacidades ---
   const { data: subCapacidades = [] } = useSubCapacidades();
@@ -149,8 +149,8 @@ const BackOfficeSection: React.FC = () => {
   };
 
   // Recursos
-  const openCreateRec = () => { setEditingRec(null); setRecForm({ name_pt: "", name_en: "", description_pt: "", icon: "" }); setRecDialog(true); };
-  const openEditRec = (r: typeof recursos[0]) => { setEditingRec(r.id); setRecForm({ name_pt: r.name_pt, name_en: r.name_en, description_pt: r.description_pt, icon: r.icon }); setRecDialog(true); };
+  const openCreateRec = () => { setEditingRec(null); setRecForm({ name_pt: "", name_en: "", description_pt: "" }); setRecDialog(true); };
+  const openEditRec = (r: typeof recursos[0]) => { setEditingRec(r.id); setRecForm({ name_pt: r.name_pt, name_en: r.name_en, description_pt: r.description_pt }); setRecDialog(true); };
   const handleSaveRec = async () => {
     try {
       if (editingRec) await updateRec.mutateAsync({ id: editingRec, ...recForm });
@@ -326,7 +326,6 @@ const BackOfficeSection: React.FC = () => {
                   <CardContent className="p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg">{r.icon || "📦"}</span>
                         <div className="min-w-0">
                           <p className="text-sm font-medium">{r.name_pt}</p>
                           {r.name_en && <p className="text-xs text-muted-foreground">{r.name_en}</p>}
@@ -398,7 +397,7 @@ const BackOfficeSection: React.FC = () => {
                       <div className="flex flex-wrap gap-1">
                         {linkedRecursos.map(({ link, recurso }) => (
                           <Badge key={link.id} variant="outline" className="text-[10px] gap-1 pr-1">
-                            {recurso!.icon || "📦"} {recurso!.name_pt}
+                            {recurso!.name_pt}
                             <button onClick={() => unlinkCR.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
                           </Badge>
                         ))}
@@ -582,8 +581,6 @@ const BackOfficeSection: React.FC = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>{editingRec ? (lang === "pt" ? "Editar Recurso" : "Edit Resource") : (lang === "pt" ? "Novo Recurso" : "New Resource")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Ícone (emoji)" : "Icon (emoji)"}</Label>
-              <Input value={recForm.icon} onChange={e => setRecForm(f => ({ ...f, icon: e.target.value }))} placeholder="💻 🏢 👥 ⚡ 🌐" className="bg-secondary border-border" /></div>
             <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
               <Input value={recForm.name_pt} onChange={e => setRecForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" /></div>
             <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
@@ -625,7 +622,7 @@ const BackOfficeSection: React.FC = () => {
             <Select value={linkRecursoId} onValueChange={setLinkRecursoId}>
               <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder={lang === "pt" ? "Selecionar recurso..." : "Select resource..."} /></SelectTrigger>
               <SelectContent>
-                {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.icon || "📦"} {r.name_pt}</SelectItem>)}
+                {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
               </SelectContent>
             </Select>
             <Button onClick={handleLink} disabled={!linkRecursoId || linkCR.isPending} className="w-full">
