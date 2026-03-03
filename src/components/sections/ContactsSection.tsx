@@ -40,6 +40,13 @@ const ContactsSection: React.FC = () => {
     (lang === "pt" ? c.role_pt : c.role_en).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const grouped = filtered.reduce<Record<string, typeof filtered>>((acc, c) => {
+    const role = (lang === "pt" ? c.role_pt : c.role_en) || (lang === "pt" ? "Sem função" : "No role");
+    if (!acc[role]) acc[role] = [];
+    acc[role].push(c);
+    return acc;
+  }, {});
+
   const openNew = () => {
     setEditing(null);
     setForm(emptyForm);
@@ -105,48 +112,54 @@ const ContactsSection: React.FC = () => {
           {lang === "pt" ? "Sem contactos." : "No contacts."}
         </p>
       ) : (
-        <div className="grid gap-2">
-          {filtered.map(c => (
-            <Card key={c.id} className={priorityBorder[c.priority] || ""}>
-              <CardContent className="p-3 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm truncate">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {lang === "pt" ? c.role_pt : c.role_en}
-                    {c.phone && <span className="ml-2 text-foreground font-medium">{c.phone}</span>}
-                  </p>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  {c.phone && (
-                    <Button asChild variant="ghost" size="icon" className="h-9 w-9">
-                      <a href={`tel:${c.phone}`}><Phone className="h-4 w-4 text-[hsl(var(--ok-green))]" /></a>
-                    </Button>
-                  )}
-                  {c.phone && (
-                    <Button asChild variant="ghost" size="icon" className="h-9 w-9">
-                      <a href={`sms:${c.phone}?body=${encodeURIComponent(lang === "pt" ? "URGENTE GCN: " : "URGENT BCM: ")}`}>
-                        <MessageSquare className="h-4 w-4 text-[hsl(var(--alert-yellow))]" />
-                      </a>
-                    </Button>
-                  )}
-                  {c.email && (
-                    <Button asChild variant="ghost" size="icon" className="h-9 w-9">
-                      <a href={`mailto:${c.email}`}><Mail className="h-4 w-4" /></a>
-                    </Button>
-                  )}
-                  {canEdit && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(c)}>
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => handleDelete(c.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          {Object.entries(grouped).map(([role, members]) => (
+            <div key={role}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 px-1">{role}</p>
+              <div className="grid gap-1.5">
+                {members.map(c => (
+                  <Card key={c.id} className={priorityBorder[c.priority] || ""}>
+                    <CardContent className="p-3 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{c.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.phone && <span className="text-foreground font-medium">{c.phone}</span>}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        {c.phone && (
+                          <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+                            <a href={`tel:${c.phone}`}><Phone className="h-4 w-4 text-[hsl(var(--ok-green))]" /></a>
+                          </Button>
+                        )}
+                        {c.phone && (
+                          <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+                            <a href={`sms:${c.phone}?body=${encodeURIComponent(lang === "pt" ? "URGENTE GCN: " : "URGENT BCM: ")}`}>
+                              <MessageSquare className="h-4 w-4 text-[hsl(var(--alert-yellow))]" />
+                            </a>
+                          </Button>
+                        )}
+                        {c.email && (
+                          <Button asChild variant="ghost" size="icon" className="h-9 w-9">
+                            <a href={`mailto:${c.email}`}><Mail className="h-4 w-4" /></a>
+                          </Button>
+                        )}
+                        {canEdit && (
+                          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(c)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => handleDelete(c.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
