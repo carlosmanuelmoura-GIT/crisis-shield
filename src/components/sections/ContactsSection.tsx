@@ -111,7 +111,10 @@ const ContactsSection: React.FC = () => {
               <CardContent className="p-3 flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{c.name}</p>
-                  <p className="text-xs text-muted-foreground">{lang === "pt" ? c.role_pt : c.role_en}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "pt" ? c.role_pt : c.role_en}
+                    {c.phone && <span className="ml-2 text-foreground font-medium">{c.phone}</span>}
+                  </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   {c.phone && (
