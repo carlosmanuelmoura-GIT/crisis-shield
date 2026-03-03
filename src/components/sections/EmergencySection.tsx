@@ -6,8 +6,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
@@ -73,6 +74,11 @@ const EmergencySection: React.FC = () => {
   const [expandedKanban, setExpandedKanban] = useState<Record<string, boolean>>({});
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+
+  // Confirmation dialog for checking items
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingCheck, setPendingCheck] = useState<{ itemId: string; checked: boolean; itemText: string; cardId: string } | null>(null);
+  const [confirmForm, setConfirmForm] = useState({ department: "", person: "", notes: "" });
 
   // Filters
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
@@ -286,12 +292,46 @@ const EmergencySection: React.FC = () => {
 
   const handleToggleCheck = async (itemId: string, checked: boolean, itemText: string, cardId: string) => {
     if (!crisisActive) return;
+    if (checked) {
+      // Opening: show confirmation dialog
+      setPendingCheck({ itemId, checked, itemText, cardId });
+      setConfirmForm({ department: "", person: "", notes: "" });
+      setConfirmDialogOpen(true);
+    } else {
+      // Unchecking: direct toggle
+      const card = cards.find(c => c.id === cardId);
+      const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
+      const author = profile?.display_name || "Sistema";
+      toggleCheck.mutate({ itemId, checked });
+      await createLog.mutateAsync({ text: `⬜ "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+    }
+  };
+
+  const handleConfirmCheck = async () => {
+    if (!pendingCheck) return;
+    const { itemId, itemText, cardId } = pendingCheck;
     const card = cards.find(c => c.id === cardId);
     const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
     const author = profile?.display_name || "Sistema";
-    toggleCheck.mutate({ itemId, checked });
-    const action = checked ? "✅" : "⬜";
-    await createLog.mutateAsync({ text: `${action} "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+    toggleCheck.mutate({
+      itemId,
+      checked: true,
+      confirmed_by_department: confirmForm.department,
+      confirmed_by_person: confirmForm.person,
+      notes: confirmForm.notes,
+    });
+    const details = [
+      confirmForm.department && `Dept: ${confirmForm.department}`,
+      confirmForm.person && `Por: ${confirmForm.person}`,
+      confirmForm.notes && `Notas: ${confirmForm.notes}`,
+    ].filter(Boolean).join(" | ");
+    await createLog.mutateAsync({
+      text: `✅ "${itemText}" em "${cardTitle}"${details ? ` (${details})` : ""}`,
+      author,
+      crisis_started_at: crisisStartTime,
+    }).catch(() => {});
+    setConfirmDialogOpen(false);
+    setPendingCheck(null);
   };
 
   const resetFilters = () => {
@@ -786,6 +826,58 @@ const EmergencySection: React.FC = () => {
               {lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation dialog for checking items */}
+      <Dialog open={confirmDialogOpen} onOpenChange={(open) => { if (!open) { setConfirmDialogOpen(false); setPendingCheck(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Confirmação de Ação" : "Action Confirmation"}</DialogTitle>
+          </DialogHeader>
+          {pendingCheck && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {lang === "pt" ? "A confirmar:" : "Confirming:"} <strong>{pendingCheck.itemText}</strong>
+              </p>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>{lang === "pt" ? "Departamento" : "Department"}</Label>
+                  <Input
+                    value={confirmForm.department}
+                    onChange={(e) => setConfirmForm(f => ({ ...f, department: e.target.value }))}
+                    placeholder={lang === "pt" ? "Nome do departamento..." : "Department name..."}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{lang === "pt" ? "Pessoa" : "Person"}</Label>
+                  <Input
+                    value={confirmForm.person}
+                    onChange={(e) => setConfirmForm(f => ({ ...f, person: e.target.value }))}
+                    placeholder={lang === "pt" ? "Nome da pessoa..." : "Person name..."}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{lang === "pt" ? "Notas adicionais" : "Additional notes"}</Label>
+                  <Textarea
+                    rows={3}
+                    value={confirmForm.notes}
+                    onChange={(e) => setConfirmForm(f => ({ ...f, notes: e.target.value }))}
+                    placeholder={lang === "pt" ? "Observações..." : "Notes..."}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setConfirmDialogOpen(false); setPendingCheck(null); }}>
+              {lang === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button onClick={handleConfirmCheck} disabled={toggleCheck.isPending}>
+              {toggleCheck.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {lang === "pt" ? "Confirmar" : "Confirm"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
