@@ -29,6 +29,9 @@ export interface DBChecklistState {
   id: string;
   checklist_item_id: string;
   checked: boolean;
+  confirmed_by_department: string;
+  confirmed_by_person: string;
+  notes: string;
 }
 
 export function useActionCards() {
@@ -74,12 +77,19 @@ export function useToggleChecklistState() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ itemId, checked }: { itemId: string; checked: boolean }) => {
+    mutationFn: async ({ itemId, checked, confirmed_by_department, confirmed_by_person, notes }: { itemId: string; checked: boolean; confirmed_by_department?: string; confirmed_by_person?: string; notes?: string }) => {
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("checklist_state")
         .upsert(
-          { user_id: user.id, checklist_item_id: itemId, checked },
+          { 
+            user_id: user.id, 
+            checklist_item_id: itemId, 
+            checked,
+            confirmed_by_department: confirmed_by_department || '',
+            confirmed_by_person: confirmed_by_person || '',
+            notes: notes || '',
+          } as any,
           { onConflict: "user_id,checklist_item_id" }
         );
       if (error) throw error;

@@ -341,21 +341,30 @@ export type Database = {
         Row: {
           checked: boolean
           checklist_item_id: string
+          confirmed_by_department: string
+          confirmed_by_person: string
           id: string
+          notes: string
           updated_at: string
           user_id: string
         }
         Insert: {
           checked?: boolean
           checklist_item_id: string
+          confirmed_by_department?: string
+          confirmed_by_person?: string
           id?: string
+          notes?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           checked?: boolean
           checklist_item_id?: string
+          confirmed_by_department?: string
+          confirmed_by_person?: string
           id?: string
+          notes?: string
           updated_at?: string
           user_id?: string
         }
