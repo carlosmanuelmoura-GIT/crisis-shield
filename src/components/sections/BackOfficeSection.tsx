@@ -562,6 +562,40 @@ const BackOfficeSection: React.FC = () => {
             </div>
           )}
         </TabsContent>
+
+        {/* ===== DEPARTMENTS ===== */}
+        <TabsContent value="departments" className="space-y-3 mt-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={openCreateDept} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
+          </div>
+          {deptLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : departmentsList.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum departamento configurado." : "No departments configured."}</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
+                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {departmentsList.map(d => (
+                    <TableRow key={d.id}>
+                      <TableCell className="text-sm">{d.name}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDept(d)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDept(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* ===== DIALOGS ===== */}
@@ -709,40 +743,6 @@ const BackOfficeSection: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* ===== DEPARTMENTS ===== */}
-      <TabsContent value="departments" className="space-y-3 mt-3">
-        <div className="flex justify-end">
-          <Button size="sm" onClick={openCreateDept} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
-        </div>
-        {deptLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : departmentsList.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum departamento configurado." : "No departments configured."}</p>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
-                  <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {departmentsList.map(d => (
-                  <TableRow key={d.id}>
-                    <TableCell className="text-sm">{d.name}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDept(d)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDept(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </TabsContent>
 
       {/* Department Dialog */}
       <Dialog open={deptDialog} onOpenChange={setDeptDialog}>
