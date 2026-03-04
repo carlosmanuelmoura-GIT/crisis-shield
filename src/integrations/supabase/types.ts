@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           capability: string | null
           created_at: string
+          department_id: string | null
           funcao: string
           id: string
           macro_processo: string
@@ -32,6 +33,7 @@ export type Database = {
         Insert: {
           capability?: string | null
           created_at?: string
+          department_id?: string | null
           funcao?: string
           id?: string
           macro_processo?: string
@@ -46,6 +48,7 @@ export type Database = {
         Update: {
           capability?: string | null
           created_at?: string
+          department_id?: string | null
           funcao?: string
           id?: string
           macro_processo?: string
@@ -58,6 +61,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "action_cards_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "action_cards_recurso_id_fkey"
             columns: ["recurso_id"]
@@ -481,6 +491,30 @@ export type Database = {
           owner_id?: string | null
           text?: string
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      departments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
           updated_at?: string
         }
         Relationships: []

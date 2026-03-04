@@ -1,0 +1,59 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+export interface Department {
+  id: string;
+  name: string;
+  owner_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useDepartments() {
+  return useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments" as any)
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data as unknown as Department[];
+    },
+  });
+}
+
+export function useCreateDepartment() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await (supabase.from("departments" as any) as any).insert({ name, owner_id: user?.id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),
+  });
+}
+
+export function useUpdateDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await (supabase.from("departments" as any) as any).update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),
+  });
+}
+
+export function useDeleteDepartment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase.from("departments" as any) as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),
+  });
+}

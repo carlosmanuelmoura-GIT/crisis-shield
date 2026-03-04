@@ -28,6 +28,7 @@ import {
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useSubCapacidades } from "@/hooks/useSubCapacidades";
+import { useDepartments } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { useCurrentUserProfile } from "@/hooks/useUserRoles";
@@ -53,6 +54,7 @@ const EmergencySection: React.FC = () => {
   const { data: businessProcesses = [] } = useBusinessProcesses();
   const { data: recursos = [] } = useRecursos();
   const { data: subCapacidades = [] } = useSubCapacidades();
+  const { data: departments = [] } = useDepartments();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
   const updateCard = useUpdateActionCard();
@@ -68,7 +70,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "", sub_capacidade_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "", sub_capacidade_id: "", department_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [expandedKanban, setExpandedKanban] = useState<Record<string, boolean>>({});
@@ -186,7 +188,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "", sub_capacidade_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "", sub_capacidade_id: "", department_id: "" });
     setDialogOpen(true);
   };
 
@@ -197,6 +199,7 @@ const EmergencySection: React.FC = () => {
       capability: card.capability || "", funcao: card.funcao || "",
       macro_processo: card.macro_processo || "", recurso_id: card.recurso_id || "",
       sub_capacidade_id: (card as any).sub_capacidade_id || "",
+      department_id: (card as any).department_id || "",
     });
     setDialogOpen(true);
   };
@@ -210,6 +213,7 @@ const EmergencySection: React.FC = () => {
         recurso_id: form.recurso_id || undefined,
         capability: form.capability || undefined,
         sub_capacidade_id: form.sub_capacidade_id || undefined,
+        department_id: form.department_id || undefined,
       };
       if (editingCard) {
         await updateCard.mutateAsync({ id: editingCard, ...payload });
@@ -378,6 +382,13 @@ const EmergencySection: React.FC = () => {
     return sc ? (lang === "pt" ? sc.name_pt : sc.name_en || sc.name_pt) : null;
   };
 
+  const getDeptLabel = (card: typeof cards[0]) => {
+    const dId = (card as any).department_id;
+    if (!dId) return null;
+    const d = departments.find(dep => dep.id === dId);
+    return d ? d.name : null;
+  };
+
   return (
     <div className="space-y-4">
       {/* Crisis banner */}
@@ -535,6 +546,8 @@ const EmergencySection: React.FC = () => {
                   const severity = severityLabels[card.severity];
                   const scLabel = getSubCapLabel(card);
 
+                          const deptLabel = getDeptLabel(card);
+
                   return (
                     <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
                       <CardHeader className="p-3 pb-1 cursor-pointer" onClick={() => toggle(card.id)}>
@@ -547,6 +560,7 @@ const EmergencySection: React.FC = () => {
                               </Badge>
                               {bpLabel && <Badge variant="outline" className="text-[9px] font-normal">{bpLabel}</Badge>}
                               {scLabel && <Badge variant="outline" className="text-[9px] font-normal bg-accent/30">{scLabel}</Badge>}
+                              {deptLabel && <Badge variant="outline" className="text-[9px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
@@ -818,6 +832,18 @@ const EmergencySection: React.FC = () => {
                   {[...new Set(businessProcesses.filter(bp => !form.funcao || bp.funcao === form.funcao).map(bp => bp.macro_processo).filter(Boolean))].map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Departamento (Owner)" : "Department (Owner)"}</Label>
+              <Select value={form.department_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, department_id: v === "none" ? "" : v }))}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

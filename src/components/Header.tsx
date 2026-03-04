@@ -37,7 +37,7 @@ const CrisisTimer: React.FC<{ startTime: string; crisisType: "real" | "simulated
   const isSimulated = crisisType === "simulated";
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 ${isSimulated ? "bg-alert/20 text-alert border border-alert/30" : "bg-crisis/20 text-crisis border border-crisis/30"}`}>
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-mono font-bold shrink-0 ${isSimulated ? "bg-alert/20 text-white border border-alert/30" : "bg-crisis/20 text-white border border-crisis/30"}`}>
       {isSimulated ? <FlaskConical className="h-3.5 w-3.5" /> : <Shield className="h-3.5 w-3.5" />}
       <Clock className="h-3.5 w-3.5" />
       <span>{elapsed}</span>
@@ -73,7 +73,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className={`sticky top-0 z-50 border-b border-border backdrop-blur ${crisisActive ? "bg-[hsl(0,35%,12%)]/95 text-white border-[hsl(0,40%,28%)]" : "bg-background/95 supports-[backdrop-filter]:bg-background/80"}`}>
       <div className="flex items-center gap-2 px-3 py-2">
         {/* Left: sidebar trigger + logo */}
         <SidebarTrigger className="shrink-0" />

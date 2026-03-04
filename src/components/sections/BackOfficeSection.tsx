@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building } from "lucide-react";
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
@@ -17,6 +17,7 @@ import { useSubCapacidades, useCreateSubCapacidade, useUpdateSubCapacidade, useD
 import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso } from "@/hooks/useCenarios";
 import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
 import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/useBuildings";
+import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/use-toast";
 import { Building2 as BuildingIcon } from "lucide-react";
 
@@ -105,6 +106,15 @@ const BackOfficeSection: React.FC = () => {
   const [editingBld, setEditingBld] = useState<string | null>(null);
   const [bldName, setBldName] = useState("");
 
+  // --- Departments ---
+  const { data: departmentsList = [], isLoading: deptLoading } = useDepartments();
+  const createDept = useCreateDepartment();
+  const updateDept = useUpdateDepartment();
+  const deleteDept = useDeleteDepartment();
+  const [deptDialog, setDeptDialog] = useState(false);
+  const [editingDept, setEditingDept] = useState<string | null>(null);
+  const [deptName, setDeptName] = useState("");
+
   const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
   const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
   const handleSaveBld = async () => {
@@ -116,6 +126,21 @@ const BackOfficeSection: React.FC = () => {
   };
   const handleDeleteBld = async (id: string) => {
     try { await deleteBld.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
+  // Departments handlers
+  const openCreateDept = () => { setEditingDept(null); setDeptName(""); setDeptDialog(true); };
+  const openEditDept = (d: typeof departmentsList[0]) => { setEditingDept(d.id); setDeptName(d.name); setDeptDialog(true); };
+  const handleSaveDept = async () => {
+    try {
+      if (editingDept) await updateDept.mutateAsync({ id: editingDept, name: deptName });
+      else await createDept.mutateAsync(deptName);
+      setDeptDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+  const handleDeleteDept = async (id: string) => {
+    try { await deleteDept.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
@@ -239,6 +264,7 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="platforms" className="text-xs"><Server className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Plataformas" : "Platforms"}</TabsTrigger>
           <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
           <TabsTrigger value="buildings" className="text-xs"><BuildingIcon className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Edifícios" : "Buildings"}</TabsTrigger>
+          <TabsTrigger value="departments" className="text-xs"><Building className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Departamentos" : "Departments"}</TabsTrigger>
         </TabsList>
 
         {/* ===== USER ROLES ===== */}
@@ -679,6 +705,54 @@ const BackOfficeSection: React.FC = () => {
               <Input value={subCapForm.name_en} onChange={e => setSubCapForm(f => ({ ...f, name_en: e.target.value }))} className="bg-secondary border-border" /></div>
             <Button onClick={handleSaveSubCap} disabled={!subCapForm.name_pt || createSubCap.isPending || updateSubCap.isPending} className="w-full">
               {(createSubCap.isPending || updateSubCap.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== DEPARTMENTS ===== */}
+      <TabsContent value="departments" className="space-y-3 mt-3">
+        <div className="flex justify-end">
+          <Button size="sm" onClick={openCreateDept} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
+        </div>
+        {deptLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : departmentsList.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum departamento configurado." : "No departments configured."}</p>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
+                  <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {departmentsList.map(d => (
+                  <TableRow key={d.id}>
+                    <TableCell className="text-sm">{d.name}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDept(d)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDept(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </TabsContent>
+
+      {/* Department Dialog */}
+      <Dialog open={deptDialog} onOpenChange={setDeptDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingDept ? (lang === "pt" ? "Editar Departamento" : "Edit Department") : (lang === "pt" ? "Novo Departamento" : "New Department")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
+              <Input value={deptName} onChange={e => setDeptName(e.target.value)} className="bg-secondary border-border" /></div>
+            <Button onClick={handleSaveDept} disabled={!deptName || createDept.isPending || updateDept.isPending} className="w-full">
+              {(createDept.isPending || updateDept.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
         </DialogContent>
