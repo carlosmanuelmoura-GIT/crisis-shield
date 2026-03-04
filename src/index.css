@@ -57,15 +57,8 @@
   }
 }
 
-/* Crisis mode — activated by JS class on <html> */
+/* Crisis mode — only affects header and sidebar, not full page */
 .crisis-active {
-  --background: 0 35% 10%;
-  --foreground: 0 0% 95%;
-  --card: 0 30% 14%;
-  --card-foreground: 0 0% 95%;
-  --border: 0 40% 28%;
-  --secondary: 0 35% 18%;
-  --muted: 0 25% 16%;
   --sidebar-background: 0 35% 8%;
   --sidebar-border: 0 40% 22%;
 }
