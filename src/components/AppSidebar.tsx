@@ -59,6 +59,7 @@ const operationalItems = [
 
 /* ── War Room ── */
 const warRoomItems = [
+  { id: "crisis-control", icon: Shield, label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
   { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards", en: "Action Cards" } },
   { id: "meetings", icon: Video, label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" } },
   { id: "log", icon: ClipboardList, label: { pt: "Log das Acções", en: "Action Log" } },
