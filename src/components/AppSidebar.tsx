@@ -49,7 +49,6 @@ const visaoGlobalItems = [
 /* ── Operacional ── */
 const operationalItems = [
   { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
-  { id: "crisis-control", icon: Shield, label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
   { id: "procedures", icon: FileText, label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
   { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
   { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
