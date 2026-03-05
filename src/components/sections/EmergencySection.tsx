@@ -85,30 +85,10 @@ const EmergencySection: React.FC = () => {
   // Filters
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
   const [filterSubCapacidade, setFilterSubCapacidade] = useState<string>("all");
-  const [filterTipoFuncao, setFilterTipoFuncao] = useState<string>("all");
-  const [filterFuncao, setFilterFuncao] = useState<string>("all");
-  const [filterMacroProcesso, setFilterMacroProcesso] = useState<string>("all");
-  const [filterProcesso, setFilterProcesso] = useState<string>("all");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
 
-  // Cascading BP filters
-  const uniqueTipoFuncao = useMemo(() => [...new Set(businessProcesses.map(bp => bp.tipo_funcao).filter(Boolean))], [businessProcesses]);
-  const filteredByTipo = useMemo(() => filterTipoFuncao === "all" ? businessProcesses : businessProcesses.filter(bp => bp.tipo_funcao === filterTipoFuncao), [businessProcesses, filterTipoFuncao]);
-  const uniqueFuncao = useMemo(() => [...new Set(filteredByTipo.map(bp => bp.funcao).filter(Boolean))], [filteredByTipo]);
-  const filteredByFuncao = useMemo(() => filterFuncao === "all" ? filteredByTipo : filteredByTipo.filter(bp => bp.funcao === filterFuncao), [filteredByTipo, filterFuncao]);
-  const uniqueMacroProcesso = useMemo(() => [...new Set(filteredByFuncao.map(bp => bp.macro_processo).filter(Boolean))], [filteredByFuncao]);
-  const filteredByMacro = useMemo(() => filterMacroProcesso === "all" ? filteredByFuncao : filteredByFuncao.filter(bp => bp.macro_processo === filterMacroProcesso), [filteredByFuncao, filterMacroProcesso]);
-  const uniqueProcesso = useMemo(() => [...new Set(filteredByMacro.map(bp => bp.processo).filter(Boolean))], [filteredByMacro]);
-
-  const hasBpFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
-
-  const matchingBpValues = useMemo(() => {
-    let bps = filteredByMacro;
-    if (filterProcesso !== "all") bps = bps.filter(bp => bp.processo === filterProcesso);
-    return {
-      funcaoSet: new Set(bps.map(bp => bp.funcao)),
-      macroSet: new Set(bps.map(bp => bp.macro_processo)),
-    };
-  }, [filteredByMacro, filterProcesso]);
+  const effectiveFilterRecurso = filterRecurso;
+  const hasActiveFilter = effectiveFilterRecurso !== "all" || filterSubCapacidade !== "all" || filterDepartment !== "all";
 
   // Sub-capacidades for current recurso filter
   const filteredSubCaps = useMemo(() => {
@@ -122,23 +102,16 @@ const EmergencySection: React.FC = () => {
     return subCapacidades.filter(sc => sc.recurso_id === form.recurso_id);
   }, [subCapacidades, form.recurso_id]);
 
-  const effectiveFilterRecurso = filterRecurso;
-  const hasActiveFilter = effectiveFilterRecurso !== "all" || filterSubCapacidade !== "all" || hasBpFilter;
-
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) return false;
       if (filterSubCapacidade !== "all" && (c as any).sub_capacidade_id !== filterSubCapacidade) return false;
-      if (hasBpFilter) {
-        const funcaoMatch = !c.funcao || matchingBpValues.funcaoSet.has(c.funcao);
-        const macroMatch = !c.macro_processo || matchingBpValues.macroSet.has(c.macro_processo);
-        if (!funcaoMatch || !macroMatch) return false;
-      }
+      if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, effectiveFilterRecurso, filterSubCapacidade, hasBpFilter, matchingBpValues]);
+  }, [cards, searchQuery, lang, effectiveFilterRecurso, filterSubCapacidade, filterDepartment]);
 
   // Group cards by sub_capacidade (within recurso)
   const groupedCards = useMemo(() => {
@@ -339,7 +312,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterRecurso("all"); setFilterSubCapacidade("all"); setFilterTipoFuncao("all"); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all");
+    setFilterRecurso("all"); setFilterSubCapacidade("all"); setFilterDepartment("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
@@ -455,42 +428,12 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de Função" : "Function Type"}</Label>
-              <Select value={filterTipoFuncao} onValueChange={(v) => { setFilterTipoFuncao(v); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all"); }}>
+              <Label className="text-xs text-muted-foreground">Owner</Label>
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueTipoFuncao.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Função" : "Function"}</Label>
-              <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v); setFilterMacroProcesso("all"); setFilterProcesso("all"); }}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueFuncao.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
-              <Select value={filterMacroProcesso} onValueChange={(v) => { setFilterMacroProcesso(v); setFilterProcesso("all"); }}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueMacroProcesso.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Processo" : "Process"}</Label>
-              <Select value={filterProcesso} onValueChange={setFilterProcesso}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueProcesso.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
