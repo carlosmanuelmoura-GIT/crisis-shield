@@ -85,10 +85,7 @@ const EmergencySection: React.FC = () => {
   // Filters
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
   const [filterSubCapacidade, setFilterSubCapacidade] = useState<string>("all");
-  const [filterTipoFuncao, setFilterTipoFuncao] = useState<string>("all");
-  const [filterFuncao, setFilterFuncao] = useState<string>("all");
-  const [filterMacroProcesso, setFilterMacroProcesso] = useState<string>("all");
-  const [filterProcesso, setFilterProcesso] = useState<string>("all");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
 
   // Cascading BP filters
   const uniqueTipoFuncao = useMemo(() => [...new Set(businessProcesses.map(bp => bp.tipo_funcao).filter(Boolean))], [businessProcesses]);
