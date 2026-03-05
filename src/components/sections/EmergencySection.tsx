@@ -87,25 +87,8 @@ const EmergencySection: React.FC = () => {
   const [filterSubCapacidade, setFilterSubCapacidade] = useState<string>("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
 
-  // Cascading BP filters
-  const uniqueTipoFuncao = useMemo(() => [...new Set(businessProcesses.map(bp => bp.tipo_funcao).filter(Boolean))], [businessProcesses]);
-  const filteredByTipo = useMemo(() => filterTipoFuncao === "all" ? businessProcesses : businessProcesses.filter(bp => bp.tipo_funcao === filterTipoFuncao), [businessProcesses, filterTipoFuncao]);
-  const uniqueFuncao = useMemo(() => [...new Set(filteredByTipo.map(bp => bp.funcao).filter(Boolean))], [filteredByTipo]);
-  const filteredByFuncao = useMemo(() => filterFuncao === "all" ? filteredByTipo : filteredByTipo.filter(bp => bp.funcao === filterFuncao), [filteredByTipo, filterFuncao]);
-  const uniqueMacroProcesso = useMemo(() => [...new Set(filteredByFuncao.map(bp => bp.macro_processo).filter(Boolean))], [filteredByFuncao]);
-  const filteredByMacro = useMemo(() => filterMacroProcesso === "all" ? filteredByFuncao : filteredByFuncao.filter(bp => bp.macro_processo === filterMacroProcesso), [filteredByFuncao, filterMacroProcesso]);
-  const uniqueProcesso = useMemo(() => [...new Set(filteredByMacro.map(bp => bp.processo).filter(Boolean))], [filteredByMacro]);
-
-  const hasBpFilter = filterTipoFuncao !== "all" || filterFuncao !== "all" || filterMacroProcesso !== "all" || filterProcesso !== "all";
-
-  const matchingBpValues = useMemo(() => {
-    let bps = filteredByMacro;
-    if (filterProcesso !== "all") bps = bps.filter(bp => bp.processo === filterProcesso);
-    return {
-      funcaoSet: new Set(bps.map(bp => bp.funcao)),
-      macroSet: new Set(bps.map(bp => bp.macro_processo)),
-    };
-  }, [filteredByMacro, filterProcesso]);
+  const effectiveFilterRecurso = filterRecurso;
+  const hasActiveFilter = effectiveFilterRecurso !== "all" || filterSubCapacidade !== "all" || filterDepartment !== "all";
 
   // Sub-capacidades for current recurso filter
   const filteredSubCaps = useMemo(() => {
