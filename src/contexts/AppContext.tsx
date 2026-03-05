@@ -96,7 +96,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCrisisRecursoIds(recursoIds || []);
     setCrisisType(type || "real");
     setCrisisStartTime(startTime || new Date().toISOString());
-    setActiveSection("emergency");
+    setActiveSection("crisis-control");
   }, []);
   const clearCrisis = useCallback(() => {
     setCrisis(false);

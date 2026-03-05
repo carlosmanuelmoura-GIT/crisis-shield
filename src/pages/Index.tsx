@@ -12,9 +12,11 @@ import ScenariosSection from "@/components/sections/ScenariosSection";
 import BackOfficeSection from "@/components/sections/BackOfficeSection";
 import PCNDepartamentaisSection from "@/components/sections/PCNDepartamentaisSection";
 import TestCalendarSection from "@/components/sections/TestCalendarSection";
+import CrisisControlSection from "@/components/sections/CrisisControlSection";
 
 const sectionMap: Record<string, React.FC> = {
   scenarios: ScenariosSection,
+  "crisis-control": CrisisControlSection,
   emergency: EmergencySection,
   contacts: ContactsSection,
   sms: SMSSection,

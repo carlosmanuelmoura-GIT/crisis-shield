@@ -8,7 +8,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import AppSidebar from "@/components/AppSidebar";
-import CrisisFAB from "@/components/CrisisFAB";
+
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -40,7 +40,7 @@ const ProtectedLayout = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-          <CrisisFAB />
+          
         </div>
       </SidebarProvider>
     </AppProvider>
