@@ -102,23 +102,16 @@ const EmergencySection: React.FC = () => {
     return subCapacidades.filter(sc => sc.recurso_id === form.recurso_id);
   }, [subCapacidades, form.recurso_id]);
 
-  const effectiveFilterRecurso = filterRecurso;
-  const hasActiveFilter = effectiveFilterRecurso !== "all" || filterSubCapacidade !== "all" || hasBpFilter;
-
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (effectiveFilterRecurso !== "all" && c.recurso_id !== effectiveFilterRecurso) return false;
       if (filterSubCapacidade !== "all" && (c as any).sub_capacidade_id !== filterSubCapacidade) return false;
-      if (hasBpFilter) {
-        const funcaoMatch = !c.funcao || matchingBpValues.funcaoSet.has(c.funcao);
-        const macroMatch = !c.macro_processo || matchingBpValues.macroSet.has(c.macro_processo);
-        if (!funcaoMatch || !macroMatch) return false;
-      }
+      if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, effectiveFilterRecurso, filterSubCapacidade, hasBpFilter, matchingBpValues]);
+  }, [cards, searchQuery, lang, effectiveFilterRecurso, filterSubCapacidade, filterDepartment]);
 
   // Group cards by sub_capacidade (within recurso)
   const groupedCards = useMemo(() => {
