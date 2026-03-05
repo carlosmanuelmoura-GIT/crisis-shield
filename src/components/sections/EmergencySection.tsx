@@ -428,42 +428,12 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de Função" : "Function Type"}</Label>
-              <Select value={filterTipoFuncao} onValueChange={(v) => { setFilterTipoFuncao(v); setFilterFuncao("all"); setFilterMacroProcesso("all"); setFilterProcesso("all"); }}>
+              <Label className="text-xs text-muted-foreground">Owner</Label>
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueTipoFuncao.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Função" : "Function"}</Label>
-              <Select value={filterFuncao} onValueChange={(v) => { setFilterFuncao(v); setFilterMacroProcesso("all"); setFilterProcesso("all"); }}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueFuncao.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
-              <Select value={filterMacroProcesso} onValueChange={(v) => { setFilterMacroProcesso(v); setFilterProcesso("all"); }}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueMacroProcesso.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Processo" : "Process"}</Label>
-              <Select value={filterProcesso} onValueChange={setFilterProcesso}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {uniqueProcesso.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
