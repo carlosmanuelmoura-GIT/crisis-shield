@@ -40,7 +40,7 @@ const ProtectedLayout = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
-          <CrisisFAB />
+          
         </div>
       </SidebarProvider>
     </AppProvider>
