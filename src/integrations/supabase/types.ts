@@ -462,6 +462,123 @@ export type Database = {
         }
         Relationships: []
       }
+      crises: {
+        Row: {
+          cloned_from_id: string | null
+          created_at: string
+          crisis_date: string
+          crisis_type: string
+          id: string
+          owner_id: string | null
+          status: Database["public"]["Enums"]["crisis_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cloned_from_id?: string | null
+          created_at?: string
+          crisis_date?: string
+          crisis_type?: string
+          id?: string
+          owner_id?: string | null
+          status?: Database["public"]["Enums"]["crisis_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cloned_from_id?: string | null
+          created_at?: string
+          crisis_date?: string
+          crisis_type?: string
+          id?: string
+          owner_id?: string | null
+          status?: Database["public"]["Enums"]["crisis_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crises_cloned_from_id_fkey"
+            columns: ["cloned_from_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crisis_cabinet_members: {
+        Row: {
+          created_at: string
+          crisis_id: string
+          id: string
+          name: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          crisis_id: string
+          id?: string
+          name: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          crisis_id?: string
+          id?: string
+          name?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crisis_cabinet_members_crisis_id_fkey"
+            columns: ["crisis_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crisis_phase_actions: {
+        Row: {
+          checked: boolean
+          created_at: string
+          crisis_id: string
+          id: string
+          phase_id: string
+          sort_order: number
+          text: string
+          updated_at: string
+        }
+        Insert: {
+          checked?: boolean
+          created_at?: string
+          crisis_id: string
+          id?: string
+          phase_id: string
+          sort_order?: number
+          text: string
+          updated_at?: string
+        }
+        Update: {
+          checked?: boolean
+          created_at?: string
+          crisis_id?: string
+          id?: string
+          phase_id?: string
+          sort_order?: number
+          text?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crisis_phase_actions_crisis_id_fkey"
+            columns: ["crisis_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_log: {
         Row: {
           author: string
@@ -888,6 +1005,12 @@ export type Database = {
     }
     Enums: {
       app_role: "steering_gcn" | "tecnico_departamento" | "especialista_gcn"
+      crisis_status:
+        | "registada"
+        | "em_alerta"
+        | "crise_em_curso"
+        | "retorno"
+        | "fim"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1016,6 +1139,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["steering_gcn", "tecnico_departamento", "especialista_gcn"],
+      crisis_status: [
+        "registada",
+        "em_alerta",
+        "crise_em_curso",
+        "retorno",
+        "fim",
+      ],
     },
   },
 } as const
