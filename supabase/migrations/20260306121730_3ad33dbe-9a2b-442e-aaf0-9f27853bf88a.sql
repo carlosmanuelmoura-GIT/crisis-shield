@@ -1,0 +1,2 @@
+ALTER TABLE public.crises ADD COLUMN declared_by TEXT NOT NULL DEFAULT '';
+ALTER TABLE public.crises ADD COLUMN ended_by TEXT NOT NULL DEFAULT '';

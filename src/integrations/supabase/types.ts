@@ -468,6 +468,8 @@ export type Database = {
           created_at: string
           crisis_date: string
           crisis_type: string
+          declared_by: string
+          ended_by: string
           id: string
           owner_id: string | null
           status: Database["public"]["Enums"]["crisis_status"]
@@ -479,6 +481,8 @@ export type Database = {
           created_at?: string
           crisis_date?: string
           crisis_type?: string
+          declared_by?: string
+          ended_by?: string
           id?: string
           owner_id?: string | null
           status?: Database["public"]["Enums"]["crisis_status"]
@@ -490,6 +494,8 @@ export type Database = {
           created_at?: string
           crisis_date?: string
           crisis_type?: string
+          declared_by?: string
+          ended_by?: string
           id?: string
           owner_id?: string | null
           status?: Database["public"]["Enums"]["crisis_status"]
