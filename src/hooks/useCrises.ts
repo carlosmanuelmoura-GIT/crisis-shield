@@ -10,6 +10,8 @@ export interface DBCrisis {
   crisis_type: string;
   owner_id: string | null;
   cloned_from_id: string | null;
+  declared_by: string;
+  ended_by: string;
   created_at: string;
   updated_at: string;
 }
@@ -73,7 +75,6 @@ export function useCreateCrisis() {
         .single();
       if (error) throw error;
 
-      // Insert cabinet members
       if (data.cabinet_members && data.cabinet_members.length > 0) {
         const { error: cmErr } = await supabase
           .from("crisis_cabinet_members")
@@ -87,7 +88,6 @@ export function useCreateCrisis() {
         if (cmErr) throw cmErr;
       }
 
-      // Clone phase actions from source crisis
       if (data.clone_from_id) {
         const { data: sourceActions } = await supabase
           .from("crisis_phase_actions")
@@ -110,12 +110,21 @@ export function useCreateCrisis() {
         }
       }
 
+      // Log to decision_log
+      await supabase.from("decision_log").insert({
+        title: `📋 Crise registada`,
+        text: `Crise "${data.title}" registada (${data.crisis_type})`,
+        author: "Sistema",
+        owner_id: user?.id,
+      } as any);
+
       return crisis as DBCrisis;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["crises"] });
       qc.invalidateQueries({ queryKey: ["crisis_cabinet_members"] });
       qc.invalidateQueries({ queryKey: ["crisis_phase_actions"] });
+      qc.invalidateQueries({ queryKey: ["decision_log"] });
     },
   });
 }
@@ -123,7 +132,15 @@ export function useCreateCrisis() {
 export function useUpdateCrisis() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title?: string; status?: DBCrisis["status"]; crisis_type?: string }) => {
+    mutationFn: async ({ id, ...data }: {
+      id: string;
+      title?: string;
+      status?: DBCrisis["status"];
+      crisis_type?: string;
+      crisis_date?: string;
+      declared_by?: string;
+      ended_by?: string;
+    }) => {
       const { error } = await supabase.from("crises").update(data as any).eq("id", id);
       if (error) throw error;
     },
@@ -146,7 +163,6 @@ export function useDeleteCrisis() {
   });
 }
 
-// Cabinet members
 export function useCrisisCabinetMembers(crisisId?: string) {
   return useQuery({
     queryKey: ["crisis_cabinet_members", crisisId],
@@ -163,7 +179,25 @@ export function useCrisisCabinetMembers(crisisId?: string) {
   });
 }
 
-// Phase actions
+export function useUpdateCabinetMembers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ crisis_id, members }: { crisis_id: string; members: { name: string; role: string }[] }) => {
+      // Delete existing
+      const { error: delErr } = await supabase.from("crisis_cabinet_members").delete().eq("crisis_id", crisis_id);
+      if (delErr) throw delErr;
+      // Re-insert
+      if (members.length > 0) {
+        const { error: insErr } = await supabase.from("crisis_cabinet_members").insert(
+          members.map((m) => ({ crisis_id, name: m.name, role: m.role })) as any
+        );
+        if (insErr) throw insErr;
+      }
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["crisis_cabinet_members", vars.crisis_id] }),
+  });
+}
+
 export function useCrisisPhaseActions(crisisId?: string) {
   return useQuery({
     queryKey: ["crisis_phase_actions", crisisId],
@@ -217,5 +251,22 @@ export function useDeletePhaseAction() {
       return crisis_id;
     },
     onSuccess: (crisis_id) => qc.invalidateQueries({ queryKey: ["crisis_phase_actions", crisis_id] }),
+  });
+}
+
+export function useLogDecisionFromCrisis() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (data: { title: string; text: string; author?: string }) => {
+      const { error } = await supabase.from("decision_log").insert({
+        title: data.title,
+        text: data.text,
+        author: data.author || "Sistema",
+        owner_id: user?.id,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["decision_log"] }),
   });
 }

@@ -1,74 +1,81 @@
 
+# CRUD para Procedimentos e BIA
 
-## Plan: Enhancements to Crisis Control Section
+## Resumo
+Os Procedimentos e os processos BIA estao atualmente guardados num ficheiro JSON estatico. Vamos criar tabelas na base de dados para cada um e adicionar funcionalidade completa de criar, editar e eliminar, seguindo o mesmo padrao usado nos Action Cards.
 
-### Summary of Changes
+## Alteracoes
 
-1. **"DECLARAÇÃO DE CRISE" phase**: Replace checkbox list with a "Declarar Crise" button + field for "Autorizado por" (who authorized). When clicked, sets crisis status to `crise_em_curso` and logs to decision_log.
+### 1. Criar tabelas na base de dados
 
-2. **"FIM DE CRISE" phase**: Add "Fim de Crise" button + "Aprovado por" field. Sets status to `fim` and logs.
+**Tabela `procedures`:**
+- `id` (uuid, PK)
+- `title_pt` (text)
+- `title_en` (text)
+- `category_pt` (text)
+- `category_en` (text)
+- `content_pt` (text) -- conteudo markdown
+- `content_en` (text)
+- `owner_id` (uuid, nullable)
+- `created_at`, `updated_at` (timestamptz)
 
-3. **Decision Log integration**: Every crisis creation and every checkbox toggle writes an entry to `decision_log` table automatically.
+**Tabela `bia_processes`:**
+- `id` (uuid, PK)
+- `name_pt` (text)
+- `name_en` (text)
+- `rto` (numeric) -- horas
+- `rpo` (numeric) -- horas
+- `criticality` (text) -- critical/high/medium
+- `dependencies` (text[]) -- array de IDs
+- `owner_id` (uuid, nullable)
+- `created_at`, `updated_at` (timestamptz)
 
-4. **New crisis type "template"**: Add `template` option alongside `real` and `simulated`. Templates don't represent actual crises but serve as reusable action blueprints.
+**Politicas RLS** (mesmo padrao dos action_cards):
+- SELECT: todos os autenticados
+- INSERT: utilizadores privilegiados
+- UPDATE: owner ou privilegiados
+- DELETE: especialista_gcn
 
-5. **Full CRUD on crisis data**: Add an "Edit Crisis" dialog in the Kanban view header to update title, date, type, and cabinet members of an existing crisis.
+**Dados iniciais**: seed com os dados atuais do JSON.
 
-### Database Changes
+### 2. Criar hooks de dados
 
-**Migration** — Add columns to `crises` table:
-```sql
-ALTER TABLE public.crises ADD COLUMN declared_by TEXT NOT NULL DEFAULT '';
-ALTER TABLE public.crises ADD COLUMN ended_by TEXT NOT NULL DEFAULT '';
-```
+**`src/hooks/useProcedures.ts`** -- seguindo o padrao de `useActionCards.ts`:
+- `useProcedures()` -- query
+- `useCreateProcedure()`
+- `useUpdateProcedure()`
+- `useDeleteProcedure()`
 
-No enum change needed for `crisis_type` since it's a `text` column already accepting any value.
+**`src/hooks/useBIAProcesses.ts`**:
+- `useBIAProcesses()` -- query
+- `useCreateBIAProcess()`
+- `useUpdateBIAProcess()`
+- `useDeleteBIAProcess()`
 
-### File Changes
+### 3. Atualizar componentes
 
-#### 1. `supabase/migrations/[timestamp].sql`
-- Add `declared_by` and `ended_by` columns to `crises` table.
+**`ProceduresSection.tsx`**:
+- Substituir dados do contexto por `useProcedures()`
+- Adicionar botao "Novo" no cabecalho
+- Adicionar botoes Editar/Eliminar em cada card
+- Dialog com formulario: titulo PT/EN, categoria PT/EN, conteudo PT/EN (textarea para markdown)
 
-#### 2. `src/hooks/useCrises.ts`
-- Update `DBCrisis` interface to include `declared_by` and `ended_by`.
-- Update `useUpdateCrisis` to accept `declared_by`, `ended_by`, `crisis_date`, and full cabinet member updates.
-- Add `useUpdateCabinetMembers` mutation (delete all + re-insert for a crisis).
-- Add `useCreateDecisionLogFromCrisis` or import existing `useCreateDecisionLog` for logging.
+**`BIASection.tsx`**:
+- Substituir dados do contexto por `useBIAProcesses()`
+- Adicionar botao "Novo" no cabecalho
+- Adicionar botoes Editar/Eliminar em cada processo
+- Dialog com formulario: nome PT/EN, RTO, RPO, criticidade (select), dependencias (multi-select dos outros processos)
+- Grafico e mapa de dependencias continuam a funcionar com os dados da BD
 
-#### 3. `src/components/sections/CrisisControlSection.tsx`
+### 4. Limpar contexto
 
-**Crisis list (main view):**
-- Add `TEMPLATE` to the type badge display.
-- Add an edit button per row (opens edit dialog pre-filled with crisis data).
+Remover `procedures` e `biaProcesses` do `AppContext.tsx` (ja nao serao necessarios la, pois os componentes usam os hooks proprios). Manter o `searchQuery` disponivel no contexto para filtragem.
 
-**Create/Edit dialog:**
-- Add `template` as third option in type selector.
-- Reuse same dialog for editing (pre-fill all fields including cabinet members loaded from DB).
+---
 
-**Kanban view — "declaracao" phase:**
-- Instead of checkbox actions, show:
-  - An `Input` for "Autorizado por / Authorized by"
-  - A prominent "Declarar Crise" button (red, with AlertTriangle icon)
-  - Only visible when status is `registada` or `em_alerta`
-  - On click: updates crisis status to `crise_em_curso`, sets `declared_by`, and inserts a decision_log entry.
+### Detalhes tecnicos
 
-**Kanban view — "fim" phase:**
-- Instead of/in addition to checkbox actions, show:
-  - An `Input` for "Aprovado por / Approved by"
-  - A "Fim de Crise" button (green, with CheckCircle icon)
-  - Only visible when status is not already `fim`
-  - On click: updates status to `fim`, sets `ended_by`, and inserts a decision_log entry.
-
-**Kanban view — logging on checkbox toggle:**
-- After each `toggleAction.mutate`, also call `createDecisionLog` with text like: `"✅ [phase] — [action text]"` or `"↩️ [phase] — [action text] (unchecked)"`.
-
-**Kanban view header:**
-- Add edit (pencil) button next to crisis title that opens the edit dialog.
-
-#### 4. Decision log entries format
-- Crisis created: `"📋 Crise registada: [title]"`
-- Crisis declared: `"🚨 Crise declarada por [name]: [title]"`
-- Crisis ended: `"✅ Fim de crise aprovado por [name]: [title]"`
-- Action checked: `"✅ [phase label] — [action text]"`
-- Action unchecked: `"↩️ [phase label] — [action text]"`
-
+- Migracao SQL cria as tabelas, RLS e insere os dados seed
+- Triggers `update_updated_at_column` reutilizados para ambas as tabelas
+- Os hooks usam `@tanstack/react-query` com `useQuery` e `useMutation`, invalidando queries apos mutacoes
+- O formulario BIA usa inputs numericos para RTO/RPO e um multi-select para dependencias baseado nos processos existentes
