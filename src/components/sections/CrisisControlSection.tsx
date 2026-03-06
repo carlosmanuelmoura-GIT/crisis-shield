@@ -1,28 +1,24 @@
 import React, { useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { useCurrentUserRoles, useCurrentUserProfile } from "@/hooks/useUserRoles";
-import { useRecursos } from "@/hooks/useRecursos";
-import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
-import { useClearAllChecklistStates } from "@/hooks/useActionCards";
-import { useAuth } from "@/hooks/useAuth";
+import { useCurrentUserRoles } from "@/hooks/useUserRoles";
+import {
+  useCrises, useCreateCrisis, useUpdateCrisis, useDeleteCrisis,
+  useCrisisCabinetMembers, useCrisisPhaseActions,
+  useCreatePhaseAction, useTogglePhaseAction, useDeletePhaseAction,
+  type DBCrisis,
+} from "@/hooks/useCrises";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  AlertTriangle, Plus, Trash2, Shield, FlaskConical,
-  Loader2, CheckCircle2, Circle, ArrowDown,
+  AlertTriangle, Plus, Trash2, Shield, Loader2,
+  CheckCircle2, ArrowDown, Eye, Copy, X,
 } from "lucide-react";
-
-interface PhaseAction {
-  id: string;
-  text: string;
-  checked: boolean;
-}
 
 const PHASES = [
   { id: "alerta", label: { pt: "ALERTA & CONTENÇÃO", en: "ALERT & CONTAINMENT" }, color: "border-alert bg-alert/10", icon: "🔔" },
@@ -33,120 +29,357 @@ const PHASES = [
   { id: "fim", label: { pt: "FIM DE CRISE", en: "END OF CRISIS" }, color: "border-green-500 bg-green-500/10", icon: "✅" },
 ] as const;
 
-const loadActions = (): Record<string, PhaseAction[]> => {
-  try {
-    const v = localStorage.getItem("gcn-crisis-control-actions");
-    return v ? JSON.parse(v) : {};
-  } catch { return {}; }
+const STATUS_MAP: Record<DBCrisis["status"], { pt: string; en: string; variant: string }> = {
+  registada: { pt: "REGISTADA", en: "REGISTERED", variant: "bg-muted text-muted-foreground" },
+  em_alerta: { pt: "EM ALERTA", en: "ALERT", variant: "bg-alert text-alert-foreground" },
+  crise_em_curso: { pt: "CRISE EM CURSO", en: "CRISIS IN PROGRESS", variant: "bg-crisis text-crisis-foreground" },
+  retorno: { pt: "RETORNO", en: "RETURN", variant: "bg-accent text-accent-foreground" },
+  fim: { pt: "FIM", en: "END", variant: "bg-green-600 text-white" },
 };
 
 const CrisisControlSection: React.FC = () => {
-  const { lang, crisisActive, crisisType, crisisStartTime, declareCrisis, clearCrisis } = useApp();
+  const { lang } = useApp();
   const { data: roles = [] } = useCurrentUserRoles();
-  const { data: profile } = useCurrentUserProfile();
-  const { data: recursos = [] } = useRecursos();
-  const { user } = useAuth();
-  const createLog = useCreateDecisionLog();
-  const clearChecks = useClearAllChecklistStates();
-
-  const [actions, setActions] = useState<Record<string, PhaseAction[]>>(loadActions);
-  const [newActionText, setNewActionText] = useState<Record<string, string>>({});
-
-  // Crisis declaration state
-  const [selectedRecursos, setSelectedRecursos] = useState<string[]>([]);
-  const [crisisTypeChoice, setCrisisTypeChoice] = useState<"real" | "simulated">("real");
-
   const isSteering = roles.includes("steering_gcn") || roles.includes("especialista_gcn");
 
-  const persistActions = (updated: Record<string, PhaseAction[]>) => {
-    setActions(updated);
-    localStorage.setItem("gcn-crisis-control-actions", JSON.stringify(updated));
+  const { data: crises = [], isLoading } = useCrises();
+  const createCrisis = useCreateCrisis();
+  const updateCrisis = useUpdateCrisis();
+  const deleteCrisis = useDeleteCrisis();
+
+  const [selectedCrisisId, setSelectedCrisisId] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [cloneFromId, setCloneFromId] = useState<string | null>(null);
+
+  // Create form state
+  const [formTitle, setFormTitle] = useState("");
+  const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 16));
+  const [formType, setFormType] = useState<"real" | "simulated">("real");
+  const [cabinetMembers, setCabinetMembers] = useState<{ name: string; role: string }[]>([]);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberRole, setNewMemberRole] = useState("");
+
+  const selectedCrisis = crises.find((c) => c.id === selectedCrisisId);
+
+  const resetForm = () => {
+    setFormTitle("");
+    setFormDate(new Date().toISOString().slice(0, 16));
+    setFormType("real");
+    setCabinetMembers([]);
+    setNewMemberName("");
+    setNewMemberRole("");
+    setCloneFromId(null);
   };
 
-  const addAction = (phaseId: string) => {
-    const text = (newActionText[phaseId] || "").trim();
-    if (!text) return;
-    const updated = { ...actions };
-    const list = [...(updated[phaseId] || [])];
-    list.push({ id: crypto.randomUUID(), text, checked: false });
-    updated[phaseId] = list;
-    persistActions(updated);
-    setNewActionText(prev => ({ ...prev, [phaseId]: "" }));
+  const openCreate = (cloneId?: string) => {
+    resetForm();
+    if (cloneId) {
+      const source = crises.find((c) => c.id === cloneId);
+      if (source) {
+        setFormTitle(`${source.title} (cópia)`);
+        setFormType(source.crisis_type as "real" | "simulated");
+        setCloneFromId(cloneId);
+      }
+    }
+    setShowCreateDialog(true);
   };
 
-  const toggleAction = (phaseId: string, actionId: string) => {
-    const updated = { ...actions };
-    const list = [...(updated[phaseId] || [])];
-    const idx = list.findIndex(a => a.id === actionId);
-    if (idx >= 0) { list[idx] = { ...list[idx], checked: !list[idx].checked }; }
-    updated[phaseId] = list;
-    persistActions(updated);
+  const handleCreate = async () => {
+    if (!formTitle.trim()) return;
+    await createCrisis.mutateAsync({
+      title: formTitle.trim(),
+      crisis_date: new Date(formDate).toISOString(),
+      crisis_type: formType,
+      cabinet_members: cabinetMembers.filter((m) => m.name.trim()),
+      clone_from_id: cloneFromId || undefined,
+    });
+    setShowCreateDialog(false);
+    resetForm();
   };
 
-  const removeAction = (phaseId: string, actionId: string) => {
-    const updated = { ...actions };
-    updated[phaseId] = (updated[phaseId] || []).filter(a => a.id !== actionId);
-    persistActions(updated);
+  const addMember = () => {
+    if (!newMemberName.trim()) return;
+    setCabinetMembers((prev) => [...prev, { name: newMemberName.trim(), role: newMemberRole.trim() }]);
+    setNewMemberName("");
+    setNewMemberRole("");
   };
 
-  const toggleRecurso = (id: string) => {
-    setSelectedRecursos(prev => prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]);
+  const removeMember = (idx: number) => {
+    setCabinetMembers((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleDeclare = async () => {
-    const recursoNames = selectedRecursos
-      .map(id => recursos.find(r => r.id === id))
-      .filter(Boolean)
-      .map(r => r!.name_pt)
-      .join(", ");
-    const typeLabel = crisisTypeChoice === "real" ? "REAL" : (lang === "pt" ? "SIMULADA" : "SIMULATED");
-    const author = profile?.display_name || "Sistema";
-    const text = lang === "pt"
-      ? `🚨 CRISE ${typeLabel} DECLARADA — Recursos perdidos: ${recursoNames || "Nenhum selecionado"}`
-      : `🚨 ${typeLabel} CRISIS DECLARED — Resources lost: ${recursoNames || "None selected"}`;
-    const startTime = new Date().toISOString();
-    try { await createLog.mutateAsync({ text, author, crisis_started_at: startTime }); } catch {}
-    declareCrisis(selectedRecursos, crisisTypeChoice, startTime);
-    setSelectedRecursos([]);
-    setCrisisTypeChoice("real");
-  };
-
-  const handleEndCrisis = async () => {
-    const author = profile?.display_name || user?.email || "Sistema";
-    const typeLabel = crisisType === "simulated" ? (lang === "pt" ? "SIMULADA" : "SIMULATED") : "REAL";
-    const text = lang === "pt" ? `✅ FIM DA CRISE ${typeLabel}` : `✅ ${typeLabel} CRISIS ENDED`;
-    try { await createLog.mutateAsync({ text, author, crisis_started_at: crisisStartTime }); } catch {}
-    try { await clearChecks.mutateAsync(); } catch {}
-    clearCrisis();
-  };
-
-  const getPhaseProgress = (phaseId: string) => {
-    const list = actions[phaseId] || [];
-    if (list.length === 0) return null;
-    const done = list.filter(a => a.checked).length;
-    return { done, total: list.length, pct: Math.round((done / list.length) * 100) };
-  };
+  if (selectedCrisis) {
+    return (
+      <CrisisKanbanView
+        crisis={selectedCrisis}
+        lang={lang}
+        isSteering={isSteering}
+        onBack={() => setSelectedCrisisId(null)}
+        onUpdateStatus={(status) => updateCrisis.mutate({ id: selectedCrisis.id, status })}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
-          <Shield className="h-5 w-5 text-primary sat-keep" />
+          <Shield className="h-5 w-5 text-primary" />
           {lang === "pt" ? "Controlo da Gestão de Crise" : "Crisis Management Control"}
         </h2>
-        {crisisActive && (
-          <Badge className={crisisType === "simulated" ? "bg-alert text-alert-foreground" : "bg-crisis text-crisis-foreground"}>
-            {crisisType === "simulated" ? (lang === "pt" ? "CRISE SIMULADA" : "SIMULATED CRISIS") : (lang === "pt" ? "CRISE REAL" : "REAL CRISIS")}
-          </Badge>
+        {isSteering && (
+          <Button onClick={() => openCreate()} size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            {lang === "pt" ? "Nova Crise" : "New Crisis"}
+          </Button>
         )}
       </div>
 
-      {/* Vertical Kanban */}
+      {/* Crises table */}
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+      ) : crises.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground text-sm">
+            {lang === "pt" ? "Nenhuma crise registada." : "No crises registered."}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{lang === "pt" ? "Data" : "Date"}</TableHead>
+                  <TableHead>{lang === "pt" ? "Título" : "Title"}</TableHead>
+                  <TableHead>{lang === "pt" ? "Tipo" : "Type"}</TableHead>
+                  <TableHead>{lang === "pt" ? "Estado" : "Status"}</TableHead>
+                  <TableHead className="text-right">{lang === "pt" ? "Acções" : "Actions"}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {crises.map((crisis) => {
+                  const st = STATUS_MAP[crisis.status];
+                  return (
+                    <TableRow key={crisis.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedCrisisId(crisis.id)}>
+                      <TableCell className="text-xs whitespace-nowrap">
+                        {new Date(crisis.crisis_date).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </TableCell>
+                      <TableCell className="font-medium text-sm">{crisis.title}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-[10px]">
+                          {crisis.crisis_type === "simulated" ? (lang === "pt" ? "SIMULADA" : "SIMULATED") : "REAL"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`text-[10px] ${st.variant}`}>{st[lang]}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedCrisisId(crisis.id)}>
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          {isSteering && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openCreate(crisis.id)}>
+                                <Copy className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteCrisis.mutate(crisis.id)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create crisis dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {cloneFromId
+                ? (lang === "pt" ? "Clonar Crise" : "Clone Crisis")
+                : (lang === "pt" ? "Registar Nova Crise" : "Register New Crisis")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{lang === "pt" ? "Título" : "Title"}</label>
+              <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder={lang === "pt" ? "Ex: Falha Datacenter Norte" : "Ex: North Datacenter Failure"} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{lang === "pt" ? "Data" : "Date"}</label>
+              <Input type="datetime-local" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{lang === "pt" ? "Tipo" : "Type"}</label>
+              <Select value={formType} onValueChange={(v) => setFormType(v as "real" | "simulated")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="real">REAL</SelectItem>
+                  <SelectItem value="simulated">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Cabinet members */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                {lang === "pt" ? "Constituição do Gabinete de Crise" : "Crisis Cabinet Members"}
+              </label>
+              <div className="space-y-1 mt-1">
+                {cabinetMembers.map((m, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1">
+                    <span className="font-medium">{m.name}</span>
+                    {m.role && <span className="text-muted-foreground">— {m.role}</span>}
+                    <Button variant="ghost" size="icon" className="h-5 w-5 ml-auto" onClick={() => removeMember(i)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <Input placeholder={lang === "pt" ? "Nome" : "Name"} value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} className="h-8 text-xs" />
+                <Input placeholder={lang === "pt" ? "Função" : "Role"} value={newMemberRole} onChange={(e) => setNewMemberRole(e.target.value)} className="h-8 text-xs" />
+                <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={addMember}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+
+            {cloneFromId && (
+              <div className="text-xs text-muted-foreground bg-muted/30 rounded p-2">
+                ℹ️ {lang === "pt" ? "As acções das fases serão copiadas da crise original." : "Phase actions will be copied from the original crisis."}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+              {lang === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button onClick={handleCreate} disabled={!formTitle.trim() || createCrisis.isPending}>
+              {createCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {lang === "pt" ? "Registar" : "Register"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+/* ──────────────────────────────────────────────
+   Kanban view for a single crisis
+   ────────────────────────────────────────────── */
+
+interface KanbanProps {
+  crisis: DBCrisis;
+  lang: "pt" | "en";
+  isSteering: boolean;
+  onBack: () => void;
+  onUpdateStatus: (status: DBCrisis["status"]) => void;
+}
+
+const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onBack, onUpdateStatus }) => {
+  const { data: phaseActions = [] } = useCrisisPhaseActions(crisis.id);
+  const { data: cabinetMembers = [] } = useCrisisCabinetMembers(crisis.id);
+  const createAction = useCreatePhaseAction();
+  const toggleAction = useTogglePhaseAction();
+  const deleteAction = useDeletePhaseAction();
+
+  const [newActionText, setNewActionText] = useState<Record<string, string>>({});
+
+  const addAction = (phaseId: string) => {
+    const text = (newActionText[phaseId] || "").trim();
+    if (!text) return;
+    const phaseActionsForPhase = phaseActions.filter((a) => a.phase_id === phaseId);
+    createAction.mutate({
+      crisis_id: crisis.id,
+      phase_id: phaseId,
+      text,
+      sort_order: phaseActionsForPhase.length,
+    });
+    setNewActionText((prev) => ({ ...prev, [phaseId]: "" }));
+  };
+
+  const getPhaseProgress = (phaseId: string) => {
+    const list = phaseActions.filter((a) => a.phase_id === phaseId);
+    if (list.length === 0) return null;
+    const done = list.filter((a) => a.checked).length;
+    return { done, total: list.length, pct: Math.round((done / list.length) * 100) };
+  };
+
+  const st = STATUS_MAP[crisis.status];
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          ← {lang === "pt" ? "Voltar" : "Back"}
+        </Button>
+        <div className="flex-1">
+          <h2 className="text-lg font-bold">{crisis.title}</h2>
+          <p className="text-xs text-muted-foreground">
+            {new Date(crisis.crisis_date).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            {" · "}
+            {crisis.crisis_type === "simulated" ? (lang === "pt" ? "Simulada" : "Simulated") : "Real"}
+          </p>
+        </div>
+        <Badge className={`${st.variant}`}>{st[lang]}</Badge>
+      </div>
+
+      {/* Cabinet members */}
+      {cabinetMembers.length > 0 && (
+        <Card>
+          <CardHeader className="py-2 px-4">
+            <CardTitle className="text-xs font-semibold text-muted-foreground">
+              {lang === "pt" ? "Gabinete de Crise" : "Crisis Cabinet"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-3">
+            <div className="flex flex-wrap gap-2">
+              {cabinetMembers.map((m) => (
+                <Badge key={m.id} variant="outline" className="text-xs">
+                  {m.name}{m.role ? ` (${m.role})` : ""}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Status control */}
+      {isSteering && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-muted-foreground">{lang === "pt" ? "Alterar estado:" : "Change status:"}</span>
+          {(Object.keys(STATUS_MAP) as DBCrisis["status"][]).map((s) => (
+            <Button
+              key={s}
+              variant={crisis.status === s ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-[10px]"
+              onClick={() => onUpdateStatus(s)}
+            >
+              {STATUS_MAP[s][lang]}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* Kanban phases */}
       <div className="space-y-3">
         {PHASES.map((phase, idx) => {
           const progress = getPhaseProgress(phase.id);
-          const isDeclarationPhase = phase.id === "declaracao";
-          const isEndPhase = phase.id === "fim";
+          const actions = phaseActions.filter((a) => a.phase_id === phase.id);
           const phaseLabel = phase.label[lang] || phase.label.pt;
 
           return (
@@ -166,116 +399,49 @@ const CrisisControlSection: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="px-4 pb-3 space-y-2">
-                  {/* Declaration phase: show declare crisis button */}
-                  {isDeclarationPhase && !crisisActive && isSteering && (
-                    <div className="space-y-3 p-3 rounded-lg border border-crisis/30 bg-crisis/5">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {lang === "pt" ? "Tipo de Crise" : "Crisis Type"}
-                      </p>
-                      <RadioGroup
-                        value={crisisTypeChoice}
-                        onValueChange={(v) => setCrisisTypeChoice(v as "real" | "simulated")}
-                        className="flex gap-3"
-                      >
-                        <label className="flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-secondary flex-1">
-                          <RadioGroupItem value="real" />
-                          <Shield className="h-3.5 w-3.5 text-crisis" />
-                          <span className="text-xs font-medium">REAL</span>
-                        </label>
-                        <label className="flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-secondary flex-1">
-                          <RadioGroupItem value="simulated" />
-                          <FlaskConical className="h-3.5 w-3.5 text-alert" />
-                          <span className="text-xs font-medium">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</span>
-                        </label>
-                      </RadioGroup>
-
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {lang === "pt" ? "Recurso(s) perdidos" : "Resources lost"}
-                      </p>
-                      <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {recursos.map(r => (
-                          <label key={r.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-secondary cursor-pointer">
-                            <Checkbox checked={selectedRecursos.includes(r.id)} onCheckedChange={() => toggleRecurso(r.id)} />
-                            <span className="text-xs">{lang === "pt" ? r.name_pt : r.name_en || r.name_pt}</span>
-                          </label>
-                        ))}
-                      </div>
-
-                      <Button
-                        onClick={handleDeclare}
-                        className="w-full bg-crisis text-crisis-foreground hover:bg-crisis/90 font-bold"
-                        disabled={createLog.isPending}
-                      >
-                        {createLog.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        {lang === "pt" ? "DECLARAR CRISE" : "DECLARE CRISIS"}
-                      </Button>
-                    </div>
-                  )}
-
-                  {isDeclarationPhase && crisisActive && (
-                    <div className="p-2 rounded-md bg-crisis/10 border border-crisis/20">
-                      <p className="text-xs font-medium text-crisis flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {lang === "pt" ? "Crise declarada e ativa" : "Crisis declared and active"}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* End crisis phase */}
-                  {isEndPhase && crisisActive && isSteering && (
-                    <Button
-                      variant="destructive"
-                      onClick={handleEndCrisis}
-                      className="w-full font-bold"
-                    >
-                      {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
-                    </Button>
-                  )}
-
                   {/* Action items */}
-                  {(actions[phase.id] || []).map(action => (
+                  {actions.map((action) => (
                     <div key={action.id} className="flex items-center gap-2 group">
                       <Checkbox
                         checked={action.checked}
-                        onCheckedChange={() => toggleAction(phase.id, action.id)}
+                        onCheckedChange={(checked) =>
+                          toggleAction.mutate({ id: action.id, checked: !!checked, crisis_id: crisis.id })
+                        }
                       />
                       <span className={`text-xs flex-1 ${action.checked ? "line-through text-muted-foreground" : ""}`}>
                         {action.text}
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                        onClick={() => removeAction(phase.id, action.id)}
-                      >
-                        <Trash2 className="h-3 w-3 text-destructive" />
-                      </Button>
+                      {isSteering && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                          onClick={() => deleteAction.mutate({ id: action.id, crisis_id: crisis.id })}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   ))}
 
                   {/* Add new action */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <Input
-                      placeholder={lang === "pt" ? "Nova acção..." : "New action..."}
-                      value={newActionText[phase.id] || ""}
-                      onChange={e => setNewActionText(prev => ({ ...prev, [phase.id]: e.target.value }))}
-                      onKeyDown={e => e.key === "Enter" && addAction(phase.id)}
-                      className="h-7 text-xs"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      onClick={() => addAction(phase.id)}
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  {isSteering && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <Input
+                        placeholder={lang === "pt" ? "Nova acção..." : "New action..."}
+                        value={newActionText[phase.id] || ""}
+                        onChange={(e) => setNewActionText((prev) => ({ ...prev, [phase.id]: e.target.value }))}
+                        onKeyDown={(e) => e.key === "Enter" && addAction(phase.id)}
+                        className="h-7 text-xs"
+                      />
+                      <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => addAction(phase.id)}>
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Arrow between phases */}
               {idx < PHASES.length - 1 && (
                 <div className="flex justify-center">
                   <ArrowDown className="h-5 w-5 text-muted-foreground" />
