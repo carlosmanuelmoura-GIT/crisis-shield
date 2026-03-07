@@ -31,14 +31,15 @@ export function useCreateDecisionLog() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (data: { title?: string; text: string; author: string; crisis_started_at?: string | null }) => {
+    mutationFn: async (data: { title?: string; text: string; author: string; crisis_started_at?: string | null; crisis_id?: string | null }) => {
       const { error } = await supabase.from("decision_log").insert({
         title: data.title || "",
         text: data.text,
         author: data.author,
         owner_id: user?.id,
         crisis_started_at: data.crisis_started_at || null,
-      });
+        crisis_id: data.crisis_id || null,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["decision_log"] }),

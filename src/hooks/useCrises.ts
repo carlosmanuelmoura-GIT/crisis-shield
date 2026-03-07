@@ -116,6 +116,7 @@ export function useCreateCrisis() {
         text: `Crise "${data.title}" registada (${data.crisis_type})`,
         author: "Sistema",
         owner_id: user?.id,
+        crisis_id: (crisis as any).id,
       } as any);
 
       return crisis as DBCrisis;
