@@ -116,6 +116,7 @@ export function useCreateCrisis() {
         text: `Crise "${data.title}" registada (${data.crisis_type})`,
         author: "Sistema",
         owner_id: user?.id,
+        crisis_id: (crisis as any).id,
       } as any);
 
       return crisis as DBCrisis;
@@ -258,12 +259,13 @@ export function useLogDecisionFromCrisis() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (data: { title: string; text: string; author?: string }) => {
+    mutationFn: async (data: { title: string; text: string; author?: string; crisis_id?: string }) => {
       const { error } = await supabase.from("decision_log").insert({
         title: data.title,
         text: data.text,
         author: data.author || "Sistema",
         owner_id: user?.id,
+        crisis_id: data.crisis_id || null,
       } as any);
       if (error) throw error;
     },

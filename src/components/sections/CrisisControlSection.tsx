@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useCurrentUserRoles } from "@/hooks/useUserRoles";
 import {
@@ -12,13 +12,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertTriangle, Plus, Trash2, Shield, Loader2,
-  CheckCircle2, ArrowDown, Eye, Copy, X, Pencil,
+  CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter,
 } from "lucide-react";
 
 const PHASES = [
@@ -63,6 +64,12 @@ const CrisisControlSection: React.FC = () => {
   const [editingCrisisId, setEditingCrisisId] = useState<string | null>(null);
   const [cloneFromId, setCloneFromId] = useState<string | null>(null);
 
+  // Filters
+  const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterName, setFilterName] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+
   // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 16));
@@ -72,6 +79,28 @@ const CrisisControlSection: React.FC = () => {
   const [newMemberRole, setNewMemberRole] = useState("");
 
   const selectedCrisis = crises.find((c) => c.id === selectedCrisisId);
+
+  const filteredCrises = useMemo(() => {
+    return crises.filter((c) => {
+      if (filterType !== "all" && c.crisis_type !== filterType) return false;
+      if (filterStatus !== "all" && c.status !== filterStatus) return false;
+      if (filterName && !c.title.toLowerCase().includes(filterName.toLowerCase())) return false;
+      if (filterDate) {
+        const crisisDay = new Date(c.crisis_date).toISOString().slice(0, 10);
+        if (crisisDay !== filterDate) return false;
+      }
+      return true;
+    });
+  }, [crises, filterType, filterStatus, filterName, filterDate]);
+
+  const hasActiveFilter = filterType !== "all" || filterStatus !== "all" || filterName !== "" || filterDate !== "";
+
+  const resetFilters = () => {
+    setFilterType("all");
+    setFilterStatus("all");
+    setFilterName("");
+    setFilterDate("");
+  };
 
   const resetForm = () => {
     setFormTitle("");
@@ -118,7 +147,6 @@ const CrisisControlSection: React.FC = () => {
         crisis_date: new Date(formDate).toISOString(),
         crisis_type: formType,
       });
-      // Update cabinet members via the edit dialog's own save
     } else {
       await createCrisis.mutateAsync({
         title: formTitle.trim(),
@@ -171,12 +199,75 @@ const CrisisControlSection: React.FC = () => {
         )}
       </div>
 
+      {/* Filters */}
+      <Card className="border-dashed">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {lang === "pt" ? "Filtros" : "Filters"}
+              </span>
+            </div>
+            {hasActiveFilter && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={resetFilters}>
+                {lang === "pt" ? "Limpar" : "Clear"}
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Nome" : "Name"}</Label>
+              <Input
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                placeholder={lang === "pt" ? "Pesquisar..." : "Search..."}
+                className="h-8 text-xs bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo" : "Type"}</Label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  <SelectItem value="real">REAL</SelectItem>
+                  <SelectItem value="simulated">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</SelectItem>
+                  <SelectItem value="template">TEMPLATE</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Estado" : "Status"}</Label>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {(Object.keys(STATUS_MAP) as DBCrisis["status"][]).map((s) => (
+                    <SelectItem key={s} value={s}>{STATUS_MAP[s][lang]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Data" : "Date"}</Label>
+              <Input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="h-8 text-xs bg-secondary border-border"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-      ) : crises.length === 0 ? (
+      ) : filteredCrises.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground text-sm">
-            {lang === "pt" ? "Nenhuma crise registada." : "No crises registered."}
+            {lang === "pt" ? "Nenhuma crise encontrada." : "No crises found."}
           </CardContent>
         </Card>
       ) : (
@@ -193,7 +284,7 @@ const CrisisControlSection: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {crises.map((crisis) => {
+                {filteredCrises.map((crisis) => {
                   const st = STATUS_MAP[crisis.status];
                   const typeLabel = TYPE_LABELS[crisis.crisis_type] || { pt: crisis.crisis_type, en: crisis.crisis_type };
                   return (
@@ -304,7 +395,6 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
   const { data: existingMembers = [] } = useCrisisCabinetMembers(isEditing ? editingCrisisId! : undefined);
   const updateCabinetMembers = useUpdateCabinetMembers();
 
-  // Load existing cabinet members when editing
   useEffect(() => {
     if (isEditing && existingMembers.length > 0) {
       setCabinetMembers(existingMembers.map((m) => ({ name: m.name, role: m.role })));
@@ -354,7 +444,6 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
             </Select>
           </div>
 
-          {/* Cabinet members */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">
               {lang === "pt" ? "Constituição do Gabinete de Crise" : "Crisis Cabinet Members"}
@@ -443,6 +532,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     logDecision.mutate({
       title: checked ? "✅ Acção concluída" : "↩️ Acção revertida",
       text: `${checked ? "✅" : "↩️"} ${phaseLabel} — ${actionText}${!checked ? " (revertida)" : ""}`,
+      crisis_id: crisis.id,
     });
   };
 
@@ -457,6 +547,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
       title: "🚨 Crise declarada",
       text: `🚨 Crise declarada por ${declaredBy.trim()}: ${crisis.title}`,
       author: declaredBy.trim(),
+      crisis_id: crisis.id,
     });
   };
 
@@ -471,6 +562,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
       title: "✅ Fim de crise",
       text: `✅ Fim de crise aprovado por ${endedBy.trim()}: ${crisis.title}`,
       author: endedBy.trim(),
+      crisis_id: crisis.id,
     });
   };
 
@@ -558,7 +650,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
         </div>
       )}
 
-      {/* Kanban phases */}
+      {/* Kanban phases - vertical */}
       <div className="space-y-3">
         {PHASES.map((phase, idx) => {
           const progress = getPhaseProgress(phase.id);
@@ -584,10 +676,9 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                   </div>
                 </CardHeader>
                 <CardContent className="px-4 pb-3 space-y-2">
-                  {/* DECLARATION phase: show button instead of checklist */}
+                  {/* DECLARATION phase */}
                   {isDeclarationPhase ? (
                     <div className="space-y-3">
-                      {/* Still show actions if any exist (from template/clone) */}
                       {actions.map((action) => (
                         <div key={action.id} className="flex items-center gap-2 group">
                           <Checkbox
@@ -606,7 +697,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                         </div>
                       ))}
 
-                      {/* Add action input */}
                       {isSteering && (
                         <div className="flex items-center gap-2 pt-1">
                           <Input
@@ -622,7 +712,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                         </div>
                       )}
 
-                      {/* Declare crisis button */}
                       {isSteering && (crisis.status === "registada" || crisis.status === "em_alerta") && (
                         <div className="border-t border-border pt-3 mt-2 space-y-2">
                           <div>
@@ -650,7 +739,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                     </div>
                   ) : isEndPhase ? (
                     <div className="space-y-3">
-                      {/* Actions */}
                       {actions.map((action) => (
                         <div key={action.id} className="flex items-center gap-2 group">
                           <Checkbox
@@ -669,7 +757,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                         </div>
                       ))}
 
-                      {/* Add action input */}
                       {isSteering && (
                         <div className="flex items-center gap-2 pt-1">
                           <Input
@@ -685,7 +772,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                         </div>
                       )}
 
-                      {/* End crisis button */}
                       {isSteering && crisis.status !== "fim" && (
                         <div className="border-t border-border pt-3 mt-2 space-y-2">
                           <div>
@@ -713,7 +799,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                     </div>
                   ) : (
                     <>
-                      {/* Normal phase with checkbox actions */}
                       {actions.map((action) => (
                         <div key={action.id} className="flex items-center gap-2 group">
                           <Checkbox

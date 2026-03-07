@@ -13,18 +13,19 @@ import {
   useDecisionLog, useCreateDecisionLog, useUpdateDecisionLog, useDeleteDecisionLog,
   type DBDecisionLog,
 } from "@/hooks/useDecisionLog";
+import { useCrises, type DBCrisis } from "@/hooks/useCrises";
 import { useToast } from "@/hooks/use-toast";
 
 interface CrisisGroup {
   key: string;
-  startedAt: string;
+  crisis: DBCrisis | null;
   entries: DBDecisionLog[];
-  isSystem: boolean;
 }
 
 const DecisionLogSection: React.FC = () => {
-  const { lang, crisisActive, crisisStartTime, crisisType } = useApp();
+  const { lang, crisisActive, crisisStartTime } = useApp();
   const { data: entries = [], isLoading } = useDecisionLog();
+  const { data: crises = [] } = useCrises();
   const createEntry = useCreateDecisionLog();
   const updateEntry = useUpdateDecisionLog();
   const deleteEntry = useDeleteDecisionLog();
@@ -35,52 +36,55 @@ const DecisionLogSection: React.FC = () => {
   const [form, setForm] = useState({ title: "", text: "", author: "" });
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  // Group entries by crisis_started_at
+  // Find the active declared crisis for adding new entries
+  const activeCrisis = useMemo(() => {
+    return crises.find(c =>
+      (c.status === "crise_em_curso" || c.status === "em_alerta" || c.status === "retorno") &&
+      (c.crisis_type === "real" || c.crisis_type === "simulated")
+    );
+  }, [crises]);
+
+  // Group entries by crisis_id, only show real/simulated crises
   const groups = useMemo((): CrisisGroup[] => {
-    const map = new Map<string, DBDecisionLog[]>();
-    const ungrouped: DBDecisionLog[] = [];
+    const crisesMap = new Map(crises.map(c => [c.id, c]));
+    const byCrisis = new Map<string, DBDecisionLog[]>();
 
     entries.forEach(e => {
-      if (e.crisis_started_at) {
-        const key = e.crisis_started_at;
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(e);
-      } else {
-        ungrouped.push(e);
+      const cId = (e as any).crisis_id;
+      if (cId && crisesMap.has(cId)) {
+        const crisis = crisesMap.get(cId)!;
+        // Only include real or simulated crises
+        if (crisis.crisis_type === "real" || crisis.crisis_type === "simulated") {
+          if (!byCrisis.has(cId)) byCrisis.set(cId, []);
+          byCrisis.get(cId)!.push(e);
+        }
       }
     });
 
     const result: CrisisGroup[] = [];
 
-    // Sort crisis groups by start time descending
-    const sortedKeys = Array.from(map.keys()).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-    
+    // Sort by crisis date descending
+    const sortedKeys = Array.from(byCrisis.keys()).sort((a, b) => {
+      const ca = crisesMap.get(a);
+      const cb = crisesMap.get(b);
+      return new Date(cb?.crisis_date || 0).getTime() - new Date(ca?.crisis_date || 0).getTime();
+    });
+
     for (const key of sortedKeys) {
-      const groupEntries = map.get(key)!;
       result.push({
         key,
-        startedAt: key,
-        entries: groupEntries,
-        isSystem: false,
+        crisis: crisesMap.get(key) || null,
+        entries: byCrisis.get(key)!,
       });
     }
 
-    if (ungrouped.length > 0) {
-      result.push({
-        key: "__ungrouped",
-        startedAt: "",
-        entries: ungrouped,
-        isSystem: true,
-      });
-    }
-
-    // Auto-expand the current crisis group
-    if (crisisStartTime && !expandedGroups.has(crisisStartTime)) {
-      setExpandedGroups(prev => new Set([...prev, crisisStartTime]));
+    // Auto-expand active crisis group
+    if (activeCrisis && !expandedGroups.has(activeCrisis.id)) {
+      setExpandedGroups(prev => new Set([...prev, activeCrisis.id]));
     }
 
     return result;
-  }, [entries, crisisStartTime]);
+  }, [entries, crises, activeCrisis]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups(prev => {
@@ -116,6 +120,7 @@ const DecisionLogSection: React.FC = () => {
           text: form.text.trim(),
           author,
           crisis_started_at: crisisStartTime,
+          crisis_id: activeCrisis?.id || null,
         });
         toast({ title: lang === "pt" ? "Acção registada" : "Action logged" });
       }
@@ -149,6 +154,14 @@ const DecisionLogSection: React.FC = () => {
     });
   };
 
+  const STATUS_LABELS: Record<string, { pt: string; en: string }> = {
+    registada: { pt: "Registada", en: "Registered" },
+    em_alerta: { pt: "Em Alerta", en: "Alert" },
+    crise_em_curso: { pt: "Em Curso", en: "In Progress" },
+    retorno: { pt: "Retorno", en: "Return" },
+    fim: { pt: "Terminada", en: "Ended" },
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -163,7 +176,7 @@ const DecisionLogSection: React.FC = () => {
               : "Chronological action record by crisis"}
           </p>
         </div>
-        {crisisActive && (
+        {activeCrisis && (
           <Button size="sm" onClick={openCreate} className="h-9 text-xs gap-1.5">
             <Plus className="h-3.5 w-3.5" />
             {lang === "pt" ? "Nova Acção" : "New Action"}
@@ -171,8 +184,8 @@ const DecisionLogSection: React.FC = () => {
         )}
       </div>
 
-      {/* No crisis active message */}
-      {!crisisActive && (
+      {/* No active crisis message */}
+      {!activeCrisis && groups.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="p-6 flex flex-col items-center justify-center text-center gap-3">
             <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
@@ -180,14 +193,12 @@ const DecisionLogSection: React.FC = () => {
             </div>
             <div>
               <p className="text-sm font-medium">
-                {lang === "pt"
-                  ? "Nenhuma crise ativa"
-                  : "No active crisis"}
+                {lang === "pt" ? "Sem registos de crises" : "No crisis records"}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 {lang === "pt"
-                   ? "O registo de acções só está disponível durante uma crise ativa. Declare uma crise para começar a registar."
-                   : "Action logging is only available during an active crisis. Declare a crisis to start logging."}
+                  ? "Os logs de acções são agrupados por crise do tipo Real ou Simulada."
+                  : "Action logs are grouped by Real or Simulated crisis type."}
               </p>
             </div>
           </CardContent>
@@ -195,52 +206,44 @@ const DecisionLogSection: React.FC = () => {
       )}
 
       {/* Crisis groups */}
-      {groups.length === 0 && !crisisActive && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          {lang === "pt" ? "Sem entradas no log." : "No log entries."}
-        </p>
-      )}
-
       {groups.map(group => {
         const isOpen = expandedGroups.has(group.key);
-        const isCurrentCrisis = crisisActive && crisisStartTime === group.startedAt;
-        const systemEntries = group.entries.filter(e => e.title === "" && (e.text.startsWith("🚨") || e.text.startsWith("✅")));
+        const crisis = group.crisis;
+        const isActive = activeCrisis?.id === group.key;
+        const isSimulated = crisis?.crisis_type === "simulated";
+        const systemEntries = group.entries.filter(e => e.title === "" && (e.text.startsWith("🚨") || e.text.startsWith("✅") || e.text.startsWith("📋")));
         const decisionEntries = group.entries.filter(e => !systemEntries.includes(e));
 
         return (
           <Collapsible key={group.key} open={isOpen} onOpenChange={() => toggleGroup(group.key)}>
-            <Card className={isCurrentCrisis ? "border-crisis/40 shadow-sm" : ""}>
+            <Card className={isActive ? "border-crisis/40 shadow-sm" : ""}>
               <CollapsibleTrigger asChild>
                 <CardHeader className="p-3 cursor-pointer hover:bg-secondary/50 transition-colors">
                   <div className="flex items-center gap-2">
                     {isOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-                    
-                    {group.isSystem ? (
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {lang === "pt" ? "Entradas anteriores" : "Previous entries"}
+
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
+                      <span className="text-sm font-semibold truncate">
+                        {crisis?.title || (lang === "pt" ? "Crise" : "Crisis")}
                       </span>
-                    ) : (
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        {(() => {
-                          const startEntry = group.entries.find(e => e.text.startsWith("🚨"));
-                          const isSimulated = startEntry ? startEntry.text.includes("SIMULADA") || startEntry.text.includes("SIMULATED") : false;
-                          return (
-                            <>
-                              {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
-                              <span className="text-sm font-semibold truncate">
-                                {lang === "pt" ? "Crise" : "Crisis"} — {formatCrisisDate(group.startedAt)}
-                              </span>
-                              <Badge variant={isSimulated ? "secondary" : "destructive"} className="text-[10px] h-5 px-1.5 uppercase tracking-wider shrink-0">
-                                {isSimulated ? (lang === "pt" ? "Simulada" : "Simulated") : (lang === "pt" ? "Real" : "Real")}
-                              </Badge>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    )}
+                      {crisis && (
+                        <span className="text-[10px] text-muted-foreground shrink-0">
+                          {formatCrisisDate(crisis.crisis_date)}
+                        </span>
+                      )}
+                      <Badge variant={isSimulated ? "secondary" : "destructive"} className="text-[10px] h-5 px-1.5 uppercase tracking-wider shrink-0">
+                        {isSimulated ? (lang === "pt" ? "Simulada" : "Simulated") : (lang === "pt" ? "Real" : "Real")}
+                      </Badge>
+                      {crisis && (
+                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0">
+                          {STATUS_LABELS[crisis.status]?.[lang] || crisis.status}
+                        </Badge>
+                      )}
+                    </div>
 
                     <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                      {isCurrentCrisis && (
+                      {isActive && (
                         <Badge variant="destructive" className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
                           {lang === "pt" ? "Ativa" : "Active"}
                         </Badge>
@@ -255,7 +258,7 @@ const DecisionLogSection: React.FC = () => {
 
               <CollapsibleContent>
                 <CardContent className="p-3 pt-0 space-y-2">
-                  {/* System entries (crisis declared/ended) */}
+                  {/* System entries */}
                   {systemEntries.map(entry => (
                     <div key={entry.id} className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 text-xs">
                       <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -266,7 +269,6 @@ const DecisionLogSection: React.FC = () => {
                     </div>
                   ))}
 
-                  {/* Decision entries */}
                   {decisionEntries.length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-3">
                       {lang === "pt" ? "Sem acções registadas nesta crise." : "No actions logged for this crisis."}

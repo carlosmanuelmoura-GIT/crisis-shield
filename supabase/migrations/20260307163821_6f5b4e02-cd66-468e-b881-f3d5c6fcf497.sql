@@ -1,0 +1,1 @@
+ALTER TABLE public.decision_log ADD COLUMN crisis_id UUID REFERENCES public.crises(id) ON DELETE SET NULL;

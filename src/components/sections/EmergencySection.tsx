@@ -31,6 +31,7 @@ import { useSubCapacidades } from "@/hooks/useSubCapacidades";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
+import { useCrises } from "@/hooks/useCrises";
 import { useCurrentUserProfile } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,6 +56,7 @@ const EmergencySection: React.FC = () => {
   const { data: recursos = [] } = useRecursos();
   const { data: subCapacidades = [] } = useSubCapacidades();
   const { data: departments = [] } = useDepartments();
+  const { data: dbCrises = [] } = useCrises();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
   const updateCard = useUpdateActionCard();
@@ -65,6 +67,15 @@ const EmergencySection: React.FC = () => {
   const queryClient = useQueryClient();
   const createLog = useCreateDecisionLog();
   const { data: profile } = useCurrentUserProfile();
+
+  // Check if there's a declared crisis (real or simulated) in DB
+  const activeDeclaredCrisis = useMemo(() => {
+    return dbCrises.find(c =>
+      c.status === "crise_em_curso" &&
+      (c.crisis_type === "real" || c.crisis_type === "simulated")
+    );
+  }, [dbCrises]);
+  const canCheck = !!activeDeclaredCrisis;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -245,10 +256,10 @@ const EmergencySection: React.FC = () => {
     try {
       await createItem.mutateAsync({ action_card_id: cardId, text_pt: text, text_en: text, sort_order: items.length + 1 });
       setNewItemText(prev => ({ ...prev, [cardId]: "" }));
-      if (crisisActive) {
+      if (canCheck) {
         const author = profile?.display_name || "Sistema";
         const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
-        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
@@ -258,17 +269,17 @@ const EmergencySection: React.FC = () => {
     const card = item ? cards.find(c => c.id === item.action_card_id) : null;
     try {
       await deleteItem.mutateAsync(itemId);
-      if (crisisActive && item) {
+      if (canCheck && item) {
         const author = profile?.display_name || "Sistema";
         const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
         const itemText = lang === "pt" ? item.text_pt : item.text_en;
-        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
   const handleToggleCheck = async (itemId: string, checked: boolean, itemText: string, cardId: string) => {
-    if (!crisisActive) return;
+    if (!canCheck) return;
     if (checked) {
       // Opening: show confirmation dialog
       setPendingCheck({ itemId, checked, itemText, cardId });
@@ -280,7 +291,7 @@ const EmergencySection: React.FC = () => {
       const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
       const author = profile?.display_name || "Sistema";
       toggleCheck.mutate({ itemId, checked });
-      await createLog.mutateAsync({ text: `⬜ "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+      await createLog.mutateAsync({ text: `⬜ "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
     }
   };
 
@@ -306,6 +317,7 @@ const EmergencySection: React.FC = () => {
       text: `✅ "${itemText}" em "${cardTitle}"${details ? ` (${details})` : ""}`,
       author,
       crisis_started_at: crisisStartTime,
+      crisis_id: activeDeclaredCrisis?.id || null,
     }).catch(() => {});
     setConfirmDialogOpen(false);
     setPendingCheck(null);
@@ -365,15 +377,23 @@ const EmergencySection: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Crisis banner */}
-      {crisisActive && crisisRecursoIds.length > 0 && (
+      {canCheck && activeDeclaredCrisis && (
         <div className="p-3 rounded-lg bg-crisis/10 border border-crisis text-sm">
           <div className="flex items-center gap-2 font-bold text-crisis">
             <AlertTriangle className="h-4 w-4" />
-            {lang === "pt" ? "CRISE ATIVA" : "ACTIVE CRISIS"}
+            {lang === "pt" ? "CRISE DECLARADA" : "CRISIS DECLARED"} — {activeDeclaredCrisis.title}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {lang === "pt" ? "Filtrado por recursos perdidos: " : "Filtered by lost resources: "}
-            {crisisRecursoIds.map(id => recursos.find(r => r.id === id)?.name_pt || id).join(", ")}
+            {lang === "pt" ? "Os checklists estão desbloqueados para interação." : "Checklists are unlocked for interaction."}
+          </p>
+        </div>
+      )}
+      {!canCheck && (
+        <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm">
+          <p className="text-xs text-muted-foreground">
+            {lang === "pt"
+              ? "Os checklists só podem ser preenchidos quando existe uma crise declarada do tipo Real ou Simulada."
+              : "Checklists can only be filled when a Real or Simulated crisis is declared."}
           </p>
         </div>
       )}
@@ -527,8 +547,8 @@ const EmergencySection: React.FC = () => {
                             const text = lang === "pt" ? item.text_pt : item.text_en;
                             return (
                               <div key={item.id} className="flex items-start gap-2 py-0.5 group">
-                                <label className={`flex items-start gap-2 flex-1 ${crisisActive ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!crisisActive} />
+                                <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
                                   <span className={`text-xs ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                 </label>
                                 <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)}><X className="h-2.5 w-2.5" /></Button>
@@ -669,8 +689,8 @@ const EmergencySection: React.FC = () => {
                                           const checked = !!statesMap[item.id];
                                           const text = lang === "pt" ? item.text_pt : item.text_en;
                                           return (
-                                            <label key={item.id} className={`flex items-start gap-1.5 ${crisisActive ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                              <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!crisisActive} />
+                                            <label key={item.id} className={`flex items-start gap-1.5 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                              <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
                                               <span className={`text-[10px] leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                             </label>
                                           );
