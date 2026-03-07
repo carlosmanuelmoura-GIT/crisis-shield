@@ -256,10 +256,10 @@ const EmergencySection: React.FC = () => {
     try {
       await createItem.mutateAsync({ action_card_id: cardId, text_pt: text, text_en: text, sort_order: items.length + 1 });
       setNewItemText(prev => ({ ...prev, [cardId]: "" }));
-      if (crisisActive) {
+      if (canCheck) {
         const author = profile?.display_name || "Sistema";
         const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
-        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+        await createLog.mutateAsync({ text: `➕ Ação adicionada em "${cardTitle}": ${text}`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
