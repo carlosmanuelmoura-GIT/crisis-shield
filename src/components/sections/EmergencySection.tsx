@@ -56,6 +56,7 @@ const EmergencySection: React.FC = () => {
   const { data: recursos = [] } = useRecursos();
   const { data: subCapacidades = [] } = useSubCapacidades();
   const { data: departments = [] } = useDepartments();
+  const { data: dbCrises = [] } = useCrises();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
   const updateCard = useUpdateActionCard();
@@ -66,6 +67,15 @@ const EmergencySection: React.FC = () => {
   const queryClient = useQueryClient();
   const createLog = useCreateDecisionLog();
   const { data: profile } = useCurrentUserProfile();
+
+  // Check if there's a declared crisis (real or simulated) in DB
+  const activeDeclaredCrisis = useMemo(() => {
+    return dbCrises.find(c =>
+      c.status === "crise_em_curso" &&
+      (c.crisis_type === "real" || c.crisis_type === "simulated")
+    );
+  }, [dbCrises]);
+  const canCheck = !!activeDeclaredCrisis;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
