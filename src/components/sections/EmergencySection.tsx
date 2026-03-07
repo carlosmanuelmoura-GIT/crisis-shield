@@ -279,7 +279,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const handleToggleCheck = async (itemId: string, checked: boolean, itemText: string, cardId: string) => {
-    if (!crisisActive) return;
+    if (!canCheck) return;
     if (checked) {
       // Opening: show confirmation dialog
       setPendingCheck({ itemId, checked, itemText, cardId });
@@ -291,7 +291,7 @@ const EmergencySection: React.FC = () => {
       const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
       const author = profile?.display_name || "Sistema";
       toggleCheck.mutate({ itemId, checked });
-      await createLog.mutateAsync({ text: `⬜ "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+      await createLog.mutateAsync({ text: `⬜ "${itemText}" em "${cardTitle}"`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
     }
   };
 
