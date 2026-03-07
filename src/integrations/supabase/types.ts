@@ -589,6 +589,7 @@ export type Database = {
         Row: {
           author: string
           created_at: string
+          crisis_id: string | null
           crisis_started_at: string | null
           id: string
           owner_id: string | null
@@ -599,6 +600,7 @@ export type Database = {
         Insert: {
           author?: string
           created_at?: string
+          crisis_id?: string | null
           crisis_started_at?: string | null
           id?: string
           owner_id?: string | null
@@ -609,6 +611,7 @@ export type Database = {
         Update: {
           author?: string
           created_at?: string
+          crisis_id?: string | null
           crisis_started_at?: string | null
           id?: string
           owner_id?: string | null
@@ -616,7 +619,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "decision_log_crisis_id_fkey"
+            columns: ["crisis_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       departments: {
         Row: {
