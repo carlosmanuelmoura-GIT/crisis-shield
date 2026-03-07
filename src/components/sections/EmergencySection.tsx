@@ -317,6 +317,7 @@ const EmergencySection: React.FC = () => {
       text: `✅ "${itemText}" em "${cardTitle}"${details ? ` (${details})` : ""}`,
       author,
       crisis_started_at: crisisStartTime,
+      crisis_id: activeDeclaredCrisis?.id || null,
     }).catch(() => {});
     setConfirmDialogOpen(false);
     setPendingCheck(null);
