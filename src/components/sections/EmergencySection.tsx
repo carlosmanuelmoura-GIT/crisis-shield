@@ -377,15 +377,23 @@ const EmergencySection: React.FC = () => {
   return (
     <div className="space-y-4">
       {/* Crisis banner */}
-      {crisisActive && crisisRecursoIds.length > 0 && (
+      {canCheck && activeDeclaredCrisis && (
         <div className="p-3 rounded-lg bg-crisis/10 border border-crisis text-sm">
           <div className="flex items-center gap-2 font-bold text-crisis">
             <AlertTriangle className="h-4 w-4" />
-            {lang === "pt" ? "CRISE ATIVA" : "ACTIVE CRISIS"}
+            {lang === "pt" ? "CRISE DECLARADA" : "CRISIS DECLARED"} — {activeDeclaredCrisis.title}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {lang === "pt" ? "Filtrado por recursos perdidos: " : "Filtered by lost resources: "}
-            {crisisRecursoIds.map(id => recursos.find(r => r.id === id)?.name_pt || id).join(", ")}
+            {lang === "pt" ? "Os checklists estão desbloqueados para interação." : "Checklists are unlocked for interaction."}
+          </p>
+        </div>
+      )}
+      {!canCheck && (
+        <div className="p-3 rounded-lg bg-muted/50 border border-border text-sm">
+          <p className="text-xs text-muted-foreground">
+            {lang === "pt"
+              ? "Os checklists só podem ser preenchidos quando existe uma crise declarada do tipo Real ou Simulada."
+              : "Checklists can only be filled when a Real or Simulated crisis is declared."}
           </p>
         </div>
       )}
