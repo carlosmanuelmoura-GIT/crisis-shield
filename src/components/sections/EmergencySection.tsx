@@ -31,6 +31,7 @@ import { useSubCapacidades } from "@/hooks/useSubCapacidades";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
+import { useCrises } from "@/hooks/useCrises";
 import { useCurrentUserProfile } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
