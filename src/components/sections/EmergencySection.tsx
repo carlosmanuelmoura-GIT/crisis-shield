@@ -681,8 +681,8 @@ const EmergencySection: React.FC = () => {
                                           const checked = !!statesMap[item.id];
                                           const text = lang === "pt" ? item.text_pt : item.text_en;
                                           return (
-                                            <label key={item.id} className={`flex items-start gap-1.5 ${crisisActive ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                              <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!crisisActive} />
+                                            <label key={item.id} className={`flex items-start gap-1.5 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                              <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
                                               <span className={`text-[10px] leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                             </label>
                                           );
