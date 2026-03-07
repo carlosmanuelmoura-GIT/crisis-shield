@@ -269,11 +269,11 @@ const EmergencySection: React.FC = () => {
     const card = item ? cards.find(c => c.id === item.action_card_id) : null;
     try {
       await deleteItem.mutateAsync(itemId);
-      if (crisisActive && item) {
+      if (canCheck && item) {
         const author = profile?.display_name || "Sistema";
         const cardTitle = lang === "pt" ? card?.title_pt : card?.title_en;
         const itemText = lang === "pt" ? item.text_pt : item.text_en;
-        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author, crisis_started_at: crisisStartTime }).catch(() => {});
+        await createLog.mutateAsync({ text: `➖ Ação removida de "${cardTitle}": ${itemText}`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
