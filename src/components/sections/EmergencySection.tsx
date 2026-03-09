@@ -635,7 +635,7 @@ const EmergencySection: React.FC = () => {
 
                       return (
                         <div key={scId || "__none"} className="space-y-1.5">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">{scLabel}</p>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">{scLabel}</p>
                           <div className="space-y-2">
                             {scCards.map(card => {
                               const items = allItems.filter(i => i.action_card_id === card.id);
