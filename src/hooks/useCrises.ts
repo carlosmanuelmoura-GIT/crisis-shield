@@ -31,6 +31,9 @@ export interface DBCrisisPhaseAction {
   text: string;
   checked: boolean;
   sort_order: number;
+  info_department: string;
+  info_person: string;
+  notes: string;
   created_at: string;
   updated_at: string;
 }
