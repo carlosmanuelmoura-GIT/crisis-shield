@@ -516,14 +516,14 @@ const EmergencySection: React.FC = () => {
                       <CardHeader className="p-3 pb-1 cursor-pointer" onClick={() => toggle(card.id)}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-1 min-w-0 flex-1">
-                            <CardTitle className="text-sm leading-tight">{title}</CardTitle>
+                            <CardTitle className="text-base leading-tight">{title}</CardTitle>
                             <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="text-[9px]">
+                              <Badge variant="secondary" className="text-[11px]">
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                               </Badge>
-                              {bpLabel && <Badge variant="outline" className="text-[9px] font-normal">{bpLabel}</Badge>}
-                              {scLabel && <Badge variant="outline" className="text-[9px] font-normal bg-accent/30">{scLabel}</Badge>}
-                              {deptLabel && <Badge variant="outline" className="text-[9px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                              {bpLabel && <Badge variant="outline" className="text-[11px] font-normal">{bpLabel}</Badge>}
+                              {scLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{scLabel}</Badge>}
+                              {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
@@ -537,7 +537,7 @@ const EmergencySection: React.FC = () => {
                           <div className="flex-1 h-1 bg-secondary rounded-full">
                             <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
                           </div>
-                          <span className="text-[9px] text-muted-foreground font-medium">{done}/{total}</span>
+                          <span className="text-xs text-muted-foreground font-medium">{done}/{total}</span>
                         </div>
                       </CardHeader>
                       {isOpen && (
@@ -549,7 +549,7 @@ const EmergencySection: React.FC = () => {
                               <div key={item.id} className="flex items-start gap-2 py-0.5 group">
                                 <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
                                   <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                  <span className={`text-xs ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                  <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                 </label>
                                 <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)}><X className="h-2.5 w-2.5" /></Button>
                               </div>
@@ -635,7 +635,7 @@ const EmergencySection: React.FC = () => {
 
                       return (
                         <div key={scId || "__none"} className="space-y-1.5">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">{scLabel}</p>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">{scLabel}</p>
                           <div className="space-y-2">
                             {scCards.map(card => {
                               const items = allItems.filter(i => i.action_card_id === card.id);
@@ -658,9 +658,9 @@ const EmergencySection: React.FC = () => {
                                     <div className="flex items-start gap-1.5">
                                       <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
                                       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))}>
-                                        <p className="text-xs font-medium leading-tight">{title}</p>
+                                        <p className="text-sm font-medium leading-tight">{title}</p>
                                         <div className="flex flex-wrap gap-1 mt-1">
-                                          <Badge variant="secondary" className="text-[8px]">
+                                          <Badge variant="secondary" className="text-[10px]">
                                             {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                                           </Badge>
                                         </div>
@@ -675,7 +675,7 @@ const EmergencySection: React.FC = () => {
                                       <div className="flex-1 h-1 bg-secondary rounded-full">
                                         <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
                                       </div>
-                                      <span className="text-[8px] text-muted-foreground">{done}/{total}</span>
+                                      <span className="text-[10px] text-muted-foreground">{done}/{total}</span>
                                       {total > 0 && (
                                         <button onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))} className="text-muted-foreground">
                                           {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -691,7 +691,7 @@ const EmergencySection: React.FC = () => {
                                           return (
                                             <label key={item.id} className={`flex items-start gap-1.5 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
                                               <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
-                                              <span className={`text-[10px] leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                              <span className={`text-xs leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                             </label>
                                           );
                                         })}
