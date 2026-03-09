@@ -550,6 +550,9 @@ export type Database = {
           created_at: string
           crisis_id: string
           id: string
+          info_department: string
+          info_person: string
+          notes: string
           phase_id: string
           sort_order: number
           text: string
@@ -560,6 +563,9 @@ export type Database = {
           created_at?: string
           crisis_id: string
           id?: string
+          info_department?: string
+          info_person?: string
+          notes?: string
           phase_id: string
           sort_order?: number
           text: string
@@ -570,6 +576,9 @@ export type Database = {
           created_at?: string
           crisis_id?: string
           id?: string
+          info_department?: string
+          info_person?: string
+          notes?: string
           phase_id?: string
           sort_order?: number
           text?: string
