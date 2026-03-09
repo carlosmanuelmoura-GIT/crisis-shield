@@ -513,6 +513,14 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [newActionText, setNewActionText] = useState<Record<string, string>>({});
   const [declaredBy, setDeclaredBy] = useState(crisis.declared_by || "");
   const [endedBy, setEndedBy] = useState(crisis.ended_by || "");
+  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>({});
+
+  // Confirmation dialog state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseLabel: string } | null>(null);
+  const [confirmForm, setConfirmForm] = useState({ info_department: "", info_person: "", notes: "" });
+
+  const togglePhaseCollapse = (phaseId: string) => setCollapsedPhases(prev => ({ ...prev, [phaseId]: !prev[phaseId] }));
 
   const addAction = (phaseId: string) => {
     const text = (newActionText[phaseId] || "").trim();
@@ -528,12 +536,45 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   };
 
   const handleToggle = (actionId: string, checked: boolean, actionText: string, phaseLabel: string) => {
-    toggleAction.mutate({ id: actionId, checked, crisis_id: crisis.id });
+    if (checked) {
+      // Opening confirmation dialog
+      setPendingToggle({ actionId, checked, actionText, phaseLabel });
+      setConfirmForm({ info_department: "", info_person: "", notes: "" });
+      setConfirmDialogOpen(true);
+    } else {
+      // Unchecking directly
+      toggleAction.mutate({ id: actionId, checked: false, crisis_id: crisis.id });
+      logDecision.mutate({
+        title: "↩️ Acção revertida",
+        text: `↩️ ${phaseLabel} — ${actionText} (revertida)`,
+        crisis_id: crisis.id,
+      });
+    }
+  };
+
+  const handleConfirmToggle = () => {
+    if (!pendingToggle) return;
+    const { actionId, actionText, phaseLabel } = pendingToggle;
+    toggleAction.mutate({
+      id: actionId,
+      checked: true,
+      crisis_id: crisis.id,
+      info_department: confirmForm.info_department,
+      info_person: confirmForm.info_person,
+      notes: confirmForm.notes,
+    });
+    const details = [
+      confirmForm.info_department && `Dept: ${confirmForm.info_department}`,
+      confirmForm.info_person && `Por: ${confirmForm.info_person}`,
+      confirmForm.notes && `Notas: ${confirmForm.notes}`,
+    ].filter(Boolean).join(" | ");
     logDecision.mutate({
-      title: checked ? "✅ Acção concluída" : "↩️ Acção revertida",
-      text: `${checked ? "✅" : "↩️"} ${phaseLabel} — ${actionText}${!checked ? " (revertida)" : ""}`,
+      title: "✅ Acção concluída",
+      text: `✅ ${phaseLabel} — ${actionText}${details ? ` (${details})` : ""}`,
       crisis_id: crisis.id,
     });
+    setConfirmDialogOpen(false);
+    setPendingToggle(null);
   };
 
   const handleDeclareCrisis = async () => {
@@ -575,6 +616,53 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
   const st = STATUS_MAP[crisis.status];
   const typeLabel = TYPE_LABELS[crisis.crisis_type] || { pt: crisis.crisis_type, en: crisis.crisis_type };
+
+  const renderActions = (actions: typeof phaseActions, phaseId: string, phaseLabel: string) => (
+    <>
+      {actions.map((action) => (
+        <div key={action.id} className="flex items-start gap-3 py-1.5 group">
+          <Checkbox
+            checked={action.checked}
+            onCheckedChange={(checked) => handleToggle(action.id, !!checked, action.text, phaseLabel)}
+            className="mt-0.5"
+          />
+          <div className="flex-1 min-w-0">
+            <span className={`text-sm ${action.checked ? "line-through text-muted-foreground" : ""}`}>
+              {action.text}
+            </span>
+            {action.checked && ((action as any).info_department || (action as any).info_person || (action as any).notes) && (
+              <div className="text-xs text-muted-foreground mt-0.5 space-x-2">
+                {(action as any).info_department && <span>📍 {(action as any).info_department}</span>}
+                {(action as any).info_person && <span>👤 {(action as any).info_person}</span>}
+                {(action as any).notes && <span>📝 {(action as any).notes}</span>}
+              </div>
+            )}
+          </div>
+          {isSteering && (
+            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+              onClick={() => deleteAction.mutate({ id: action.id, crisis_id: crisis.id })}>
+              <Trash2 className="h-3 w-3 text-destructive" />
+            </Button>
+          )}
+        </div>
+      ))}
+
+      {isSteering && (
+        <div className="flex items-center gap-2 pt-1">
+          <Input
+            placeholder={lang === "pt" ? "Nova acção..." : "New action..."}
+            value={newActionText[phaseId] || ""}
+            onChange={(e) => setNewActionText((prev) => ({ ...prev, [phaseId]: e.target.value }))}
+            onKeyDown={(e) => e.key === "Enter" && addAction(phaseId)}
+            className="h-8 text-sm"
+          />
+          <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => addAction(phaseId)}>
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -658,182 +746,93 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
           const phaseLabel = phase.label[lang] || phase.label.pt;
           const isDeclarationPhase = phase.id === "declaracao";
           const isEndPhase = phase.id === "fim";
+          const isCollapsed = !!collapsedPhases[phase.id];
 
           return (
             <React.Fragment key={phase.id}>
               <Card className={`border-l-4 ${phase.color}`}>
-                <CardHeader className="py-3 px-4">
+                <CardHeader className="py-3 px-4 cursor-pointer" onClick={() => togglePhaseCollapse(phase.id)}>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <CardTitle className="text-base font-bold flex items-center gap-2">
                       <span>{phase.icon}</span>
                       {phaseLabel}
                     </CardTitle>
-                    {progress && !isDeclarationPhase && !isEndPhase && (
-                      <Badge variant="outline" className="text-[10px] font-mono">
-                        {progress.done}/{progress.total} ({progress.pct}%)
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {progress && (
+                        <Badge variant="outline" className="text-xs font-mono">
+                          {progress.done}/{progress.total} ({progress.pct}%)
+                        </Badge>
+                      )}
+                      {isCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+                    </div>
                   </div>
                 </CardHeader>
-                <CardContent className="px-4 pb-3 space-y-2">
-                  {/* DECLARATION phase */}
-                  {isDeclarationPhase ? (
-                    <div className="space-y-3">
-                      {actions.map((action) => (
-                        <div key={action.id} className="flex items-center gap-2 group">
-                          <Checkbox
-                            checked={action.checked}
-                            onCheckedChange={(checked) => handleToggle(action.id, !!checked, action.text, phaseLabel)}
-                          />
-                          <span className={`text-xs flex-1 ${action.checked ? "line-through text-muted-foreground" : ""}`}>
-                            {action.text}
-                          </span>
-                          {isSteering && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={() => deleteAction.mutate({ id: action.id, crisis_id: crisis.id })}>
-                              <Trash2 className="h-3 w-3 text-destructive" />
+                {!isCollapsed && (
+                  <CardContent className="px-4 pb-3 space-y-2">
+                    {/* DECLARATION phase */}
+                    {isDeclarationPhase ? (
+                      <div className="space-y-3">
+                        {renderActions(actions, phase.id, phaseLabel)}
+
+                        {isSteering && (crisis.status === "registada" || crisis.status === "em_alerta") && (
+                          <div className="border-t border-border pt-3 mt-2 space-y-2">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                {lang === "pt" ? "Autorizado por" : "Authorized by"}
+                              </label>
+                              <Input
+                                value={declaredBy}
+                                onChange={(e) => setDeclaredBy(e.target.value)}
+                                placeholder={lang === "pt" ? "Nome de quem autoriza..." : "Name of authorizer..."}
+                                className="h-8 text-sm mt-1"
+                              />
+                            </div>
+                            <Button
+                              className="w-full bg-crisis hover:bg-crisis/90 text-crisis-foreground"
+                              onClick={handleDeclareCrisis}
+                              disabled={!declaredBy.trim() || updateCrisis.isPending}
+                            >
+                              {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                              <AlertTriangle className="h-4 w-4 mr-2" />
+                              {lang === "pt" ? "DECLARAR CRISE" : "DECLARE CRISIS"}
                             </Button>
-                          )}
-                        </div>
-                      ))}
-
-                      {isSteering && (
-                        <div className="flex items-center gap-2 pt-1">
-                          <Input
-                            placeholder={lang === "pt" ? "Nova acção..." : "New action..."}
-                            value={newActionText[phase.id] || ""}
-                            onChange={(e) => setNewActionText((prev) => ({ ...prev, [phase.id]: e.target.value }))}
-                            onKeyDown={(e) => e.key === "Enter" && addAction(phase.id)}
-                            className="h-7 text-xs"
-                          />
-                          <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => addAction(phase.id)}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-
-                      {isSteering && (crisis.status === "registada" || crisis.status === "em_alerta") && (
-                        <div className="border-t border-border pt-3 mt-2 space-y-2">
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground">
-                              {lang === "pt" ? "Autorizado por" : "Authorized by"}
-                            </label>
-                            <Input
-                              value={declaredBy}
-                              onChange={(e) => setDeclaredBy(e.target.value)}
-                              placeholder={lang === "pt" ? "Nome de quem autoriza..." : "Name of authorizer..."}
-                              className="h-8 text-xs mt-1"
-                            />
                           </div>
-                          <Button
-                            className="w-full bg-crisis hover:bg-crisis/90 text-crisis-foreground"
-                            onClick={handleDeclareCrisis}
-                            disabled={!declaredBy.trim() || updateCrisis.isPending}
-                          >
-                            {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                            <AlertTriangle className="h-4 w-4 mr-2" />
-                            {lang === "pt" ? "DECLARAR CRISE" : "DECLARE CRISIS"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : isEndPhase ? (
-                    <div className="space-y-3">
-                      {actions.map((action) => (
-                        <div key={action.id} className="flex items-center gap-2 group">
-                          <Checkbox
-                            checked={action.checked}
-                            onCheckedChange={(checked) => handleToggle(action.id, !!checked, action.text, phaseLabel)}
-                          />
-                          <span className={`text-xs flex-1 ${action.checked ? "line-through text-muted-foreground" : ""}`}>
-                            {action.text}
-                          </span>
-                          {isSteering && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={() => deleteAction.mutate({ id: action.id, crisis_id: crisis.id })}>
-                              <Trash2 className="h-3 w-3 text-destructive" />
+                        )}
+                      </div>
+                    ) : isEndPhase ? (
+                      <div className="space-y-3">
+                        {renderActions(actions, phase.id, phaseLabel)}
+
+                        {isSteering && crisis.status !== "fim" && (
+                          <div className="border-t border-border pt-3 mt-2 space-y-2">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                {lang === "pt" ? "Aprovado por" : "Approved by"}
+                              </label>
+                              <Input
+                                value={endedBy}
+                                onChange={(e) => setEndedBy(e.target.value)}
+                                placeholder={lang === "pt" ? "Nome de quem aprova..." : "Name of approver..."}
+                                className="h-8 text-sm mt-1"
+                              />
+                            </div>
+                            <Button
+                              className="w-full bg-green-600 hover:bg-green-700 text-white"
+                              onClick={handleEndCrisis}
+                              disabled={!endedBy.trim() || updateCrisis.isPending}
+                            >
+                              {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
                             </Button>
-                          )}
-                        </div>
-                      ))}
-
-                      {isSteering && (
-                        <div className="flex items-center gap-2 pt-1">
-                          <Input
-                            placeholder={lang === "pt" ? "Nova acção..." : "New action..."}
-                            value={newActionText[phase.id] || ""}
-                            onChange={(e) => setNewActionText((prev) => ({ ...prev, [phase.id]: e.target.value }))}
-                            onKeyDown={(e) => e.key === "Enter" && addAction(phase.id)}
-                            className="h-7 text-xs"
-                          />
-                          <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => addAction(phase.id)}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-
-                      {isSteering && crisis.status !== "fim" && (
-                        <div className="border-t border-border pt-3 mt-2 space-y-2">
-                          <div>
-                            <label className="text-xs font-medium text-muted-foreground">
-                              {lang === "pt" ? "Aprovado por" : "Approved by"}
-                            </label>
-                            <Input
-                              value={endedBy}
-                              onChange={(e) => setEndedBy(e.target.value)}
-                              placeholder={lang === "pt" ? "Nome de quem aprova..." : "Name of approver..."}
-                              className="h-8 text-xs mt-1"
-                            />
                           </div>
-                          <Button
-                            className="w-full bg-green-600 hover:bg-green-700 text-white"
-                            onClick={handleEndCrisis}
-                            disabled={!endedBy.trim() || updateCrisis.isPending}
-                          >
-                            {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      {actions.map((action) => (
-                        <div key={action.id} className="flex items-center gap-2 group">
-                          <Checkbox
-                            checked={action.checked}
-                            onCheckedChange={(checked) => handleToggle(action.id, !!checked, action.text, phaseLabel)}
-                          />
-                          <span className={`text-xs flex-1 ${action.checked ? "line-through text-muted-foreground" : ""}`}>
-                            {action.text}
-                          </span>
-                          {isSteering && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={() => deleteAction.mutate({ id: action.id, crisis_id: crisis.id })}>
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-
-                      {isSteering && (
-                        <div className="flex items-center gap-2 pt-1">
-                          <Input
-                            placeholder={lang === "pt" ? "Nova acção..." : "New action..."}
-                            value={newActionText[phase.id] || ""}
-                            onChange={(e) => setNewActionText((prev) => ({ ...prev, [phase.id]: e.target.value }))}
-                            onKeyDown={(e) => e.key === "Enter" && addAction(phase.id)}
-                            className="h-7 text-xs"
-                          />
-                          <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => addAction(phase.id)}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </CardContent>
+                        )}
+                      </div>
+                    ) : (
+                      renderActions(actions, phase.id, phaseLabel)
+                    )}
+                  </CardContent>
+                )}
               </Card>
 
               {idx < PHASES.length - 1 && (
@@ -845,6 +844,67 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
           );
         })}
       </div>
+
+      {/* Confirmation dialog for checking tasks */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {lang === "pt" ? "Confirmar acção" : "Confirm action"}
+            </DialogTitle>
+          </DialogHeader>
+          {pendingToggle && (
+            <div className="space-y-1 mb-2">
+              <p className="text-sm font-medium">{pendingToggle.actionText}</p>
+              <p className="text-xs text-muted-foreground">{pendingToggle.phaseLabel}</p>
+            </div>
+          )}
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "DEP Origem da Informação" : "Info Source Department"}
+              </Label>
+              <Input
+                value={confirmForm.info_department}
+                onChange={(e) => setConfirmForm(f => ({ ...f, info_department: e.target.value }))}
+                placeholder={lang === "pt" ? "Departamento..." : "Department..."}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "Quem deu a informação" : "Who provided the information"}
+              </Label>
+              <Input
+                value={confirmForm.info_person}
+                onChange={(e) => setConfirmForm(f => ({ ...f, info_person: e.target.value }))}
+                placeholder={lang === "pt" ? "Nome da pessoa..." : "Person name..."}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "Notas" : "Notes"}
+              </Label>
+              <Input
+                value={confirmForm.notes}
+                onChange={(e) => setConfirmForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder={lang === "pt" ? "Observações..." : "Observations..."}
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
+              {lang === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button onClick={handleConfirmToggle}>
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              {lang === "pt" ? "Confirmar" : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
