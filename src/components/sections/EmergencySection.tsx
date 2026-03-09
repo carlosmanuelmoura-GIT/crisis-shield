@@ -549,7 +549,7 @@ const EmergencySection: React.FC = () => {
                               <div key={item.id} className="flex items-start gap-2 py-0.5 group">
                                 <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
                                   <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                  <span className={`text-xs ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                  <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
                                 </label>
                                 <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)}><X className="h-2.5 w-2.5" /></Button>
                               </div>
