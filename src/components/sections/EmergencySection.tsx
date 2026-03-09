@@ -518,12 +518,12 @@ const EmergencySection: React.FC = () => {
                           <div className="space-y-1 min-w-0 flex-1">
                             <CardTitle className="text-base leading-tight">{title}</CardTitle>
                             <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="text-[9px]">
+                              <Badge variant="secondary" className="text-[11px]">
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                               </Badge>
-                              {bpLabel && <Badge variant="outline" className="text-[9px] font-normal">{bpLabel}</Badge>}
-                              {scLabel && <Badge variant="outline" className="text-[9px] font-normal bg-accent/30">{scLabel}</Badge>}
-                              {deptLabel && <Badge variant="outline" className="text-[9px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                              {bpLabel && <Badge variant="outline" className="text-[11px] font-normal">{bpLabel}</Badge>}
+                              {scLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{scLabel}</Badge>}
+                              {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
