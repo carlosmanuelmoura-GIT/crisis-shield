@@ -660,7 +660,7 @@ const EmergencySection: React.FC = () => {
                                       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))}>
                                         <p className="text-sm font-medium leading-tight">{title}</p>
                                         <div className="flex flex-wrap gap-1 mt-1">
-                                          <Badge variant="secondary" className="text-[8px]">
+                                          <Badge variant="secondary" className="text-[10px]">
                                             {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                                           </Badge>
                                         </div>
