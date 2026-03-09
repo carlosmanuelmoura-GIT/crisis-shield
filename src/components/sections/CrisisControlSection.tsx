@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   AlertTriangle, Plus, Trash2, Shield, Loader2,
-  CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter,
+  CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter, ChevronDown, ChevronUp,
 } from "lucide-react";
 
 const PHASES = [
