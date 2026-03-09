@@ -537,7 +537,7 @@ const EmergencySection: React.FC = () => {
                           <div className="flex-1 h-1 bg-secondary rounded-full">
                             <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
                           </div>
-                          <span className="text-[9px] text-muted-foreground font-medium">{done}/{total}</span>
+                          <span className="text-xs text-muted-foreground font-medium">{done}/{total}</span>
                         </div>
                       </CardHeader>
                       {isOpen && (
