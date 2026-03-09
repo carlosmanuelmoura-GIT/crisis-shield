@@ -516,7 +516,7 @@ const EmergencySection: React.FC = () => {
                       <CardHeader className="p-3 pb-1 cursor-pointer" onClick={() => toggle(card.id)}>
                         <div className="flex items-start justify-between gap-2">
                           <div className="space-y-1 min-w-0 flex-1">
-                            <CardTitle className="text-sm leading-tight">{title}</CardTitle>
+                            <CardTitle className="text-base leading-tight">{title}</CardTitle>
                             <div className="flex flex-wrap gap-1">
                               <Badge variant="secondary" className="text-[9px]">
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
