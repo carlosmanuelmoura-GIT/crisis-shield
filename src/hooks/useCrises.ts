@@ -237,8 +237,12 @@ export function useCreatePhaseAction() {
 export function useTogglePhaseAction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, checked, crisis_id }: { id: string; checked: boolean; crisis_id: string }) => {
-      const { error } = await supabase.from("crisis_phase_actions").update({ checked } as any).eq("id", id);
+    mutationFn: async ({ id, checked, crisis_id, info_department, info_person, notes }: { id: string; checked: boolean; crisis_id: string; info_department?: string; info_person?: string; notes?: string }) => {
+      const updateData: any = { checked };
+      if (info_department !== undefined) updateData.info_department = info_department;
+      if (info_person !== undefined) updateData.info_person = info_person;
+      if (notes !== undefined) updateData.notes = notes;
+      const { error } = await supabase.from("crisis_phase_actions").update(updateData).eq("id", id);
       if (error) throw error;
       return crisis_id;
     },
