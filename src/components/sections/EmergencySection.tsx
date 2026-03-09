@@ -675,7 +675,7 @@ const EmergencySection: React.FC = () => {
                                       <div className="flex-1 h-1 bg-secondary rounded-full">
                                         <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
                                       </div>
-                                      <span className="text-[8px] text-muted-foreground">{done}/{total}</span>
+                                      <span className="text-[10px] text-muted-foreground">{done}/{total}</span>
                                       {total > 0 && (
                                         <button onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))} className="text-muted-foreground">
                                           {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
