@@ -13,6 +13,7 @@ import BackOfficeSection from "@/components/sections/BackOfficeSection";
 import PCNDepartamentaisSection from "@/components/sections/PCNDepartamentaisSection";
 import TestCalendarSection from "@/components/sections/TestCalendarSection";
 import CrisisControlSection from "@/components/sections/CrisisControlSection";
+import DocumentationSection from "@/components/sections/DocumentationSection";
 
 const sectionMap: Record<string, React.FC> = {
   scenarios: ScenariosSection,
@@ -28,6 +29,7 @@ const sectionMap: Record<string, React.FC> = {
   backoffice: BackOfficeSection,
   "pcn-departamentais": PCNDepartamentaisSection,
   "test-calendar": TestCalendarSection,
+  documentacao: DocumentationSection,
 };
 
 const Index = () => {
