@@ -65,13 +65,9 @@ const warRoomItems = [
 { id: "log", icon: ClipboardList, label: { pt: "Log das Acções", en: "Action Log" } }];
 
 
-/* ── Logística ── */
-const logisticaItems = [
-{ id: "logistica-carregado", label: { pt: "Complexo do Carregado", en: "Carregado Complex" }, icon: MapPin },
-{ id: "logistica-acessos", label: { pt: "Acessos autorizados", en: "Authorized Access" }, icon: Key },
-{ id: "logistica-lugares", label: { pt: "Lugares por departamentos", en: "Seats by Department" }, icon: Building2 },
-{ id: "logistica-concur", label: { pt: "Guia Prático Concur", en: "Concur Guide" }, icon: CreditCard },
-{ id: "logistica-bolt", label: { pt: "Procedimento BOLT", en: "BOLT Procedure" }, icon: FileCheck }];
+/* ── Documentação ── */
+const documentacaoItems = [
+{ id: "documentacao", label: { pt: "Documentação", en: "Documentation" }, icon: FileText }];
 
 
 /* ── Component ── */
