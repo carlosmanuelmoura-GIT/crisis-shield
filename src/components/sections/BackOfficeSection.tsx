@@ -139,7 +139,6 @@ const BackOfficeSection: React.FC = () => {
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
-  const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
   const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
   const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
   const handleSaveBld = async () => {
