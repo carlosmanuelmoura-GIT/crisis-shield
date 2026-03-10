@@ -782,6 +782,25 @@ const BackOfficeSection: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ===== DOCUMENT CATEGORIES TAB CONTENT ===== */}
+      {/* (inserted via TabsContent in the Tabs block) */}
+
+      {/* Document Category Dialog */}
+      <Dialog open={docCatDialog} onOpenChange={setDocCatDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingDocCat ? (lang === "pt" ? "Editar Categoria" : "Edit Category") : (lang === "pt" ? "Nova Categoria" : "New Category")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
+              <Input value={docCatForm.name_pt} onChange={e => setDocCatForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" /></div>
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
+              <Input value={docCatForm.name_en} onChange={e => setDocCatForm(f => ({ ...f, name_en: e.target.value }))} className="bg-secondary border-border" /></div>
+            <Button onClick={handleSaveDocCat} disabled={!docCatForm.name_pt || createDocCat.isPending || updateDocCat.isPending} className="w-full">
+              {(createDocCat.isPending || updateDocCat.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
