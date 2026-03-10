@@ -116,7 +116,29 @@ const BackOfficeSection: React.FC = () => {
   const [editingDept, setEditingDept] = useState<string | null>(null);
   const [deptName, setDeptName] = useState("");
 
-  const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
+  // --- Document Categories ---
+  const { data: docCats = [], isLoading: docCatLoading } = useDocumentCategories();
+  const createDocCat = useCreateDocumentCategory();
+  const updateDocCat = useUpdateDocumentCategory();
+  const deleteDocCat = useDeleteDocumentCategory();
+  const [docCatDialog, setDocCatDialog] = useState(false);
+  const [editingDocCat, setEditingDocCat] = useState<string | null>(null);
+  const [docCatForm, setDocCatForm] = useState({ name_pt: "", name_en: "" });
+
+  const openCreateDocCat = () => { setEditingDocCat(null); setDocCatForm({ name_pt: "", name_en: "" }); setDocCatDialog(true); };
+  const openEditDocCat = (d: typeof docCats[0]) => { setEditingDocCat(d.id); setDocCatForm({ name_pt: d.name_pt, name_en: d.name_en }); setDocCatDialog(true); };
+  const handleSaveDocCat = async () => {
+    try {
+      if (editingDocCat) await updateDocCat.mutateAsync({ id: editingDocCat, ...docCatForm });
+      else await createDocCat.mutateAsync(docCatForm);
+      setDocCatDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+  const handleDeleteDocCat = async (id: string) => {
+    try { await deleteDocCat.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+
   const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
   const handleSaveBld = async () => {
     try {
