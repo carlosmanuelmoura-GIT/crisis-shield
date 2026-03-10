@@ -140,6 +140,8 @@ const BackOfficeSection: React.FC = () => {
   };
 
   const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
+  const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
+  const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
   const handleSaveBld = async () => {
     try {
       if (editingBld) await updateBld.mutateAsync({ id: editingBld, name: bldName });
