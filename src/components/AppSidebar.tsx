@@ -22,28 +22,9 @@ import {
   LayoutGrid,
   Settings,
   Eye,
-  BookOpen,
   Shield,
-  Building2,
-  Truck,
-  Users,
-  Key,
-  MapPin,
-  CreditCard,
-  FileCheck } from
+  Building2 } from
 "lucide-react";
-
-/* ── Visão Global ── */
-const visaoGlobalItems = [
-{ id: "politica-gcn", label: { pt: "Política GCN", en: "BCM Policy" }, icon: Shield },
-{ id: "proc-normalidade", label: { pt: "Procedimentos Normalidade e Alerta", en: "Normal & Alert Procedures" }, icon: FileCheck },
-{ id: "glossario", label: { pt: "Glossário GCN", en: "BCM Glossary" }, icon: BookOpen },
-{ id: "manual-bia", label: { pt: "Manual BIA", en: "BIA Manual" }, icon: BarChart3 },
-{ id: "pcn-global", label: { pt: "Planos de Continuidade de Negócio", en: "Business Continuity Plans" }, icon: FileText },
-{ id: "plano-crise", label: { pt: "Plano de Gestão de Crise", en: "Crisis Management Plan" }, icon: AlertTriangle },
-{ id: "plano-dsi", label: { pt: "Plano Recuperação Tecnológica (DSI)", en: "Tech Recovery Plan (DSI)" }, icon: Settings },
-{ id: "plano-dli", label: { pt: "Plano Emergência Interno (DLI)", en: "Internal Emergency Plan (DLI)" }, icon: AlertTriangle },
-{ id: "plano-dpe", label: { pt: "Plano Recursos Humanos (DPE)", en: "HR Plan (DPE)" }, icon: Users }];
 
 
 /* ── Operacional ── */
