@@ -22,28 +22,9 @@ import {
   LayoutGrid,
   Settings,
   Eye,
-  BookOpen,
   Shield,
-  Building2,
-  Truck,
-  Users,
-  Key,
-  MapPin,
-  CreditCard,
-  FileCheck } from
+  Building2 } from
 "lucide-react";
-
-/* ── Visão Global ── */
-const visaoGlobalItems = [
-{ id: "politica-gcn", label: { pt: "Política GCN", en: "BCM Policy" }, icon: Shield },
-{ id: "proc-normalidade", label: { pt: "Procedimentos Normalidade e Alerta", en: "Normal & Alert Procedures" }, icon: FileCheck },
-{ id: "glossario", label: { pt: "Glossário GCN", en: "BCM Glossary" }, icon: BookOpen },
-{ id: "manual-bia", label: { pt: "Manual BIA", en: "BIA Manual" }, icon: BarChart3 },
-{ id: "pcn-global", label: { pt: "Planos de Continuidade de Negócio", en: "Business Continuity Plans" }, icon: FileText },
-{ id: "plano-crise", label: { pt: "Plano de Gestão de Crise", en: "Crisis Management Plan" }, icon: AlertTriangle },
-{ id: "plano-dsi", label: { pt: "Plano Recuperação Tecnológica (DSI)", en: "Tech Recovery Plan (DSI)" }, icon: Settings },
-{ id: "plano-dli", label: { pt: "Plano Emergência Interno (DLI)", en: "Internal Emergency Plan (DLI)" }, icon: AlertTriangle },
-{ id: "plano-dpe", label: { pt: "Plano Recursos Humanos (DPE)", en: "HR Plan (DPE)" }, icon: Users }];
 
 
 /* ── Operacional ── */
@@ -65,13 +46,9 @@ const warRoomItems = [
 { id: "log", icon: ClipboardList, label: { pt: "Log das Acções", en: "Action Log" } }];
 
 
-/* ── Logística ── */
-const logisticaItems = [
-{ id: "logistica-carregado", label: { pt: "Complexo do Carregado", en: "Carregado Complex" }, icon: MapPin },
-{ id: "logistica-acessos", label: { pt: "Acessos autorizados", en: "Authorized Access" }, icon: Key },
-{ id: "logistica-lugares", label: { pt: "Lugares por departamentos", en: "Seats by Department" }, icon: Building2 },
-{ id: "logistica-concur", label: { pt: "Guia Prático Concur", en: "Concur Guide" }, icon: CreditCard },
-{ id: "logistica-bolt", label: { pt: "Procedimento BOLT", en: "BOLT Procedure" }, icon: FileCheck }];
+/* ── Documentação ── */
+const documentacaoItems = [
+{ id: "documentacao", label: { pt: "Documentação", en: "Documentation" }, icon: FileText }];
 
 
 /* ── Component ── */
@@ -116,8 +93,7 @@ const AppSidebar: React.FC = () => {
         <SidebarContent className="pt-14 pb-6">
           {renderGroup(lang === "pt" ? "OPERACIONAL" : "OPERATIONAL", null, operationalItems)}
           {renderGroup(lang === "pt" ? "WAR ROOM / Gestão Crise" : "WAR ROOM / Crisis Mgmt", null, warRoomItems)}
-          {renderGroup(lang === "pt" ? "LOGÍSTICA" : "LOGISTICS", Truck, logisticaItems)}
-          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO" : "DOCUMENTATION", Eye, visaoGlobalItems)}
+          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO" : "DOCUMENTATION", Eye, documentacaoItems)}
 
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-bold tracking-wider text-sidebar-primary">

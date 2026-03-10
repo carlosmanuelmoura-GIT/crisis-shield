@@ -662,6 +662,74 @@ export type Database = {
         }
         Relationships: []
       }
+      document_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name_en: string
+          name_pt: string
+          owner_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_pt: string
+          owner_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name_en?: string
+          name_pt?: string
+          owner_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      document_files: {
+        Row: {
+          category_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          owner_id: string | null
+          url: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          owner_id?: string | null
+          url?: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          owner_id?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_files_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "document_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dr_types: {
         Row: {
           code: string

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText } from "lucide-react";
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
@@ -18,6 +18,7 @@ import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useC
 import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
 import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/useBuildings";
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
+import { useDocumentCategories, useCreateDocumentCategory, useUpdateDocumentCategory, useDeleteDocumentCategory } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
 import { Building2 as BuildingIcon } from "lucide-react";
 
@@ -114,6 +115,29 @@ const BackOfficeSection: React.FC = () => {
   const [deptDialog, setDeptDialog] = useState(false);
   const [editingDept, setEditingDept] = useState<string | null>(null);
   const [deptName, setDeptName] = useState("");
+
+  // --- Document Categories ---
+  const { data: docCats = [], isLoading: docCatLoading } = useDocumentCategories();
+  const createDocCat = useCreateDocumentCategory();
+  const updateDocCat = useUpdateDocumentCategory();
+  const deleteDocCat = useDeleteDocumentCategory();
+  const [docCatDialog, setDocCatDialog] = useState(false);
+  const [editingDocCat, setEditingDocCat] = useState<string | null>(null);
+  const [docCatForm, setDocCatForm] = useState({ name_pt: "", name_en: "" });
+
+  const openCreateDocCat = () => { setEditingDocCat(null); setDocCatForm({ name_pt: "", name_en: "" }); setDocCatDialog(true); };
+  const openEditDocCat = (d: typeof docCats[0]) => { setEditingDocCat(d.id); setDocCatForm({ name_pt: d.name_pt, name_en: d.name_en }); setDocCatDialog(true); };
+  const handleSaveDocCat = async () => {
+    try {
+      if (editingDocCat) await updateDocCat.mutateAsync({ id: editingDocCat, ...docCatForm });
+      else await createDocCat.mutateAsync(docCatForm);
+      setDocCatDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
+    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
+  const handleDeleteDocCat = async (id: string) => {
+    try { await deleteDocCat.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
+    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+  };
 
   const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
   const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
@@ -265,6 +289,7 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
           <TabsTrigger value="buildings" className="text-xs"><BuildingIcon className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Edifícios" : "Buildings"}</TabsTrigger>
           <TabsTrigger value="departments" className="text-xs"><Building className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Departamentos" : "Departments"}</TabsTrigger>
+          <TabsTrigger value="doccats" className="text-xs"><FileText className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Documentação" : "Documentation"}</TabsTrigger>
         </TabsList>
 
         {/* ===== USER ROLES ===== */}
@@ -596,6 +621,40 @@ const BackOfficeSection: React.FC = () => {
             </div>
           )}
         </TabsContent>
+
+        {/* ===== DOCUMENT CATEGORIES ===== */}
+        <TabsContent value="doccats" className="space-y-3 mt-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={openCreateDocCat} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Nova" : "New"}</Button>
+          </div>
+          {docCatLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : docCats.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{lang === "pt" ? "Sem categorias" : "No categories"}</p>
+          ) : (
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead className="text-xs">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</TableHead>
+                  <TableHead className="text-xs">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</TableHead>
+                  <TableHead className="text-xs w-24"></TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {docCats.map(d => (
+                    <TableRow key={d.id}>
+                      <TableCell className="text-sm">{d.name_pt}</TableCell>
+                      <TableCell className="text-sm">{d.name_en}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDocCat(d)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDocCat(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* ===== DIALOGS ===== */}
@@ -753,6 +812,25 @@ const BackOfficeSection: React.FC = () => {
               <Input value={deptName} onChange={e => setDeptName(e.target.value)} className="bg-secondary border-border" /></div>
             <Button onClick={handleSaveDept} disabled={!deptName || createDept.isPending || updateDept.isPending} className="w-full">
               {(createDept.isPending || updateDept.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== DOCUMENT CATEGORIES TAB CONTENT ===== */}
+      {/* (inserted via TabsContent in the Tabs block) */}
+
+      {/* Document Category Dialog */}
+      <Dialog open={docCatDialog} onOpenChange={setDocCatDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editingDocCat ? (lang === "pt" ? "Editar Categoria" : "Edit Category") : (lang === "pt" ? "Nova Categoria" : "New Category")}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
+              <Input value={docCatForm.name_pt} onChange={e => setDocCatForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" /></div>
+            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
+              <Input value={docCatForm.name_en} onChange={e => setDocCatForm(f => ({ ...f, name_en: e.target.value }))} className="bg-secondary border-border" /></div>
+            <Button onClick={handleSaveDocCat} disabled={!docCatForm.name_pt || createDocCat.isPending || updateDocCat.isPending} className="w-full">
+              {(createDocCat.isPending || updateDocCat.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
         </DialogContent>
