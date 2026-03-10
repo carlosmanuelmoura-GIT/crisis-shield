@@ -621,6 +621,40 @@ const BackOfficeSection: React.FC = () => {
             </div>
           )}
         </TabsContent>
+
+        {/* ===== DOCUMENT CATEGORIES ===== */}
+        <TabsContent value="doccats" className="space-y-3 mt-3">
+          <div className="flex justify-end">
+            <Button size="sm" onClick={openCreateDocCat} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Nova" : "New"}</Button>
+          </div>
+          {docCatLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : docCats.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">{lang === "pt" ? "Sem categorias" : "No categories"}</p>
+          ) : (
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead className="text-xs">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</TableHead>
+                  <TableHead className="text-xs">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</TableHead>
+                  <TableHead className="text-xs w-24"></TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {docCats.map(d => (
+                    <TableRow key={d.id}>
+                      <TableCell className="text-sm">{d.name_pt}</TableCell>
+                      <TableCell className="text-sm">{d.name_en}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDocCat(d)}><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDocCat(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* ===== DIALOGS ===== */}
