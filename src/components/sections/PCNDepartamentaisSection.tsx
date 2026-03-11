@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleTrigger,
@@ -16,7 +17,15 @@ import {
   Key,
   ChevronRight,
   Search,
+  Upload,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import { usePCNDocuments, useCreatePCNDocument, useDeletePCNDocument } from "@/hooks/usePCNDocuments";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+const ACCEPTED = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx";
 
 const departments = [
   { code: "DAS", name: "Departamento de Auditoria e Supervisão", hasCC: false },
@@ -53,7 +62,14 @@ const subItemIcon: Record<string, React.ElementType> = {
 
 const PCNDepartamentaisSection: React.FC = () => {
   const { lang } = useApp();
+  const { toast } = useToast();
   const [filter, setFilter] = useState("");
+  const { data: pcnDocs = [] } = usePCNDocuments();
+  const createDoc = useCreatePCNDocument();
+  const deleteDoc = useDeletePCNDocument();
+  const [uploading, setUploading] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTarget, setUploadTarget] = useState<{ dept: string; attr: string } | null>(null);
 
   const filtered = departments.filter(
     (d) =>
@@ -76,13 +92,65 @@ const PCNDepartamentaisSection: React.FC = () => {
     return items;
   };
 
+  const getDocsFor = (deptCode: string, attrKey: string) =>
+    pcnDocs.filter(d => d.dept_code === deptCode && d.attribute_key === attrKey);
+
+  const handleUpload = async (deptCode: string, attrKey: string, file: File) => {
+    const uploadKey = `${deptCode}-${attrKey}`;
+    setUploading(uploadKey);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `pcn/${deptCode}/${attrKey}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("documents").upload(path, file);
+      if (uploadError) throw uploadError;
+      await createDoc.mutateAsync({
+        dept_code: deptCode,
+        attribute_key: attrKey,
+        file_name: file.name,
+        file_path: path,
+        url: "",
+      });
+      toast({ title: lang === "pt" ? "Ficheiro carregado" : "File uploaded" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const handleDelete = async (docId: string, filePath: string) => {
+    try {
+      if (filePath) await supabase.storage.from("documents").remove([filePath]);
+      await deleteDoc.mutateAsync(docId);
+      toast({ title: lang === "pt" ? "Eliminado" : "Deleted" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const getFileUrl = (filePath: string) => {
+    const { data } = supabase.storage.from("documents").getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold uppercase tracking-wider">
         {lang === "pt" ? "PCN Departamentais" : "Departmental BCPs"}
       </h2>
 
-      {/* Search / filter */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ACCEPTED}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file && uploadTarget) handleUpload(uploadTarget.dept, uploadTarget.attr, file);
+          e.target.value = "";
+        }}
+      />
+
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -97,7 +165,6 @@ const PCNDepartamentaisSection: React.FC = () => {
         {filtered.length} {lang === "pt" ? "departamentos" : "departments"}
       </p>
 
-      {/* Department grid */}
       <div className="grid gap-2">
         {filtered.map((dept) => (
           <Collapsible key={dept.code}>
@@ -120,17 +187,69 @@ const PCNDepartamentaisSection: React.FC = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="p-0 border-t border-border">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 divide-x divide-border">
+                  <div className="divide-y divide-border">
                     {getSubItems(dept).map((sub) => {
                       const Icon = subItemIcon[sub.key];
+                      const docs = getDocsFor(dept.code, sub.key);
+                      const uploadKey = `${dept.code}-${sub.key}`;
+                      const isUploading = uploading === uploadKey;
+
                       return (
-                        <button
-                          key={sub.key}
-                          className="flex flex-col items-center gap-1 py-3 px-2 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
-                        >
-                          <Icon className="h-4 w-4" />
-                          <span className="text-center leading-tight">{sub.label}</span>
-                        </button>
+                        <div key={sub.key} className="px-4 py-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                              <Icon className="h-4 w-4 text-muted-foreground" />
+                              {sub.label}
+                              {docs.length > 0 && (
+                                <Badge variant="secondary" className="text-[10px] h-5">{docs.length}</Badge>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={isUploading}
+                              onClick={() => {
+                                setUploadTarget({ dept: dept.code, attr: sub.key });
+                                fileInputRef.current?.click();
+                              }}
+                            >
+                              {isUploading ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <>
+                                  <Upload className="h-3.5 w-3.5 mr-1" />
+                                  Upload
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                          {docs.length > 0 && (
+                            <div className="space-y-1 ml-6">
+                              {docs.map((doc) => (
+                                <div key={doc.id} className="flex items-center gap-2">
+                                  <a
+                                    href={getFileUrl(doc.file_path)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 text-xs text-primary hover:underline truncate"
+                                  >
+                                    <FileText className="h-3.5 w-3.5 shrink-0" />
+                                    {doc.file_name}
+                                  </a>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 shrink-0 text-destructive hover:text-destructive"
+                                    onClick={() => handleDelete(doc.id, doc.file_path)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

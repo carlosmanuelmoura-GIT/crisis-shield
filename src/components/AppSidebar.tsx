@@ -23,7 +23,8 @@ import {
   Settings,
   Eye,
   Shield,
-  Building2 } from
+  Building2,
+  ArrowUpDown } from
 "lucide-react";
 
 
@@ -102,6 +103,7 @@ const AppSidebar: React.FC = () => {
             <SidebarGroupContent>
               <SidebarMenu>
                 <MenuBtn id="backoffice" icon={Settings} label="Back Office" />
+                <MenuBtn id="import-export" icon={ArrowUpDown} label="Import / Export" />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
