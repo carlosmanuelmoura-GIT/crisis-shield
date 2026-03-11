@@ -793,6 +793,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pcn_documents: {
+        Row: {
+          attribute_key: string
+          created_at: string
+          dept_code: string
+          file_name: string
+          file_path: string
+          id: string
+          owner_id: string | null
+          url: string
+        }
+        Insert: {
+          attribute_key: string
+          created_at?: string
+          dept_code: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          owner_id?: string | null
+          url?: string
+        }
+        Update: {
+          attribute_key?: string
+          created_at?: string
+          dept_code?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          owner_id?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           category_en: string
