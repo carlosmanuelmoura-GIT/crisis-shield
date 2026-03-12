@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentUserProfile, useCurrentUserRoles } from "@/hooks/useUserRoles";
@@ -9,13 +9,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 
 const roleLabels: Record<string, string> = {
   steering_gcn: "Steering",
   tecnico_departamento: "Técnico",
   especialista_gcn: "Especialista",
 };
+
+/* ── searchable section index ── */
+const sectionIndex: { id: string; keywords: string[]; label: { pt: string; en: string } }[] = [
+  { id: "scenarios", keywords: ["cenários", "crise", "crisis", "scenarios"], label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
+  { id: "procedures", keywords: ["procedimentos", "gcn", "bcm", "procedures"], label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
+  { id: "bia", keywords: ["bia", "impacto", "impact", "rto", "rpo"], label: { pt: "BIA", en: "BIA" } },
+  { id: "pcn-departamentais", keywords: ["pcn", "departamentais", "departmental", "bcp"], label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
+  { id: "contacts", keywords: ["contactos", "contacts", "telefone", "phone", "email"], label: { pt: "Contactos", en: "Contacts" } },
+  { id: "sms", keywords: ["sms", "express", "mensagem", "message"], label: { pt: "SMS Express", en: "SMS Express" } },
+  { id: "test-calendar", keywords: ["calendário", "testes", "test", "calendar"], label: { pt: "Calendário de Testes", en: "Test Calendar" } },
+  { id: "crisis-control", keywords: ["controlo", "gestão", "crise", "crisis", "management", "kanban"], label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
+  { id: "emergency", keywords: ["action", "cards", "emergência", "emergency", "checklist"], label: { pt: "Action Cards", en: "Action Cards" } },
+  { id: "meetings", keywords: ["reuniões", "meetings", "sala", "virtual", "video"], label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" } },
+  { id: "log", keywords: ["log", "acções", "decisão", "decision", "actions"], label: { pt: "Log das Acções", en: "Action Log" } },
+  { id: "documentacao", keywords: ["documentação", "documentation", "documentos", "documents"], label: { pt: "Documentação", en: "Documentation" } },
+  { id: "backoffice", keywords: ["back", "office", "administração", "admin", "settings"], label: { pt: "Back Office", en: "Back Office" } },
+  { id: "import-export", keywords: ["import", "export", "xls", "excel"], label: { pt: "Import / Export", en: "Import / Export" } },
+];
 
 function formatElapsed(startISO: string): string {
   const diff = Math.max(0, Math.floor((Date.now() - new Date(startISO).getTime()) / 1000));
@@ -42,7 +59,7 @@ const CrisisTimer: React.FC<{ startTime: string; crisisType: "real" | "simulated
       <Clock className="h-3.5 w-3.5" />
       <span>{elapsed}</span>
       <span className="text-[10px] uppercase opacity-80">
-        {isSimulated ? (lang === "pt" ? "SIM" : "SIM") : (lang === "pt" ? "REAL" : "REAL")}
+        {isSimulated ? "SIM" : "REAL"}
       </span>
     </div>
   );
@@ -54,12 +71,40 @@ const Header: React.FC = () => {
     satelliteMode, toggleSatellite,
     crisisActive, clearCrisis, crisisType, crisisStartTime,
     searchQuery, setSearchQuery,
+    setActiveSection,
   } = useApp();
   const { signOut, user } = useAuth();
   const { data: profile } = useCurrentUserProfile();
   const { data: roles = [] } = useCurrentUserRoles();
   const createLog = useCreateDecisionLog();
   const clearChecks = useClearAllChecklistStates();
+
+  const [focused, setFocused] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setFocused(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const matchingSections = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    const q = searchQuery.toLowerCase();
+    return sectionIndex.filter(s => {
+      const label = (lang === "pt" ? s.label.pt : s.label.en).toLowerCase();
+      if (label.includes(q)) return true;
+      return s.keywords.some(k => k.includes(q));
+    });
+  }, [searchQuery, lang]);
+
+  const handleSelectSection = (id: string) => {
+    setActiveSection(id);
+    setFocused(false);
+  };
 
   const handleClearCrisis = async () => {
     const author = profile?.display_name || user?.email || "Sistema";
@@ -84,20 +129,61 @@ const Header: React.FC = () => {
           </h1>
         </div>
 
-        {/* Crisis Timer - always visible when crisis active */}
+        {/* Crisis Timer */}
         {crisisActive && crisisStartTime && (
           <CrisisTimer startTime={crisisStartTime} crisisType={crisisType} lang={lang} />
         )}
 
-        {/* Center: Search */}
-        <div className="relative flex-1 max-w-md mx-auto">
+        {/* Center: Search with dropdown */}
+        <div ref={searchRef} className="relative flex-1 max-w-md mx-auto">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground sat-keep" />
           <Input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder={lang === "pt" ? "Pesquisar..." : "Search..."}
+            onFocus={() => setFocused(true)}
+            placeholder={lang === "pt" ? "Pesquisar secções e conteúdo..." : "Search sections & content..."}
             className="pl-8 h-8 text-sm bg-secondary border-border"
           />
+          {searchQuery && (
+            <button
+              onClick={() => { setSearchQuery(""); setFocused(false); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* Dropdown results */}
+          {focused && searchQuery.length >= 2 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-[60] overflow-hidden">
+              {matchingSections.length > 0 ? (
+                <>
+                  <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                    {lang === "pt" ? "Navegar para" : "Navigate to"}
+                  </div>
+                  {matchingSections.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => handleSelectSection(s.id)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-2"
+                    >
+                      <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {lang === "pt" ? s.label.pt : s.label.en}
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <div className="px-3 py-3 text-sm text-muted-foreground text-center">
+                  {lang === "pt" ? "Sem resultados" : "No results"}
+                </div>
+              )}
+              {searchQuery.length >= 2 && (
+                <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-t border-border">
+                  {lang === "pt" ? "💡 A pesquisa também filtra o conteúdo da secção atual" : "💡 Search also filters current section content"}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Crisis clear */}
@@ -116,7 +202,6 @@ const Header: React.FC = () => {
 
         {/* Right: user info, language, logout */}
         <div className="flex items-center gap-2 shrink-0 border-l border-border pl-3 ml-1">
-          {/* User name & role */}
           <div className="hidden md:flex flex-col items-end leading-none">
             <span className="text-xs font-medium truncate max-w-[140px]">
               {profile?.display_name || user?.email || "—"}
@@ -128,7 +213,6 @@ const Header: React.FC = () => {
             )}
           </div>
 
-          {/* Language */}
           <Button
             variant="ghost"
             size="sm"
@@ -139,7 +223,6 @@ const Header: React.FC = () => {
             {lang.toUpperCase()}
           </Button>
 
-          {/* Logout */}
           <Button
             variant="ghost"
             size="sm"
