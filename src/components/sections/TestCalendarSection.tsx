@@ -92,6 +92,24 @@ const TestCalendarSection: React.FC = () => {
     }
   };
 
+  const handleClone = async (t: typeof tests[0]) => {
+    const bIds = relations?.buildings.filter(r => r.test_id === t.id).map(r => r.building_id) || [];
+    const pIds = relations?.platforms.filter(r => r.test_id === t.id).map(r => r.platform_id) || [];
+    const bpIds = relations?.bps.filter(r => r.test_id === t.id).map(r => r.business_process_id) || [];
+    try {
+      await createTest.mutateAsync({
+        name: `${t.name} (${lang === "pt" ? "cópia" : "copy"})`,
+        test_date: t.test_date,
+        building_ids: bIds,
+        platform_ids: pIds,
+        bp_ids: bpIds,
+      });
+      toast({ title: lang === "pt" ? "Teste clonado" : "Test cloned" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
   const toggleMulti = (arr: string[], id: string) => arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
 
   // Toggle all BPs of a macro_processo
