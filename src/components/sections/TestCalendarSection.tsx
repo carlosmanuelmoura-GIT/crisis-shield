@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Loader2, CalendarIcon, List, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, CalendarIcon, List, ChevronLeft, ChevronRight, Search, X, Copy } from "lucide-react";
 import { useTests, useCreateTest, useUpdateTest, useDeleteTest, useAllTestRelations } from "@/hooks/useTests";
 import { useBuildings } from "@/hooks/useBuildings";
 import { useCMDBPlatforms } from "@/hooks/useCMDBPlatforms";
@@ -87,6 +87,24 @@ const TestCalendarSection: React.FC = () => {
     try {
       await deleteTest.mutateAsync(id);
       toast({ title: lang === "pt" ? "Eliminado" : "Deleted" });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleClone = async (t: typeof tests[0]) => {
+    const bIds = relations?.buildings.filter(r => r.test_id === t.id).map(r => r.building_id) || [];
+    const pIds = relations?.platforms.filter(r => r.test_id === t.id).map(r => r.platform_id) || [];
+    const bpIds = relations?.bps.filter(r => r.test_id === t.id).map(r => r.business_process_id) || [];
+    try {
+      await createTest.mutateAsync({
+        name: `${t.name} (${lang === "pt" ? "cópia" : "copy"})`,
+        test_date: t.test_date,
+        building_ids: bIds,
+        platform_ids: pIds,
+        bp_ids: bpIds,
+      });
+      toast({ title: lang === "pt" ? "Teste clonado" : "Test cloned" });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
@@ -260,6 +278,7 @@ const TestCalendarSection: React.FC = () => {
                   <TableCell><div className="flex flex-wrap gap-1">{getBPNames(t.id).map(n => <Badge key={n} variant="outline" className="text-[10px]">{n}</Badge>)}</div></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleClone(t)} title={lang === "pt" ? "Clonar" : "Clone"}><Copy className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
