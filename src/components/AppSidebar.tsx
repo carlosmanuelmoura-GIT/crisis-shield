@@ -24,7 +24,8 @@ import {
   Eye,
   Shield,
   Building2,
-  ArrowUpDown } from
+  ArrowUpDown,
+  Users } from
 "lucide-react";
 
 
@@ -34,6 +35,7 @@ const operationalItems = [
 { id: "procedures", icon: FileText, label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
 { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
 { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
+{ id: "pessoas-criticas", icon: Users, label: { pt: "Pessoas Críticas", en: "Critical People" } },
 { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" } },
 { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
 { id: "test-calendar", icon: ClipboardList, label: { pt: "Calendário de Testes", en: "Test Calendar" } }];
