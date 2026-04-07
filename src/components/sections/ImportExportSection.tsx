@@ -23,9 +23,11 @@ const ImportExportSection: React.FC = () => {
   const { data: processes = [] } = useBusinessProcesses();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaPlatLinks = [] } = useBIAProcessPlatforms();
+  const { data: pessoas = [] } = usePessoasCriticas();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
   const createBIA = useCreateBIAProcess();
+  const insertPessoa = useInsertPessoaCritica();
   const deletePlat = useDeleteCMDBPlatform();
   const deleteBP = useDeleteBusinessProcess();
 
@@ -33,6 +35,7 @@ const ImportExportSection: React.FC = () => {
   const platFileRef = useRef<HTMLInputElement>(null);
   const bpFileRef = useRef<HTMLInputElement>(null);
   const biaFileRef = useRef<HTMLInputElement>(null);
+  const pessoasFileRef = useRef<HTMLInputElement>(null);
 
   const t = (pt: string, en: string) => (lang === "pt" ? pt : en);
 
