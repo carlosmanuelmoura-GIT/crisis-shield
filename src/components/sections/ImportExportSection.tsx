@@ -364,6 +364,19 @@ const ImportExportSection: React.FC = () => {
             "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Plataformas (names separated by ;)"
           )}
         />
+        <ImportCard
+          icon={Users}
+          title={t("Pessoas Críticas", "Critical People")}
+          count={pessoas.length}
+          onExport={exportPessoas}
+          onTemplate={exportTemplatePessoas}
+          onImportClick={() => pessoasFileRef.current?.click()}
+          importKey="pessoas"
+          hint={t(
+            "Colunas: Nome, Email, Telefone, Departamento, Funcao, Prioridade, Codigo_Postal",
+            "Columns: Nome, Email, Telefone, Departamento, Funcao, Prioridade, Codigo_Postal"
+          )}
+        />
       </div>
     </div>
   );
