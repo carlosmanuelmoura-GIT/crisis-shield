@@ -7,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useCMDBPlatforms, useCreateCMDBPlatform, useDeleteCMDBPlatform, useBIAProcessPlatforms } from "@/hooks/useCMDBPlatforms";
 import { useBusinessProcesses, useCreateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useBIAProcesses, useCreateBIAProcess } from "@/hooks/useBIAProcesses";
+import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCriticas";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Upload, Loader2, Server, Briefcase, BarChart3 } from "lucide-react";
+import { Download, Upload, Loader2, Server, Briefcase, BarChart3, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const ImportExportSection: React.FC = () => {
