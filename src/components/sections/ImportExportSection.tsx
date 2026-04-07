@@ -7,10 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useCMDBPlatforms, useCreateCMDBPlatform, useDeleteCMDBPlatform, useBIAProcessPlatforms } from "@/hooks/useCMDBPlatforms";
 import { useBusinessProcesses, useCreateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useBIAProcesses, useCreateBIAProcess } from "@/hooks/useBIAProcesses";
+import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCriticas";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Upload, Loader2, Server, Briefcase, BarChart3 } from "lucide-react";
+import { Download, Upload, Loader2, Server, Briefcase, BarChart3, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const ImportExportSection: React.FC = () => {
@@ -22,9 +23,11 @@ const ImportExportSection: React.FC = () => {
   const { data: processes = [] } = useBusinessProcesses();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaPlatLinks = [] } = useBIAProcessPlatforms();
+  const { data: pessoas = [] } = usePessoasCriticas();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
   const createBIA = useCreateBIAProcess();
+  const insertPessoa = useInsertPessoaCritica();
   const deletePlat = useDeleteCMDBPlatform();
   const deleteBP = useDeleteBusinessProcess();
 
@@ -32,6 +35,7 @@ const ImportExportSection: React.FC = () => {
   const platFileRef = useRef<HTMLInputElement>(null);
   const bpFileRef = useRef<HTMLInputElement>(null);
   const biaFileRef = useRef<HTMLInputElement>(null);
+  const pessoasFileRef = useRef<HTMLInputElement>(null);
 
   const t = (pt: string, en: string) => (lang === "pt" ? pt : en);
 
@@ -225,6 +229,61 @@ const ImportExportSection: React.FC = () => {
     }
   };
 
+  // ── Export Pessoas Críticas ──
+  const exportPessoas = () => {
+    const rows = pessoas.map(p => ({
+      Nome: p.nome, Email: p.email, Telefone: p.telefone,
+      Departamento: p.departamento, Funcao: p.funcao,
+      Prioridade: p.prioridade, Codigo_Postal: p.codigo_postal,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pessoas_Criticas");
+    XLSX.writeFile(wb, "pessoas_criticas.xlsx");
+  };
+
+  const exportTemplatePessoas = () => {
+    const ws = XLSX.utils.json_to_sheet([{
+      Nome: "", Email: "", Telefone: "", Departamento: "", Funcao: "", Prioridade: 0, Codigo_Postal: "",
+    }]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pessoas_Criticas");
+    XLSX.writeFile(wb, "template_pessoas_criticas.xlsx");
+  };
+
+  const importPessoas = async (file: File) => {
+    setImporting("pessoas");
+    try {
+      const ab = await file.arrayBuffer();
+      const wb = XLSX.read(ab);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<{
+        Nome?: string; Email?: string; Telefone?: string;
+        Departamento?: string; Funcao?: string; Prioridade?: number; Codigo_Postal?: string;
+      }>(ws);
+
+      let count = 0;
+      for (const row of rows) {
+        if (!row.Nome?.trim()) continue;
+        await insertPessoa.mutateAsync({
+          nome: row.Nome.trim(),
+          email: row.Email?.trim() || "",
+          telefone: row.Telefone?.trim() || "",
+          departamento: row.Departamento?.trim() || "",
+          funcao: row.Funcao?.trim() || "",
+          prioridade: Number(row.Prioridade) || 0,
+          codigo_postal: row.Codigo_Postal?.trim() || "",
+        });
+        count++;
+      }
+      toast({ title: t(`${count} pessoas importadas`, `${count} people imported`) });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setImporting(null);
+    }
+  };
+
   const ImportCard: React.FC<{
     icon: React.ElementType; title: string; count: number;
     onExport: () => void; onTemplate: () => void;
@@ -268,8 +327,10 @@ const ImportExportSection: React.FC = () => {
         onChange={e => { const f = e.target.files?.[0]; if (f) importProcesses(f); e.target.value = ""; }} />
       <input ref={biaFileRef} type="file" accept=".xlsx,.xls" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) importBIA(f); e.target.value = ""; }} />
+      <input ref={pessoasFileRef} type="file" accept=".xlsx,.xls" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) importPessoas(f); e.target.value = ""; }} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ImportCard
           icon={Server}
           title={t("Plataformas CMDB", "CMDB Platforms")}
@@ -301,6 +362,19 @@ const ImportExportSection: React.FC = () => {
           hint={t(
             "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Plataformas (nomes separados por ;)",
             "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Plataformas (names separated by ;)"
+          )}
+        />
+        <ImportCard
+          icon={Users}
+          title={t("Pessoas Críticas", "Critical People")}
+          count={pessoas.length}
+          onExport={exportPessoas}
+          onTemplate={exportTemplatePessoas}
+          onImportClick={() => pessoasFileRef.current?.click()}
+          importKey="pessoas"
+          hint={t(
+            "Colunas: Nome, Email, Telefone, Departamento, Funcao, Prioridade, Codigo_Postal",
+            "Columns: Nome, Email, Telefone, Departamento, Funcao, Prioridade, Codigo_Postal"
           )}
         />
       </div>
