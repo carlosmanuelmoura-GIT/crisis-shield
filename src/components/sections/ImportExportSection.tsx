@@ -330,7 +330,7 @@ const ImportExportSection: React.FC = () => {
       <input ref={pessoasFileRef} type="file" accept=".xlsx,.xls" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) importPessoas(f); e.target.value = ""; }} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ImportCard
           icon={Server}
           title={t("Plataformas CMDB", "CMDB Platforms")}
