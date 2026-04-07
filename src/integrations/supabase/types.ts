@@ -826,6 +826,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pessoas_criticas: {
+        Row: {
+          codigo_postal: string
+          created_at: string
+          departamento: string
+          email: string
+          funcao: string
+          id: string
+          nome: string
+          owner_id: string | null
+          prioridade: number
+          telefone: string
+          updated_at: string
+        }
+        Insert: {
+          codigo_postal?: string
+          created_at?: string
+          departamento?: string
+          email?: string
+          funcao?: string
+          id?: string
+          nome: string
+          owner_id?: string | null
+          prioridade?: number
+          telefone?: string
+          updated_at?: string
+        }
+        Update: {
+          codigo_postal?: string
+          created_at?: string
+          departamento?: string
+          email?: string
+          funcao?: string
+          id?: string
+          nome?: string
+          owner_id?: string | null
+          prioridade?: number
+          telefone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       procedures: {
         Row: {
           category_en: string
