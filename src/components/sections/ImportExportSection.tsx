@@ -229,6 +229,61 @@ const ImportExportSection: React.FC = () => {
     }
   };
 
+  // ── Export Pessoas Críticas ──
+  const exportPessoas = () => {
+    const rows = pessoas.map(p => ({
+      Nome: p.nome, Email: p.email, Telefone: p.telefone,
+      Departamento: p.departamento, Funcao: p.funcao,
+      Prioridade: p.prioridade, Codigo_Postal: p.codigo_postal,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pessoas_Criticas");
+    XLSX.writeFile(wb, "pessoas_criticas.xlsx");
+  };
+
+  const exportTemplatePessoas = () => {
+    const ws = XLSX.utils.json_to_sheet([{
+      Nome: "", Email: "", Telefone: "", Departamento: "", Funcao: "", Prioridade: 0, Codigo_Postal: "",
+    }]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pessoas_Criticas");
+    XLSX.writeFile(wb, "template_pessoas_criticas.xlsx");
+  };
+
+  const importPessoas = async (file: File) => {
+    setImporting("pessoas");
+    try {
+      const ab = await file.arrayBuffer();
+      const wb = XLSX.read(ab);
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<{
+        Nome?: string; Email?: string; Telefone?: string;
+        Departamento?: string; Funcao?: string; Prioridade?: number; Codigo_Postal?: string;
+      }>(ws);
+
+      let count = 0;
+      for (const row of rows) {
+        if (!row.Nome?.trim()) continue;
+        await insertPessoa.mutateAsync({
+          nome: row.Nome.trim(),
+          email: row.Email?.trim() || "",
+          telefone: row.Telefone?.trim() || "",
+          departamento: row.Departamento?.trim() || "",
+          funcao: row.Funcao?.trim() || "",
+          prioridade: Number(row.Prioridade) || 0,
+          codigo_postal: row.Codigo_Postal?.trim() || "",
+        });
+        count++;
+      }
+      toast({ title: t(`${count} pessoas importadas`, `${count} people imported`) });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setImporting(null);
+    }
+  };
+
   const ImportCard: React.FC<{
     icon: React.ElementType; title: string; count: number;
     onExport: () => void; onTemplate: () => void;
@@ -272,6 +327,8 @@ const ImportExportSection: React.FC = () => {
         onChange={e => { const f = e.target.files?.[0]; if (f) importProcesses(f); e.target.value = ""; }} />
       <input ref={biaFileRef} type="file" accept=".xlsx,.xls" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) importBIA(f); e.target.value = ""; }} />
+      <input ref={pessoasFileRef} type="file" accept=".xlsx,.xls" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) importPessoas(f); e.target.value = ""; }} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <ImportCard
