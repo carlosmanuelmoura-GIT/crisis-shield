@@ -86,6 +86,8 @@ const CrisisControlSection: React.FC = () => {
 
   const filteredCrises = useMemo(() => {
     return crises.filter((c) => {
+      if (activeTab === "template" && c.crisis_type !== "template") return false;
+      if (activeTab === "real" && c.crisis_type === "template") return false;
       if (filterType !== "all" && c.crisis_type !== filterType) return false;
       if (filterStatus !== "all" && c.status !== filterStatus) return false;
       if (filterName && !c.title.toLowerCase().includes(filterName.toLowerCase())) return false;
@@ -95,7 +97,7 @@ const CrisisControlSection: React.FC = () => {
       }
       return true;
     });
-  }, [crises, filterType, filterStatus, filterName, filterDate]);
+  }, [crises, activeTab, filterType, filterStatus, filterName, filterDate]);
 
   const hasActiveFilter = filterType !== "all" || filterStatus !== "all" || filterName !== "" || filterDate !== "";
 
