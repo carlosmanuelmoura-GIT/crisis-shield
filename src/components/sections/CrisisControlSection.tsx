@@ -128,6 +128,8 @@ const CrisisControlSection: React.FC = () => {
         setFormType(source.crisis_type);
         setCloneFromId(cloneId);
       }
+    } else {
+      setFormType(activeTab === "template" ? "template" : "real");
     }
     setShowDialog(true);
   };
