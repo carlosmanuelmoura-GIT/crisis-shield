@@ -254,13 +254,18 @@ const CrisisControlSection: React.FC = () => {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo" : "Type"}</Label>
-              <Select value={filterType} onValueChange={setFilterType}>
+              <Select value={filterType} onValueChange={setFilterType} disabled={activeTab === "template"}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  <SelectItem value="real">REAL</SelectItem>
-                  <SelectItem value="simulated">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</SelectItem>
-                  <SelectItem value="template">TEMPLATE</SelectItem>
+                  {activeTab === "real" ? (
+                    <>
+                      <SelectItem value="real">REAL</SelectItem>
+                      <SelectItem value="simulated">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</SelectItem>
+                    </>
+                  ) : (
+                    <SelectItem value="template">TEMPLATE</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
