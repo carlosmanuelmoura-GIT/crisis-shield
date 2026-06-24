@@ -65,6 +65,9 @@ const CrisisControlSection: React.FC = () => {
   const [editingCrisisId, setEditingCrisisId] = useState<string | null>(null);
   const [cloneFromId, setCloneFromId] = useState<string | null>(null);
 
+  // Tab: separate templates from real/simulated crises
+  const [activeTab, setActiveTab] = useState<"real" | "template">("real");
+
   // Filters
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
