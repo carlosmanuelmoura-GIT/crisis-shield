@@ -207,6 +207,25 @@ const CrisisControlSection: React.FC = () => {
         )}
       </div>
 
+      {/* Tabs: Real crises vs Templates */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "real" | "template")}>
+        <TabsList>
+          <TabsTrigger value="real">
+            {lang === "pt" ? "Crises Reais" : "Real Crises"}
+            <Badge variant="outline" className="ml-2 text-[10px]">
+              {crises.filter((c) => c.crisis_type !== "template").length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="template">
+            {lang === "pt" ? "Templates" : "Templates"}
+            <Badge variant="outline" className="ml-2 text-[10px]">
+              {crises.filter((c) => c.crisis_type === "template").length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+
       {/* Filters */}
       <Card className="border-dashed">
         <CardContent className="p-3">
