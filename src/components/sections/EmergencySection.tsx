@@ -683,7 +683,7 @@ const EmergencySection: React.FC = () => {
                                       )}
                                     </div>
                                     {/* Checklist items */}
-                                    {isCardExpanded && items.length > 0 && (
+                                    {isCardExpanded && (
                                       <div className="space-y-1 pt-1 border-t border-border/50">
                                         {items.map(item => {
                                           const checked = !!statesMap[item.id];
@@ -695,6 +695,12 @@ const EmergencySection: React.FC = () => {
                                             </label>
                                           );
                                         })}
+                                        <div className="flex gap-1.5 pt-1">
+                                          <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
+                                            placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-6 text-[10px] bg-secondary border-border px-2"
+                                            onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
+                                          <Button size="sm" variant="secondary" className="h-6 px-1.5" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
+                                        </div>
                                       </div>
                                     )}
                                   </CardContent>
