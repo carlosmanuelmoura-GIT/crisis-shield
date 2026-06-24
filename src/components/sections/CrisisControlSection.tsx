@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle, Plus, Trash2, Shield, Loader2,
   CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter, ChevronDown, ChevronUp,
@@ -64,6 +65,9 @@ const CrisisControlSection: React.FC = () => {
   const [editingCrisisId, setEditingCrisisId] = useState<string | null>(null);
   const [cloneFromId, setCloneFromId] = useState<string | null>(null);
 
+  // Tab: separate templates from real/simulated crises
+  const [activeTab, setActiveTab] = useState<"real" | "template">("real");
+
   // Filters
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -82,6 +86,8 @@ const CrisisControlSection: React.FC = () => {
 
   const filteredCrises = useMemo(() => {
     return crises.filter((c) => {
+      if (activeTab === "template" && c.crisis_type !== "template") return false;
+      if (activeTab === "real" && c.crisis_type === "template") return false;
       if (filterType !== "all" && c.crisis_type !== filterType) return false;
       if (filterStatus !== "all" && c.status !== filterStatus) return false;
       if (filterName && !c.title.toLowerCase().includes(filterName.toLowerCase())) return false;
@@ -91,7 +97,7 @@ const CrisisControlSection: React.FC = () => {
       }
       return true;
     });
-  }, [crises, filterType, filterStatus, filterName, filterDate]);
+  }, [crises, activeTab, filterType, filterStatus, filterName, filterDate]);
 
   const hasActiveFilter = filterType !== "all" || filterStatus !== "all" || filterName !== "" || filterDate !== "";
 
@@ -122,6 +128,8 @@ const CrisisControlSection: React.FC = () => {
         setFormType(source.crisis_type);
         setCloneFromId(cloneId);
       }
+    } else {
+      setFormType(activeTab === "template" ? "template" : "real");
     }
     setShowDialog(true);
   };
@@ -199,6 +207,25 @@ const CrisisControlSection: React.FC = () => {
         )}
       </div>
 
+      {/* Tabs: Real crises vs Templates */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "real" | "template")}>
+        <TabsList>
+          <TabsTrigger value="real">
+            {lang === "pt" ? "Crises Reais" : "Real Crises"}
+            <Badge variant="outline" className="ml-2 text-[10px]">
+              {crises.filter((c) => c.crisis_type !== "template").length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="template">
+            {lang === "pt" ? "Templates" : "Templates"}
+            <Badge variant="outline" className="ml-2 text-[10px]">
+              {crises.filter((c) => c.crisis_type === "template").length}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+
       {/* Filters */}
       <Card className="border-dashed">
         <CardContent className="p-3">
@@ -227,13 +254,18 @@ const CrisisControlSection: React.FC = () => {
             </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo" : "Type"}</Label>
-              <Select value={filterType} onValueChange={setFilterType}>
+              <Select value={filterType} onValueChange={setFilterType} disabled={activeTab === "template"}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  <SelectItem value="real">REAL</SelectItem>
-                  <SelectItem value="simulated">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</SelectItem>
-                  <SelectItem value="template">TEMPLATE</SelectItem>
+                  {activeTab === "real" ? (
+                    <>
+                      <SelectItem value="real">REAL</SelectItem>
+                      <SelectItem value="simulated">{lang === "pt" ? "SIMULADA" : "SIMULATED"}</SelectItem>
+                    </>
+                  ) : (
+                    <SelectItem value="template">TEMPLATE</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
