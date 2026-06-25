@@ -89,7 +89,7 @@ const ImportExportSection: React.FC = () => {
         Nome_EN: b.name_en,
         RTO: b.rto,
         RPO: b.rpo,
-        Criticidade: b.criticality,
+        Tipo_BIA: b.criticality,
         DR_Type_ID: b.dr_type_id || "",
         DR_Type_Nome: b.dr_type_id ? (drMap.get(b.dr_type_id) || "") : "",
         Business_Process_ID: b.business_process_id || "",
@@ -123,7 +123,7 @@ const ImportExportSection: React.FC = () => {
 
   const exportTemplateBIA = () => {
     const ws = XLSX.utils.json_to_sheet([{
-      Nome_PT: "", Nome_EN: "", RTO: 0, RPO: 0, Criticidade: "medium",
+      Nome_PT: "", Nome_EN: "", RTO: 0, RPO: 0, Tipo_BIA: "analitica",
       DR_Type_ID: "", DR_Type_Nome: "",
       Business_Process_ID: "", Business_Process_Nome: "",
       Departamento_ID: "", Departamento_Nome: "",
@@ -194,7 +194,7 @@ const ImportExportSection: React.FC = () => {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
         Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
-        Criticidade?: string;
+        Tipo_BIA?: string; Criticidade?: string;
         DR_Type_ID?: string; DR_Type_Nome?: string;
         Business_Process_ID?: string; Business_Process_Nome?: string;
         Departamento_ID?: string; Departamento_Nome?: string;
@@ -243,7 +243,13 @@ const ImportExportSection: React.FC = () => {
             name_en: row.Nome_EN?.trim() || "",
             rto: Number(row.RTO) || 0,
             rpo: Number(row.RPO) || 0,
-            criticality: row.Criticidade?.trim() || "medium",
+            criticality: (() => {
+              const raw = (row.Tipo_BIA ?? row.Criticidade ?? "").toString().trim().toLowerCase();
+              if (["vital", "critical", "crítico", "critico"].includes(raw)) return "vital";
+              if (["decisao", "decisão", "high", "alto"].includes(raw)) return "decisao";
+              if (["analitica", "analítica", "medium", "low", "médio", "medio", "baixo"].includes(raw)) return "analitica";
+              return "analitica";
+            })(),
             dr_type_id: drId,
             business_process_id: bpId,
             department_id: deptId,
@@ -426,8 +432,8 @@ const ImportExportSection: React.FC = () => {
           onImportClick={() => biaFileRef.current?.click()}
           importKey="bia"
           hint={t(
-            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (nomes separados por ;)",
-            "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (names separated by ;)"
+            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Tipo_BIA (vital/decisao/analitica), DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (nomes separados por ;)",
+            "Columns: Nome_PT, Nome_EN, RTO, RPO, Tipo_BIA (vital/decisao/analitica), DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (names separated by ;)"
           )}
         />
         <ImportCard

@@ -1,28 +1,30 @@
-## Alterações
+## Renomear "Criticidade" → "Tipo de BIA" com valores VITAL, DECISÃO, ANALÍTICA
 
-### 1. Base de dados
-- Adicionar coluna `department_id` (uuid, nullable, FK → `departments.id`, ON DELETE SET NULL) à tabela `bia_processes`.
+Mantém-se a coluna `criticality` na base de dados (sem migração de schema) — apenas mudam os valores aceites e a apresentação. Migração de dados converte os valores antigos.
 
-### 2. BIA Section (`src/components/sections/BIASection.tsx`)
-- Adicionar `department_id` ao estado do formulário (criar/editar).
-- Adicionar um Select "Departamento" no diálogo (a seguir ao Macro Processo), alimentado por `useDepartments`.
-- Mostrar o nome do departamento no card/linha de cada BIA (junto ao DR Type e Business Process).
-- Carregar `department_id` ao abrir edição.
+### 1. Migração de dados (UPDATE)
+Mapear valores existentes na tabela `bia_processes`:
+- `critical` → `vital`
+- `high` → `decisao`
+- `medium` / `low` / outros → `analitica`
+- Atualizar default da coluna para `analitica`
 
-### 3. Export BIA (`src/components/sections/ImportExportSection.tsx`)
-- Adicionar colunas ao export e ao template:
-  - `Departamento_ID`
-  - `Departamento_Nome`
-  - `DR_Type_Nome` (além do já existente `DR_Type_ID`)
+### 2. UI — `src/components/sections/BIASection.tsx`
+- Renomear label "Criticidade" → "Tipo de BIA" / "BIA Type"
+- Substituir opções do Select por:
+  - `vital` → VITAL
+  - `decisao` → DECISÃO
+  - `analitica` → ANALÍTICA
+- Atualizar `critColor` para os 3 novos valores (vermelho / âmbar / cinza)
+- Default do formulário passa a `analitica`
 
-### 4. Import BIA
-Permitir importar identificando por **nome** (além do ID, mantendo retrocompatibilidade). Resolução:
-- `DR_Type_Nome` → procura em `dr_types.name`; se `DR_Type_ID` vier, prevalece.
-- `Business_Process_Nome` → já existe; manter.
-- `Departamento_Nome` → procura em `departments.name`; `Departamento_ID` se fornecido prevalece.
-- Se um nome não corresponder, a linha continua a ser importada mas o campo respectivo fica a `null` (e contabiliza-se um aviso no toast final).
+### 3. Import/Export — `src/components/sections/ImportExportSection.tsx`
+- Renomear coluna `Criticidade` → `Tipo_BIA` no export e template
+- Default no template: `analitica`
+- Hint text actualizado
+- Import: aceitar `Tipo_BIA` (e fallback `Criticidade` para compatibilidade), normalizar para um dos 3 valores
 
-### 5. Atualizar texto de ajuda
-Atualizar a descrição/hint do upload BIA listando as novas colunas suportadas.
+### 4. Hook
+`src/hooks/useBIAProcesses.ts` mantém o campo `criticality: string` — sem alterações necessárias.
 
-Não há alterações em lógica de negócio fora destes pontos.
+Nenhuma outra zona da app consome `criticality`.

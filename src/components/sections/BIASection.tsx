@@ -23,9 +23,9 @@ import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 const critColor: Record<string, string> = {
-  critical: "hsl(0, 72%, 51%)",
-  high: "hsl(45, 90%, 55%)",
-  medium: "hsl(220, 5%, 55%)",
+  vital: "hsl(0, 72%, 51%)",
+  decisao: "hsl(35, 92%, 52%)",
+  analitica: "hsl(220, 5%, 55%)",
 };
 
 const BIASection: React.FC = () => {
@@ -49,7 +49,7 @@ const BIASection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
   const [form, setForm] = useState({
-    name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium",
+    name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "analitica",
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
     department_id: null as string | null,
@@ -115,7 +115,7 @@ const BIASection: React.FC = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null, department_id: null });
+    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "analitica", business_process_id: null, dr_type_id: null, department_id: null });
     resetCascade();
     setDialogOpen(true);
   };
@@ -656,15 +656,15 @@ const BIASection: React.FC = () => {
               <div><Label className="text-xs">RPO ({t("horas", "hours")})</Label><Input type="number" step="0.5" min="0" value={form.rpo} onChange={e => setForm(f => ({ ...f, rpo: parseFloat(e.target.value) || 0 }))} /></div>
             </div>
 
-            {/* Criticality */}
+            {/* Tipo de BIA */}
             <div>
-              <Label className="text-xs">{t("Criticidade", "Criticality")}</Label>
+              <Label className="text-xs">{t("Tipo de BIA", "BIA Type")}</Label>
               <Select value={form.criticality} onValueChange={v => setForm(f => ({ ...f, criticality: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="critical">{t("Crítico", "Critical")}</SelectItem>
-                  <SelectItem value="high">{t("Alto", "High")}</SelectItem>
-                  <SelectItem value="medium">{t("Médio", "Medium")}</SelectItem>
+                  <SelectItem value="vital">VITAL</SelectItem>
+                  <SelectItem value="decisao">DECISÃO</SelectItem>
+                  <SelectItem value="analitica">ANALÍTICA</SelectItem>
                 </SelectContent>
               </Select>
             </div>
