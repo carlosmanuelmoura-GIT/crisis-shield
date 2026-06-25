@@ -16,6 +16,9 @@ import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers
 import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
+import { useActionCards } from "@/hooks/useActionCards";
+import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
+import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 const critColor: Record<string, string> = {
@@ -36,6 +39,10 @@ const BIASection: React.FC = () => {
   const { data: procPlatLinks = [] } = useBIAProcessPlatforms();
   const linkPlatform = useLinkBIAProcessPlatform();
   const unlinkPlatform = useUnlinkBIAProcessPlatform();
+  const { data: actionCards = [] } = useActionCards();
+  const { data: biaActionCardLinks = [] } = useBIAActionCards();
+  const linkActionCard = useLinkBIAActionCard();
+  const unlinkActionCard = useUnlinkBIAActionCard();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
@@ -46,6 +53,8 @@ const BIASection: React.FC = () => {
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
+  const [linkActionDialog, setLinkActionDialog] = useState<string | null>(null);
+  const [linkActionCardId, setLinkActionCardId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
   const [filterPlatformIds, setFilterPlatformIds] = useState<string[]>([]);
 
@@ -493,6 +502,28 @@ const BIASection: React.FC = () => {
                         <Plus className="h-2.5 w-2.5 mr-0.5" />{t("Plataforma", "Platform")}
                       </Button>
                     </div>
+
+                    {/* Action Cards linked to this BIA */}
+                    {(() => {
+                      const linkedACs = biaActionCardLinks
+                        .filter(l => l.bia_process_id === p.id)
+                        .map(l => ({ link: l, card: actionCards.find(ac => ac.id === l.action_card_id) }))
+                        .filter(x => x.card);
+                      return (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          <ListChecks className="h-3 w-3 text-muted-foreground" />
+                          {linkedACs.map(({ link, card }) => (
+                            <Badge key={link.id} variant="outline" className="text-[10px] gap-1 pr-1 bg-accent/30">
+                              {t(card!.title_pt, card!.title_en)}
+                              <button onClick={() => unlinkActionCard.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                            </Badge>
+                          ))}
+                          <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkActionDialog(p.id); setLinkActionCardId(""); }}>
+                            <Plus className="h-2.5 w-2.5 mr-0.5" />{t("Action Card", "Action Card")}
+                          </Button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -648,6 +679,53 @@ const BIASection: React.FC = () => {
             }} disabled={!linkPlatId || linkPlatform.isPending} className="w-full">
               {t("Associar", "Link")}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Action Card dialog */}
+      <Dialog open={!!linkActionDialog} onOpenChange={(o) => !o && setLinkActionDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4 text-primary" />
+              {t("Associar Action Card", "Link Action Card")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {(() => {
+              const alreadyLinkedIds = new Set(
+                biaActionCardLinks
+                  .filter(l => l.bia_process_id === linkActionDialog)
+                  .map(l => l.action_card_id)
+              );
+              const available = actionCards.filter(ac => !alreadyLinkedIds.has(ac.id));
+              return (
+                <>
+                  <Select value={linkActionCardId} onValueChange={setLinkActionCardId}>
+                    <SelectTrigger><SelectValue placeholder={t("Selecionar action card...", "Select action card...")} /></SelectTrigger>
+                    <SelectContent>
+                      {available.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">{t("Sem action cards disponíveis", "No action cards available")}</div>
+                      )}
+                      {available.map(ac => (
+                        <SelectItem key={ac.id} value={ac.id}>{t(ac.title_pt, ac.title_en)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={async () => {
+                    if (!linkActionDialog || !linkActionCardId) return;
+                    try {
+                      await linkActionCard.mutateAsync({ bia_process_id: linkActionDialog, action_card_id: linkActionCardId });
+                      setLinkActionCardId("");
+                      toast.success(t("Action Card associado", "Action Card linked"));
+                    } catch { toast.error(t("Erro ao associar", "Error linking")); }
+                  }} disabled={!linkActionCardId || linkActionCard.isPending} className="w-full">
+                    {t("Associar", "Link")}
+                  </Button>
+                </>
+              );
+            })()}
           </div>
         </DialogContent>
       </Dialog>

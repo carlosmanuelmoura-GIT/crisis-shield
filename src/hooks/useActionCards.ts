@@ -12,7 +12,7 @@ export interface DBActionCard {
   funcao: string;
   macro_processo: string;
   recurso_id: string | null;
-  sub_capacidade_id: string | null;
+  cenario_id: string | null;
   department_id: string | null;
   created_at: string;
   updated_at: string;
@@ -83,9 +83,9 @@ export function useToggleChecklistState() {
       const { error } = await supabase
         .from("checklist_state")
         .upsert(
-          { 
-            user_id: user.id, 
-            checklist_item_id: itemId, 
+          {
+            user_id: user.id,
+            checklist_item_id: itemId,
             checked,
             confirmed_by_department: confirmed_by_department || '',
             confirmed_by_person: confirmed_by_person || '',
@@ -121,7 +121,7 @@ export function useCreateActionCard() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; sub_capacidade_id?: string; department_id?: string }) => {
+    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string }) => {
       const { error } = await supabase.from("action_cards").insert({
         title_pt: data.title_pt,
         title_en: data.title_en,
@@ -130,8 +130,8 @@ export function useCreateActionCard() {
         funcao: data.funcao || '',
         macro_processo: data.macro_processo || '',
         recurso_id: data.recurso_id || null,
-        sub_capacidade_id: (data as any).sub_capacidade_id || null,
-        department_id: (data as any).department_id || null,
+        cenario_id: data.cenario_id || null,
+        department_id: data.department_id || null,
         owner_id: user?.id,
       } as any);
       if (error) throw error;
@@ -144,7 +144,7 @@ export function useUpdateActionCard() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; sub_capacidade_id?: string; department_id?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string }) => {
       const { error } = await supabase.from("action_cards").update({
         title_pt: data.title_pt,
         title_en: data.title_en,
@@ -153,8 +153,8 @@ export function useUpdateActionCard() {
         funcao: data.funcao || '',
         macro_processo: data.macro_processo || '',
         recurso_id: data.recurso_id || null,
-        sub_capacidade_id: (data as any).sub_capacidade_id || null,
-        department_id: (data as any).department_id || null,
+        cenario_id: data.cenario_id || null,
+        department_id: data.department_id || null,
       } as any).eq("id", id);
       if (error) throw error;
     },

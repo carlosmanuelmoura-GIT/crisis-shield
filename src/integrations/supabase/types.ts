@@ -17,6 +17,7 @@ export type Database = {
       action_cards: {
         Row: {
           capability: string | null
+          cenario_id: string | null
           created_at: string
           department_id: string | null
           funcao: string
@@ -25,13 +26,13 @@ export type Database = {
           owner_id: string | null
           recurso_id: string | null
           severity: string
-          sub_capacidade_id: string | null
           title_en: string
           title_pt: string
           updated_at: string
         }
         Insert: {
           capability?: string | null
+          cenario_id?: string | null
           created_at?: string
           department_id?: string | null
           funcao?: string
@@ -40,13 +41,13 @@ export type Database = {
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
-          sub_capacidade_id?: string | null
           title_en?: string
           title_pt: string
           updated_at?: string
         }
         Update: {
           capability?: string | null
+          cenario_id?: string | null
           created_at?: string
           department_id?: string | null
           funcao?: string
@@ -55,12 +56,18 @@ export type Database = {
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
-          sub_capacidade_id?: string | null
           title_en?: string
           title_pt?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "action_cards_cenario_id_fkey"
+            columns: ["cenario_id"]
+            isOneToOne: false
+            referencedRelation: "cenarios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "action_cards_department_id_fkey"
             columns: ["department_id"]
@@ -75,11 +82,40 @@ export type Database = {
             referencedRelation: "recursos"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      bia_action_cards: {
+        Row: {
+          action_card_id: string
+          bia_process_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_card_id: string
+          bia_process_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_card_id?: string
+          bia_process_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
           {
-            foreignKeyName: "action_cards_sub_capacidade_id_fkey"
-            columns: ["sub_capacidade_id"]
+            foreignKeyName: "bia_action_cards_action_card_id_fkey"
+            columns: ["action_card_id"]
             isOneToOne: false
-            referencedRelation: "sub_capacidades"
+            referencedRelation: "action_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bia_action_cards_bia_process_id_fkey"
+            columns: ["bia_process_id"]
+            isOneToOne: false
+            referencedRelation: "bia_processes"
             referencedColumns: ["id"]
           },
         ]
