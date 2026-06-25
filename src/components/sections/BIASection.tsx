@@ -59,7 +59,9 @@ const BIASection: React.FC = () => {
   const [linkActionDialog, setLinkActionDialog] = useState<string | null>(null);
   const [linkActionCardId, setLinkActionCardId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
-  const [filterPlatformIds, setFilterPlatformIds] = useState<string[]>([]);
+  const [filterActionCardId, setFilterActionCardId] = useState<string | null>(null);
+  const [actionCardSearch, setActionCardSearch] = useState<string>("");
+  const [actionCardPopoverOpen, setActionCardPopoverOpen] = useState(false);
 
   // List-level cascading filters
   const [listTipoFuncao, setListTipoFuncao] = useState<string>("__all__");
