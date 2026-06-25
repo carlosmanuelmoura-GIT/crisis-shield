@@ -432,8 +432,8 @@ const ImportExportSection: React.FC = () => {
           onImportClick={() => biaFileRef.current?.click()}
           importKey="bia"
           hint={t(
-            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (nomes separados por ;)",
-            "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (names separated by ;)"
+            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Tipo_BIA (vital/decisao/analitica), DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (nomes separados por ;)",
+            "Columns: Nome_PT, Nome_EN, RTO, RPO, Tipo_BIA (vital/decisao/analitica), DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (names separated by ;)"
           )}
         />
         <ImportCard
