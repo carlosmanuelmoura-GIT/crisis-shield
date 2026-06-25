@@ -115,7 +115,7 @@ const BIASection: React.FC = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null });
+    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null, department_id: null });
     resetCascade();
     setDialogOpen(true);
   };
@@ -127,6 +127,7 @@ const BIASection: React.FC = () => {
       criticality: p.criticality,
       business_process_id: p.business_process_id || null,
       dr_type_id: p.dr_type_id || null,
+      department_id: (p as any).department_id || null,
     });
     const bp = p.business_process_id ? businessProcesses.find(b => b.id === p.business_process_id) : undefined;
     resetCascade(bp);
