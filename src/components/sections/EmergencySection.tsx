@@ -431,9 +431,9 @@ const EmergencySection: React.FC = () => {
         <p className="text-sm text-muted-foreground py-4 text-center">{lang === "pt" ? "Nenhum action card encontrado." : "No action cards found."}</p>
       )}
 
-      {/* LIST VIEW - grouped by cenário */}
-      {viewMode === "list" && groupedCards.map(({ cenario, cards: groupCards }) => {
-        const groupId = cenario?.id || "__unassigned";
+      {/* LIST VIEW - grouped by Recurso */}
+      {viewMode === "list" && groupedCards.map(({ recurso, cards: groupCards }) => {
+        const groupId = recurso?.id || "__unassigned";
         const isGroupCollapsed = collapsedGroups[groupId];
         const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
         const groupDone = groupCards.reduce((sum, card) => {
@@ -441,9 +441,9 @@ const EmergencySection: React.FC = () => {
           return sum + items.filter(i => statesMap[i.id]).length;
         }, 0);
 
-        const groupLabel = cenario
-          ? `${cenario.roman ? cenario.roman + " — " : ""}${lang === "pt" ? cenario.name_pt : cenario.name_en || cenario.name_pt}`
-          : (lang === "pt" ? "Sem cenário associado" : "No scenario assigned");
+        const groupLabel = recurso
+          ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
+          : (lang === "pt" ? "Sem recurso associado" : "No resource assigned");
 
         return (
           <div key={groupId} className="space-y-3">
