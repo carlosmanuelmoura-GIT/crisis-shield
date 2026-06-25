@@ -376,120 +376,167 @@ const BIASection: React.FC = () => {
       </Card>
 
 
-      {/* Chart */}
-      {biaProcesses.length > 0 && (
+      {/* Pie chart — Tipo de BIA, clickable slices */}
+      {pieData.length > 0 && (
         <Card>
           <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-sm">{t("RTO vs RPO (horas)", "RTO vs RPO (hours)")}</CardTitle>
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>{t("BIAs por Tipo", "BIAs by Type")}</span>
+              {selectedTipoBIA && (
+                <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedTipoBIA(null)}>
+                  <X className="h-3 w-3 mr-0.5" />{t("Limpar seleção", "Clear selection")}
+                </Button>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2">
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                <XAxis type="number" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={(d: any) => `${d.name}: ${d.value}`}
+                  onClick={(d: any) => {
+                    const k = d?.key ?? d?.payload?.key;
+                    if (!k) return;
+                    setSelectedTipoBIA(prev => prev === k ? null : k);
+                  }}
+                  className="cursor-pointer outline-none"
+                  isAnimationActive={false}
+                >
+                  {pieData.map(entry => (
+                    <Cell
+                      key={entry.key}
+                      fill={entry.color}
+                      stroke={selectedTipoBIA === entry.key ? "hsl(var(--foreground))" : "hsl(var(--background))"}
+                      strokeWidth={selectedTipoBIA === entry.key ? 3 : 1}
+                      opacity={selectedTipoBIA && selectedTipoBIA !== entry.key ? 0.35 : 1}
+                    />
+                  ))}
+                </Pie>
                 <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", color: "hsl(var(--card-foreground))" }} />
-                <Bar dataKey="RTO" fill="hsl(0, 72%, 51%)" radius={[0, 2, 2, 0]} />
-                <Bar dataKey="RPO" fill="hsl(45, 90%, 55%)" radius={[0, 2, 2, 0]} />
-              </BarChart>
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       )}
 
-      {/* BIAs grouped by Business Process */}
-      {Array.from(grouped.entries()).map(([bpId, bias]) => {
-        const bp = bpId ? businessProcesses.find(b => b.id === bpId) : null;
-        return (
-          <Card key={bpId || "__none"}>
-            <CardHeader className="p-3 pb-1">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Database className="h-4 w-4 text-primary" />
-                {bp ? `${bp.funcao} › ${bp.processo}` : t("Processo não definido", "Process not set")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 pt-1 space-y-2">
-              {bias.map(p => {
-                const dr = p.dr_type_id ? drTypes.find(d => d.id === p.dr_type_id) : null;
-                const dept = (p as any).department_id ? departments.find(d => d.id === (p as any).department_id) : null;
-                const pLinks = procPlatLinks.filter(l => l.bia_process_id === p.id);
-                const linkedPlats = pLinks.map(l => ({
-                  link: l,
-                  platform: platforms.find(pl => pl.id === l.platform_id),
-                })).filter(x => x.platform);
+      {/* BIAs grouped by Department (accordion) → Kanban by DR Type */}
+      {sortedDeptGroups.length > 0 && (
+        <Accordion type="multiple" className="space-y-2">
+          {sortedDeptGroups.map(([deptId, bias]) => {
+            const dept = deptId ? departments.find(d => d.id === deptId) : null;
+            const deptName = dept ? dept.name : t("Sem departamento", "No department");
+            // Build kanban columns by DR Type
+            const drColumns: { id: string | null; label: string; bias: DBBIAProcess[] }[] = drTypes.map(dr => ({
+              id: dr.id,
+              label: `${dr.code} — ${dr.label}`,
+              bias: bias.filter(b => b.dr_type_id === dr.id),
+            }));
+            const sinDr = bias.filter(b => !b.dr_type_id);
+            if (sinDr.length > 0) {
+              drColumns.push({ id: null, label: t("Sem DR", "No DR"), bias: sinDr });
+            }
+            const nonEmptyCols = drColumns.filter(c => c.bias.length > 0);
 
-                return (
-                  <div key={p.id} className="rounded-md border border-border/50 bg-secondary/20 p-3 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
-                          <span className="text-sm font-semibold">{t(p.name_pt, p.name_en)}</span>
-                          {dr && (
-                            <Badge variant="outline" className="text-[10px] h-5">{dr.code}</Badge>
-                          )}
-                          {dept && (
-                            <Badge variant="secondary" className="text-[10px] h-5">{dept.name}</Badge>
-                          )}
-                          <span className="text-[10px] text-muted-foreground">
-                            RTO: {p.rto}h · RPO: {p.rpo}h
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(p)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(p.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Platform dependencies */}
-                    <div className="flex flex-wrap gap-1 items-center">
-                      <Server className="h-3 w-3 text-muted-foreground" />
-                      {linkedPlats.map(({ link, platform }) => {
-                        const platDr = drTypes.find(d => d.id === platform!.dr_type_id);
-                        return (
-                          <Badge key={link.id} variant="outline" className="text-[10px] gap-1 pr-1">
-                            {platform!.name} {platDr ? `(${platDr.code})` : ""}
-                            <button onClick={() => unlinkPlatform.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                          </Badge>
-                        );
-                      })}
-                      <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkDialog(p.id); setLinkPlatId(""); }}>
-                        <Plus className="h-2.5 w-2.5 mr-0.5" />{t("Plataforma", "Platform")}
-                      </Button>
-                    </div>
-
-                    {/* Action Cards linked to this BIA */}
-                    {(() => {
-                      const linkedACs = biaActionCardLinks
-                        .filter(l => l.bia_process_id === p.id)
-                        .map(l => ({ link: l, card: actionCards.find(ac => ac.id === l.action_card_id) }))
-                        .filter(x => x.card);
-                      return (
-                        <div className="flex flex-wrap gap-1 items-center">
-                          <ListChecks className="h-3 w-3 text-muted-foreground" />
-                          {linkedACs.map(({ link, card }) => (
-                            <Badge key={link.id} variant="outline" className="text-[10px] gap-1 pr-1 bg-accent/30">
-                              {t(card!.title_pt, card!.title_en)}
-                              <button onClick={() => unlinkActionCard.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                            </Badge>
-                          ))}
-                          <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkActionDialog(p.id); setLinkActionCardId(""); }}>
-                            <Plus className="h-2.5 w-2.5 mr-0.5" />{t("Action Card", "Action Card")}
-                          </Button>
-                        </div>
-                      );
-                    })()}
+            return (
+              <AccordionItem key={deptId || "__none"} value={deptId || "__none"} className="border rounded-md bg-card">
+                <AccordionTrigger className="px-3 py-2 hover:no-underline">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">{deptName}</span>
+                    <Badge variant="secondary" className="text-[10px] h-5">{bias.length}</Badge>
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        );
-      })}
+                </AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {nonEmptyCols.map(col => (
+                      <div key={col.id || "__none_dr"} className="min-w-[260px] w-[260px] shrink-0 rounded-md border border-border/50 bg-secondary/20 p-2">
+                        <div className="flex items-center justify-between mb-2 px-1">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider truncate">{col.label}</span>
+                          <Badge variant="outline" className="text-[10px] h-4">{col.bias.length}</Badge>
+                        </div>
+                        <div className="space-y-2">
+                          {col.bias.map(p => {
+                            const pLinks = procPlatLinks.filter(l => l.bia_process_id === p.id);
+                            const linkedPlats = pLinks.map(l => ({
+                              link: l,
+                              platform: platforms.find(pl => pl.id === l.platform_id),
+                            })).filter(x => x.platform);
+                            const bp = p.business_process_id ? businessProcesses.find(b => b.id === p.business_process_id) : null;
+                            const linkedACs = biaActionCardLinks
+                              .filter(l => l.bia_process_id === p.id)
+                              .map(l => ({ link: l, card: actionCards.find(ac => ac.id === l.action_card_id) }))
+                              .filter(x => x.card);
+                            return (
+                              <div key={p.id} className="rounded-md border border-border/60 bg-background p-2 space-y-1.5 shadow-sm">
+                                <div className="flex items-start justify-between gap-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                    <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
+                                    <span className="text-xs font-semibold leading-tight">{t(p.name_pt, p.name_en)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-0.5 shrink-0">
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(p)}>
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleDelete(p.id)}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                {bp && (
+                                  <div className="text-[10px] text-muted-foreground truncate">{bp.processo}</div>
+                                )}
+                                <div className="text-[10px] text-muted-foreground">RTO: {p.rto}h · RPO: {p.rpo}h</div>
+                                <div className="flex flex-wrap gap-1 items-center">
+                                  <Server className="h-3 w-3 text-muted-foreground" />
+                                  {linkedPlats.map(({ link, platform }) => {
+                                    const platDr = drTypes.find(d => d.id === platform!.dr_type_id);
+                                    return (
+                                      <Badge key={link.id} variant="outline" className="text-[9px] gap-0.5 pr-1 h-4">
+                                        {platform!.name}{platDr ? ` (${platDr.code})` : ""}
+                                        <button onClick={() => unlinkPlatform.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2 w-2" /></button>
+                                      </Badge>
+                                    );
+                                  })}
+                                  <Button variant="outline" size="sm" className="h-4 text-[9px] px-1" onClick={() => { setLinkDialog(p.id); setLinkPlatId(""); }}>
+                                    <Plus className="h-2 w-2 mr-0.5" />{t("Plat.", "Plat.")}
+                                  </Button>
+                                </div>
+                                <div className="flex flex-wrap gap-1 items-center">
+                                  <ListChecks className="h-3 w-3 text-muted-foreground" />
+                                  {linkedACs.map(({ link, card }) => (
+                                    <Badge key={link.id} variant="outline" className="text-[9px] gap-0.5 pr-1 h-4 bg-accent/30">
+                                      {t(card!.title_pt, card!.title_en)}
+                                      <button onClick={() => unlinkActionCard.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2 w-2" /></button>
+                                    </Badge>
+                                  ))}
+                                  <Button variant="outline" size="sm" className="h-4 text-[9px] px-1" onClick={() => { setLinkActionDialog(p.id); setLinkActionCardId(""); }}>
+                                    <Plus className="h-2 w-2 mr-0.5" />AC
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                    {nonEmptyCols.length === 0 && (
+                      <p className="text-xs text-muted-foreground p-2">{t("Sem BIAs", "No BIAs")}</p>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
+      )}
+
 
       {biaProcesses.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-4">{t("Sem processos BIA.", "No BIA processes.")}</p>
