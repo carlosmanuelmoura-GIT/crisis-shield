@@ -63,6 +63,7 @@ const BIASection: React.FC = () => {
   const [filterActionCardId, setFilterActionCardId] = useState<string | null>(null);
   const [actionCardSearch, setActionCardSearch] = useState<string>("");
   const [actionCardPopoverOpen, setActionCardPopoverOpen] = useState(false);
+  const [selectedTipoBIA, setSelectedTipoBIA] = useState<string | null>(null);
 
   // List-level cascading filters
   const [listTipoFuncao, setListTipoFuncao] = useState<string>("__all__");
