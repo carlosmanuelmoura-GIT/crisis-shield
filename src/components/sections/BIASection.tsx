@@ -115,7 +115,7 @@ const BIASection: React.FC = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null, department_id: null });
+    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "analitica", business_process_id: null, dr_type_id: null, department_id: null });
     resetCascade();
     setDialogOpen(true);
   };
