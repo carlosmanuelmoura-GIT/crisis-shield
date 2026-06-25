@@ -93,6 +93,8 @@ const EmergencySection: React.FC = () => {
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [addBiaForCard, setAddBiaForCard] = useState<Record<string, string>>({});
+  const [linkBiaDialogCard, setLinkBiaDialogCard] = useState<string | null>(null);
+  const [biaToLink, setBiaToLink] = useState<string>("");
 
   // Confirmation dialog for checking items
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
