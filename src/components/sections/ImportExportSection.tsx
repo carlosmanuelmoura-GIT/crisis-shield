@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCMDBPlatforms, useCreateCMDBPlatform, useDeleteCMDBPlatform, useBIAProcessPlatforms } from "@/hooks/useCMDBPlatforms";
 import { useBusinessProcesses, useCreateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useBIAProcesses, useCreateBIAProcess } from "@/hooks/useBIAProcesses";
+import { useActionCards } from "@/hooks/useActionCards";
+import { useBIAActionCards } from "@/hooks/useBIAActionCards";
 import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCriticas";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
