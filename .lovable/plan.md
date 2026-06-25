@@ -1,14 +1,31 @@
-## Substituir filtro "Plataformas" por "Action Card" (com pesquisa por nome) nas BIAs
+## Alterações na página BIAS
 
-### `src/components/sections/BIASection.tsx`
+### 1. Substituir gráfico de barras por Pie Chart
+- Remover o `BarChart` actual.
+- Adicionar um **PieChart** (recharts) agrupando BIAs por **Tipo de BIA** (VITAL / DECISÃO / ANALÍTICA), cores alinhadas ao `critColor` já usado.
+- Legenda + tooltip com contagem.
 
-1. **Remover** o filtro de Plataformas da barra de filtros (Popover com checkboxes) e o estado `filterPlatformIds`.
-2. **Remover** o painel "Impacto das Plataformas" (`platformImpact`) — dependia exclusivamente desse filtro.
-3. **Adicionar** novo filtro **Action Card** na mesma posição:
-   - Campo de texto livre (`Input` com ícone de pesquisa) onde o utilizador escreve parte do nome do Action Card.
-   - Lista (Popover) com sugestões filtradas a partir de `actionCards` (já disponível via `useActionCards()`) pelo `title_pt`/`title_en`.
-   - Selecionar uma sugestão fixa o filtro; botão `X` para limpar.
-4. **Lógica de filtragem**: quando um Action Card está selecionado, filtrar `biaProcesses` para apenas as que têm ligação a esse Action Card via `biaActionCardLinks` (já carregado).
-5. Atualizar o botão "Limpar filtros" e a condição que mostra "filtros ativos" para usarem o novo estado `filterActionCardId` em vez de `filterPlatformIds`.
+### 2. Pie Chart interactivo (filtro por slice)
+- Estado novo `selectedTipoBIA` em `BIASection`.
+- `onClick` num slice define o filtro; clicar de novo no mesmo slice limpa.
+- Slice activo destacado (stroke + opacidade reduzida nos restantes).
+- A lista por baixo respeita este filtro, combinado com os filtros existentes (pesquisa, departamento, action card).
 
-Nenhuma alteração à base de dados ou a outros ficheiros.
+### 3. Apresentação das BIAs por Departamento em acordeão
+- Substituir a listagem linear por um `Accordion` (shadcn) com um item por **Departamento**.
+- Cabeçalho: nome do departamento + badge com nº de BIAs.
+- BIAs sem departamento agrupadas num item "Sem departamento".
+- Departamentos ordenados alfabeticamente.
+
+### 4. Dentro de cada departamento: cartões Kanban por Tipo de DR
+- Ao expandir um departamento, mostrar as BIAs em **colunas Kanban**, uma coluna por **Tipo de DR** (`dr_types`).
+- Coluna extra "Sem DR" para BIAs sem `dr_type_id`.
+- Cada cartão mantém as acções actuais (editar, eliminar, ligar plataformas, ligar action cards, badges de processo/departamento/tipo BIA/action cards).
+- Layout: colunas com scroll horizontal quando necessário; sem drag-and-drop nesta iteração (o Tipo de DR continua editável pelo diálogo existente).
+
+### Ficheiros afectados
+- `src/components/sections/BIASection.tsx` — única alteração; usa `Accordion`, `Card` (shadcn) e `recharts` já presentes no projecto.
+
+### Fora de âmbito
+- Sem alterações de schema, hooks ou import/export.
+- Sem alterações ao diálogo de criação/edição de BIA.
