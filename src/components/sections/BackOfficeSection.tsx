@@ -155,12 +155,13 @@ const BackOfficeSection: React.FC = () => {
   };
 
   // Departments handlers
-  const openCreateDept = () => { setEditingDept(null); setDeptName(""); setDeptDialog(true); };
-  const openEditDept = (d: typeof departmentsList[0]) => { setEditingDept(d.id); setDeptName(d.name); setDeptDialog(true); };
+  const openCreateDept = () => { setEditingDept(null); setDeptForm({ name: "", code: "", has_cc: false }); setDeptDialog(true); };
+  const openEditDept = (d: typeof departmentsList[0]) => { setEditingDept(d.id); setDeptForm({ name: d.name, code: d.code ?? "", has_cc: !!d.has_cc }); setDeptDialog(true); };
   const handleSaveDept = async () => {
     try {
-      if (editingDept) await updateDept.mutateAsync({ id: editingDept, name: deptName });
-      else await createDept.mutateAsync(deptName);
+      const payload = { name: deptForm.name, code: deptForm.code.trim() || null, has_cc: deptForm.has_cc };
+      if (editingDept) await updateDept.mutateAsync({ id: editingDept, ...payload });
+      else await createDept.mutateAsync(payload);
       setDeptDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
