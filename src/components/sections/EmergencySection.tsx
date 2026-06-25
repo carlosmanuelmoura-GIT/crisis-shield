@@ -751,34 +751,6 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Função" : "Function"}</Label>
-              <Select value={form.funcao || "none"} onValueChange={(v) => setForm(f => ({ ...f, funcao: v === "none" ? "" : v, macro_processo: "" }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhuma —" : "— None —"}</SelectItem>
-                  {[...new Set(businessProcesses.map(bp => bp.funcao).filter(Boolean))].map(f => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
-              <Select value={form.macro_processo || "none"} onValueChange={(v) => setForm(f => ({ ...f, macro_processo: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {[...new Set(businessProcesses.filter(bp => !form.funcao || bp.funcao === form.funcao).map(bp => bp.macro_processo).filter(Boolean))].map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Departamento" : "Department"}</Label>
               <Select value={form.department_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, department_id: v === "none" ? "" : v }))}>
                 <SelectTrigger className="bg-secondary border-border">
