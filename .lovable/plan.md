@@ -1,81 +1,44 @@
+## Alteração 1 — Action Cards: substituir Sub-capacidade por Cenário
 
-# CRUD para Procedimentos e BIA
+**Banco de dados (migration):**
+- Remover coluna `sub_capacidade_id` da tabela `action_cards` (e dropar FK).
+- Adicionar `cenario_id uuid` em `action_cards` com FK para `cenarios(id) ON DELETE SET NULL`.
+- Manter `recurso_id` e `department_id` (relação Recurso↔Departamento preservada).
 
-## Resumo
-Os Procedimentos e os processos BIA estao atualmente guardados num ficheiro JSON estatico. Vamos criar tabelas na base de dados para cada um e adicionar funcionalidade completa de criar, editar e eliminar, seguindo o mesmo padrao usado nos Action Cards.
+**UI (`EmergencySection.tsx`):**
+- Filtros passam a ser exatamente 3: **Cenário**, **Departamento** (renomeação do label "Owner"→"Departamento"), **Recurso**.
+- Remover qualquer filtro/uso de Sub-capacidade.
+- Formulário Novo/Editar card: trocar campo Sub-capacidade por Cenário (Select com lista de `cenarios`).
+- Agrupamento (List view e Kanban): agrupar por **Cenário** (em vez de Sub-capacidade), mantendo o agrupamento secundário por Recurso quando aplicável.
+- Drag & drop entre colunas Kanban passa a alterar `cenario_id` em vez de `sub_capacidade_id`.
+- Ajustar `useActionCards` para incluir `cenario_id` no payload de create/update.
 
-## Alteracoes
+## Alteração 2 — BIA ↔ Action Cards
 
-### 1. Criar tabelas na base de dados
+**Banco de dados (migration):** nova tabela de junção
+```
+public.bia_action_cards (
+  id uuid PK,
+  bia_process_id uuid FK -> bia_processes ON DELETE CASCADE,
+  action_card_id uuid FK -> action_cards ON DELETE CASCADE,
+  created_at timestamptz,
+  UNIQUE(bia_process_id, action_card_id)
+)
+```
+Com GRANTs (`authenticated`, `service_role`), RLS habilitada, políticas: SELECT autenticado, INSERT/DELETE para `is_privileged`.
 
-**Tabela `procedures`:**
-- `id` (uuid, PK)
-- `title_pt` (text)
-- `title_en` (text)
-- `category_pt` (text)
-- `category_en` (text)
-- `content_pt` (text) -- conteudo markdown
-- `content_en` (text)
-- `owner_id` (uuid, nullable)
-- `created_at`, `updated_at` (timestamptz)
+**UI (`BIASection.tsx`):**
+- No detalhe/edição de cada BIA, nova secção "Action Cards" listando apenas os action cards associados (via tabela de junção).
+- Botão **"Adicionar Action Card"** que abre diálogo com Select dos action cards ainda não associados a essa BIA; ao confirmar, cria a linha na junção.
+- Permitir remover a associação (botão X por linha).
 
-**Tabela `bia_processes`:**
-- `id` (uuid, PK)
-- `name_pt` (text)
-- `name_en` (text)
-- `rto` (numeric) -- horas
-- `rpo` (numeric) -- horas
-- `criticality` (text) -- critical/high/medium
-- `dependencies` (text[]) -- array de IDs
-- `owner_id` (uuid, nullable)
-- `created_at`, `updated_at` (timestamptz)
+## Alteração 3 — Checklist dos Action Cards: numerar e eliminar linhas
 
-**Politicas RLS** (mesmo padrao dos action_cards):
-- SELECT: todos os autenticados
-- INSERT: utilizadores privilegiados
-- UPDATE: owner ou privilegiados
-- DELETE: especialista_gcn
+**UI (`EmergencySection.tsx`):**
+- Renderizar a lista de itens com numeração sequencial (`1.`, `2.`, …) baseada no `sort_order`, tanto na vista List como Kanban.
+- Adicionar botão de eliminar (ícone lixo) por item, visível para utilizadores privilegiados; chamar delete em `checklist_items` (já existe política DELETE para `especialista_gcn` — confirmar/alargar para `is_privileged` se necessário para Steering GCN poder remover).
 
-**Dados iniciais**: seed com os dados atuais do JSON.
-
-### 2. Criar hooks de dados
-
-**`src/hooks/useProcedures.ts`** -- seguindo o padrao de `useActionCards.ts`:
-- `useProcedures()` -- query
-- `useCreateProcedure()`
-- `useUpdateProcedure()`
-- `useDeleteProcedure()`
-
-**`src/hooks/useBIAProcesses.ts`**:
-- `useBIAProcesses()` -- query
-- `useCreateBIAProcess()`
-- `useUpdateBIAProcess()`
-- `useDeleteBIAProcess()`
-
-### 3. Atualizar componentes
-
-**`ProceduresSection.tsx`**:
-- Substituir dados do contexto por `useProcedures()`
-- Adicionar botao "Novo" no cabecalho
-- Adicionar botoes Editar/Eliminar em cada card
-- Dialog com formulario: titulo PT/EN, categoria PT/EN, conteudo PT/EN (textarea para markdown)
-
-**`BIASection.tsx`**:
-- Substituir dados do contexto por `useBIAProcesses()`
-- Adicionar botao "Novo" no cabecalho
-- Adicionar botoes Editar/Eliminar em cada processo
-- Dialog com formulario: nome PT/EN, RTO, RPO, criticidade (select), dependencias (multi-select dos outros processos)
-- Grafico e mapa de dependencias continuam a funcionar com os dados da BD
-
-### 4. Limpar contexto
-
-Remover `procedures` e `biaProcesses` do `AppContext.tsx` (ja nao serao necessarios la, pois os componentes usam os hooks proprios). Manter o `searchQuery` disponivel no contexto para filtragem.
-
----
-
-### Detalhes tecnicos
-
-- Migracao SQL cria as tabelas, RLS e insere os dados seed
-- Triggers `update_updated_at_column` reutilizados para ambas as tabelas
-- Os hooks usam `@tanstack/react-query` com `useQuery` e `useMutation`, invalidando queries apos mutacoes
-- O formulario BIA usa inputs numericos para RTO/RPO e um multi-select para dependencias baseado nos processos existentes
+## Notas técnicas
+- Regenerar tipos do Supabase (automático após migration aprovada).
+- Atualizar memória `mem://logic/organizacao-cards` para refletir agrupamento por Cenário (em vez de Sub-capacidade).
+- Sem alterações a Import/Export nesta iteração (não solicitado).
