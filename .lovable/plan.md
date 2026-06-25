@@ -1,25 +1,14 @@
-Refactor `src/components/sections/DecisionLogSection.tsx` to present the action log in **Kanban** mode, with each crisis as its own column on a single horizontal row, plus a date filter by month/year.
+Plano para alterar o Log das Acções de Crise para mostrar no máximo 2 colunas por linha na vista Kanban, sem scroll horizontal.
 
-## Layout
-- Replace the vertical accordion of crisis groups with a horizontal Kanban board: one column per crisis (Real or Simulated), scrolling horizontally with `overflow-x-auto`.
-- Each column header keeps the existing metadata: title, type icon (Shield/Real or FlaskConical/Simulated), date, status badge, "Ativa" badge when applicable, and the action counter.
-- Column body lists the action cards stacked vertically (system entries + decision entries), reusing the current card markup. Each column has its own internal scroll (`max-h-[70vh] overflow-y-auto`).
-- "Nova Acção" button stays in the section header and continues to attach to the currently active crisis.
+## Alteração
+Em `src/components/sections/DecisionLogSection.tsx`, o Kanban atual usa `flex gap-3 overflow-x-auto pb-3` com colunas de `w-[320px]`, o que empilha todas as crises numa única linha horizontal. Vou mudar para uma grid com no máximo 2 colunas por linha, com cada coluna a ocupar a metade da largura disponível, permitindo ler tudo com scroll vertical.
 
-## Filters
-Add a filter bar above the board with three controls:
-- **Ano** Select: "Todos" + distinct years derived from `crisis_date`.
-- **Mês** Select: "Todos" + 12 months (localised). Disabled when Ano = "Todos".
-- "Limpar filtros" button when any filter is active.
+## Detalhes técnicos
+- Substituir o container `flex gap-3 overflow-x-auto pb-3` por `grid grid-cols-1 md:grid-cols-2 gap-3 pb-3`.
+- Remover a largura fixa `w-[320px]` das colunas do Kanban, para que cada coluna preencha a célula da grid.
+- Manter a altura máxima e scroll vertical dentro de cada coluna (`max-h-[70vh] overflow-y-auto`).
+- Preservar todos os filtros (Ano/Mês), diálogos, empty states, contadores e comportamentos existentes.
+- Garantir que em ecrãs pequenos (mobile) fica apenas 1 coluna (`grid-cols-1`).
 
-Filtering rules:
-- Ano = Todos → show all crises.
-- Ano selected, Mês = Todos → show all crises in that year.
-- Ano + Mês selected → show only crises in that month/year.
-- Filter is applied to the crisis's `crisis_date`.
-
-## Technical notes
-- Reuse existing hooks (`useDecisionLog`, `useCrises`) and the current grouping logic; just change how groups are rendered (columns instead of collapsibles) and add a `filteredGroups` memo using the year/month state.
-- Remove the Collapsible wrapper and expand/collapse state (no longer needed since columns are always open in Kanban).
-- Keep i18n (PT/EN) consistent with existing patterns.
-- No DB changes.
+## Ficheiro a alterar
+- `src/components/sections/DecisionLogSection.tsx`
