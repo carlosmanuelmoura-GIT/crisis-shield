@@ -253,7 +253,7 @@ const DecisionLogSection: React.FC = () => {
 
       {/* Kanban board */}
       {filteredGroups.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-3">
           {filteredGroups.map(group => {
             const crisis = group.crisis;
             const isActive = activeCrisis?.id === group.key;
@@ -262,7 +262,7 @@ const DecisionLogSection: React.FC = () => {
             const decisionEntries = group.entries.filter(e => !systemEntries.includes(e));
 
             return (
-              <Card key={group.key} className={`w-[320px] shrink-0 flex flex-col ${isActive ? "border-crisis/40 shadow-sm" : ""}`}>
+              <Card key={group.key} className={`w-full flex flex-col ${isActive ? "border-crisis/40 shadow-sm" : ""}`}>
                 <CardHeader className="p-3 border-b">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
