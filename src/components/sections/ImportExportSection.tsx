@@ -425,7 +425,7 @@ const ImportExportSection: React.FC = () => {
         />
         <ImportCard
           icon={BarChart3}
-          title={t("BIA + Plataformas", "BIA + Platforms")}
+          title={t("BIAS", "BIAs")}
           count={biaProcesses.length}
           onExport={exportBIA}
           onTemplate={exportTemplateBIA}
