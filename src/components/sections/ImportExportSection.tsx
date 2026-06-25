@@ -124,7 +124,9 @@ const ImportExportSection: React.FC = () => {
   const exportTemplateBIA = () => {
     const ws = XLSX.utils.json_to_sheet([{
       Nome_PT: "", Nome_EN: "", RTO: 0, RPO: 0, Criticidade: "medium",
-      DR_Type_ID: "", Business_Process_ID: "", Business_Process_Nome: "",
+      DR_Type_ID: "", DR_Type_Nome: "",
+      Business_Process_ID: "", Business_Process_Nome: "",
+      Departamento_ID: "", Departamento_Nome: "",
       Plataformas: "", Action_Cards: "",
     }]);
     const wb = XLSX.utils.book_new();
