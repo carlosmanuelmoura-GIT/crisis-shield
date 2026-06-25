@@ -21,7 +21,7 @@ import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding }
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useDocumentCategories, useCreateDocumentCategory, useUpdateDocumentCategory, useDeleteDocumentCategory } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
-import { Building2 as BuildingIcon } from "lucide-react";
+const BuildingIcon = Building2;
 
 const roleLabels: Record<string, string> = {
   steering_gcn: "Steering GCN",
