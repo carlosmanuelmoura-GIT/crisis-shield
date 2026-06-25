@@ -34,7 +34,6 @@ const ScenariosSection: React.FC = () => {
 
   const linkMut = useLinkCenarioRecurso();
   const unlinkMut = useUnlinkCenarioRecurso();
-  const createRecurso = useCreateRecurso();
   const updateRecurso = useUpdateRecurso();
 
   const [dragOver, setDragOver] = useState<string | null>(null);
