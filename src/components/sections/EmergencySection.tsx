@@ -554,13 +554,13 @@ const EmergencySection: React.FC = () => {
         );
       })}
 
-      {/* KANBAN VIEW - columns by Cenário */}
+      {/* KANBAN VIEW - columns by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
-          {[...cenarios, null].map(cenario => {
-            const colId = cenario?.id || "__unassigned";
-            const colCards = filtered.filter(c => cenario ? (c as any).cenario_id === cenario.id : !(c as any).cenario_id || !cenarios.some(x => x.id === (c as any).cenario_id));
-            if (colCards.length === 0 && cenario) return null;
+          {[...recursos, null].map(recurso => {
+            const colId = recurso?.id || "__unassigned";
+            const colCards = filtered.filter(c => recurso ? c.recurso_id === recurso.id : !c.recurso_id || !recursos.some(x => x.id === c.recurso_id));
+            if (colCards.length === 0 && recurso) return null;
             const isDragOver = dragOverCol === colId;
 
             return (
@@ -574,15 +574,14 @@ const EmergencySection: React.FC = () => {
                   setDragOverCol(null);
                   if (!dragCardId) return;
                   const card = cards.find(c => c.id === dragCardId);
-                  const targetCenId = cenario?.id || null;
-                  if (!card || (card as any).cenario_id === targetCenId) { setDragCardId(null); return; }
+                  const targetRecId = recurso?.id || null;
+                  if (!card || card.recurso_id === targetRecId) { setDragCardId(null); return; }
                   updateCard.mutateAsync({
                     id: card.id, title_pt: card.title_pt, title_en: card.title_en,
                     severity: card.severity, capability: card.capability || undefined,
-                    funcao: card.funcao || undefined, macro_processo: card.macro_processo || undefined,
-                    recurso_id: card.recurso_id || undefined,
-                    cenario_id: targetCenId || undefined,
-                    department_id: (card as any).department_id || undefined,
+                    recurso_id: targetRecId || undefined,
+                    cenario_id: card.cenario_id || undefined,
+                    department_id: card.department_id || undefined,
                   }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
@@ -591,7 +590,7 @@ const EmergencySection: React.FC = () => {
                 <div className="p-3 border-b border-border/50 flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <span className="text-xs font-bold truncate block">
-                      {cenario ? `${cenario.roman ? cenario.roman + " — " : ""}${lang === "pt" ? cenario.name_pt : cenario.name_en || cenario.name_pt}` : (lang === "pt" ? "Sem cenário" : "No scenario")}
+                      {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso" : "No resource")}
                     </span>
                   </div>
                   <Badge variant="secondary" className="text-[9px]">{colCards.length}</Badge>
