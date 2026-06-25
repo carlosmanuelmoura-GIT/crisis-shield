@@ -502,6 +502,28 @@ const BIASection: React.FC = () => {
                         <Plus className="h-2.5 w-2.5 mr-0.5" />{t("Plataforma", "Platform")}
                       </Button>
                     </div>
+
+                    {/* Action Cards linked to this BIA */}
+                    {(() => {
+                      const linkedACs = biaActionCardLinks
+                        .filter(l => l.bia_process_id === p.id)
+                        .map(l => ({ link: l, card: actionCards.find(ac => ac.id === l.action_card_id) }))
+                        .filter(x => x.card);
+                      return (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          <ListChecks className="h-3 w-3 text-muted-foreground" />
+                          {linkedACs.map(({ link, card }) => (
+                            <Badge key={link.id} variant="outline" className="text-[10px] gap-1 pr-1 bg-accent/30">
+                              {t(card!.title_pt, card!.title_en)}
+                              <button onClick={() => unlinkActionCard.mutate(link.id)} className="ml-0.5 hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                            </Badge>
+                          ))}
+                          <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkActionDialog(p.id); setLinkActionCardId(""); }}>
+                            <Plus className="h-2.5 w-2.5 mr-0.5" />{t("Action Card", "Action Card")}
+                          </Button>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
