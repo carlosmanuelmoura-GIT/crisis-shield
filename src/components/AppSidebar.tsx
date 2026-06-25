@@ -51,7 +51,7 @@ const warRoomItems = [
 
 /* ── Documentação ── */
 const documentacaoItems = [
-{ id: "documentacao", label: { pt: "Documentação", en: "Documentation" }, icon: FileText }];
+{ id: "documentacao", label: { pt: "Documentação GCN", en: "Documentation" }, icon: FileText }];
 
 
 /* ── Component ── */
