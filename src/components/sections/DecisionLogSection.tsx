@@ -172,7 +172,7 @@ const DecisionLogSection: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-bold uppercase tracking-wider">
-            {lang === "pt" ? "Log das Acções" : "Action Log"}
+            {lang === "pt" ? "Log das Acções Gestão Crise" : "Action Log"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {lang === "pt"
