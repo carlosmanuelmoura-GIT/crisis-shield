@@ -402,6 +402,19 @@ const EmergencySection: React.FC = () => {
         </div>
       </div>
 
+      {/* Severity legend */}
+      <div className="flex flex-wrap items-center gap-3 px-3 py-2 bg-secondary/40 border border-border rounded-lg">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {lang === "pt" ? "Severidade:" : "Severity:"}
+        </span>
+        {(["critical", "high", "medium"] as const).map(key => (
+          <div key={key} className="flex items-center gap-1.5">
+            <span className={`inline-block h-3 w-3 rounded-sm border-l-4 ${severityColors[key]}`} />
+            <span className="text-xs">{lang === "pt" ? severityLabels[key].pt : severityLabels[key].en}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Filters: Cenário, Departamento, Recurso */}
       <Card className="border-dashed">
         <CardContent className="p-3">
