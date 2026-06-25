@@ -1,30 +1,14 @@
-## Renomear "Criticidade" → "Tipo de BIA" com valores VITAL, DECISÃO, ANALÍTICA
+## Substituir filtro "Plataformas" por "Action Card" (com pesquisa por nome) nas BIAs
 
-Mantém-se a coluna `criticality` na base de dados (sem migração de schema) — apenas mudam os valores aceites e a apresentação. Migração de dados converte os valores antigos.
+### `src/components/sections/BIASection.tsx`
 
-### 1. Migração de dados (UPDATE)
-Mapear valores existentes na tabela `bia_processes`:
-- `critical` → `vital`
-- `high` → `decisao`
-- `medium` / `low` / outros → `analitica`
-- Atualizar default da coluna para `analitica`
+1. **Remover** o filtro de Plataformas da barra de filtros (Popover com checkboxes) e o estado `filterPlatformIds`.
+2. **Remover** o painel "Impacto das Plataformas" (`platformImpact`) — dependia exclusivamente desse filtro.
+3. **Adicionar** novo filtro **Action Card** na mesma posição:
+   - Campo de texto livre (`Input` com ícone de pesquisa) onde o utilizador escreve parte do nome do Action Card.
+   - Lista (Popover) com sugestões filtradas a partir de `actionCards` (já disponível via `useActionCards()`) pelo `title_pt`/`title_en`.
+   - Selecionar uma sugestão fixa o filtro; botão `X` para limpar.
+4. **Lógica de filtragem**: quando um Action Card está selecionado, filtrar `biaProcesses` para apenas as que têm ligação a esse Action Card via `biaActionCardLinks` (já carregado).
+5. Atualizar o botão "Limpar filtros" e a condição que mostra "filtros ativos" para usarem o novo estado `filterActionCardId` em vez de `filterPlatformIds`.
 
-### 2. UI — `src/components/sections/BIASection.tsx`
-- Renomear label "Criticidade" → "Tipo de BIA" / "BIA Type"
-- Substituir opções do Select por:
-  - `vital` → VITAL
-  - `decisao` → DECISÃO
-  - `analitica` → ANALÍTICA
-- Atualizar `critColor` para os 3 novos valores (vermelho / âmbar / cinza)
-- Default do formulário passa a `analitica`
-
-### 3. Import/Export — `src/components/sections/ImportExportSection.tsx`
-- Renomear coluna `Criticidade` → `Tipo_BIA` no export e template
-- Default no template: `analitica`
-- Hint text actualizado
-- Import: aceitar `Tipo_BIA` (e fallback `Criticidade` para compatibilidade), normalizar para um dos 3 valores
-
-### 4. Hook
-`src/hooks/useBIAProcesses.ts` mantém o campo `criticality: string` — sem alterações necessárias.
-
-Nenhuma outra zona da app consome `criticality`.
+Nenhuma alteração à base de dados ou a outros ficheiros.
