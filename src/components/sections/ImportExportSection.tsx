@@ -194,7 +194,7 @@ const ImportExportSection: React.FC = () => {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
         Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
-        Criticidade?: string;
+        Tipo_BIA?: string; Criticidade?: string;
         DR_Type_ID?: string; DR_Type_Nome?: string;
         Business_Process_ID?: string; Business_Process_Nome?: string;
         Departamento_ID?: string; Departamento_Nome?: string;
