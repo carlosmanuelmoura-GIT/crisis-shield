@@ -49,7 +49,7 @@ const BIASection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
   const [form, setForm] = useState({
-    name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium",
+    name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "analitica",
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
     department_id: null as string | null,
