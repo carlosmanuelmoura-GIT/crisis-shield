@@ -5,9 +5,17 @@ import { useAuth } from "@/hooks/useAuth";
 export interface Department {
   id: string;
   name: string;
+  code: string | null;
+  has_cc: boolean;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DepartmentInput {
+  name: string;
+  code?: string | null;
+  has_cc?: boolean;
 }
 
 export function useDepartments() {
@@ -17,7 +25,7 @@ export function useDepartments() {
       const { data, error } = await supabase
         .from("departments" as any)
         .select("*")
-        .order("name");
+        .order("code", { ascending: true, nullsFirst: false });
       if (error) throw error;
       return data as unknown as Department[];
     },
@@ -28,8 +36,12 @@ export function useCreateDepartment() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (name: string) => {
-      const { error } = await (supabase.from("departments" as any) as any).insert({ name, owner_id: user?.id });
+    mutationFn: async (input: string | DepartmentInput) => {
+      const payload =
+        typeof input === "string"
+          ? { name: input, owner_id: user?.id }
+          : { ...input, owner_id: user?.id };
+      const { error } = await (supabase.from("departments" as any) as any).insert(payload);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),
@@ -39,8 +51,8 @@ export function useCreateDepartment() {
 export function useUpdateDepartment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await (supabase.from("departments" as any) as any).update({ name }).eq("id", id);
+    mutationFn: async ({ id, ...rest }: { id: string } & DepartmentInput) => {
+      const { error } = await (supabase.from("departments" as any) as any).update(rest).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["departments"] }),

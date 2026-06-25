@@ -22,35 +22,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { usePCNDocuments, useCreatePCNDocument, useDeletePCNDocument } from "@/hooks/usePCNDocuments";
+import { useDepartments, type Department } from "@/hooks/useDepartments";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const ACCEPTED = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx";
-
-const departments = [
-  { code: "DAS", name: "Departamento de Auditoria e Supervisão", hasCC: false },
-  { code: "DAU", name: "Departamento de Auditoria", hasCC: false },
-  { code: "DCC", name: "Departamento de Contabilidade e Controlo", hasCC: false },
-  { code: "DCM", name: "Departamento de Comunicação", hasCC: false },
-  { code: "DCR", name: "Departamento de Controlo de Risco", hasCC: true },
-  { code: "DDE", name: "Departamento de Desenvolvimento Económico", hasCC: false },
-  { code: "DEE", name: "Departamento de Estudos Económicos", hasCC: false },
-  { code: "DES", name: "Departamento de Estatística", hasCC: false },
-  { code: "DET", name: "Departamento de Estabilidade", hasCC: false },
-  { code: "DJU", name: "Departamento Jurídico", hasCC: false },
-  { code: "DMR", name: "Departamento de Mercados e Reservas", hasCC: true },
-  { code: "DPE", name: "Departamento de Pessoas", hasCC: false },
-  { code: "DPG", name: "Departamento de Pagamentos", hasCC: true },
-  { code: "DRE", name: "Departamento de Relações Internacionais", hasCC: false },
-  { code: "DLI", name: "Departamento de Logística e Instalações", hasCC: false },
-  { code: "DSC", name: "Departamento de Supervisão Comportamental", hasCC: false },
-  { code: "DSI", name: "Departamento de Sistemas de Informação", hasCC: true },
-  { code: "DSP", name: "Departamento de Supervisão Prudencial", hasCC: false },
-  { code: "GAB", name: "Gabinete", hasCC: false },
-  { code: "GPD", name: "Gabinete de Planeamento e Design", hasCC: false },
-  { code: "SEC", name: "Secretariado", hasCC: false },
-  { code: "SEC-DRC", name: "Secretariado - DRC", hasCC: false },
-];
 
 const subItemIcon: Record<string, React.ElementType> = {
   proc: FileText,
@@ -64,6 +40,7 @@ const PCNDepartamentaisSection: React.FC = () => {
   const { lang } = useApp();
   const { toast } = useToast();
   const [filter, setFilter] = useState("");
+  const { data: departments = [], isLoading: deptsLoading } = useDepartments();
   const { data: pcnDocs = [] } = usePCNDocuments();
   const createDoc = useCreatePCNDocument();
   const deleteDoc = useDeletePCNDocument();
@@ -73,16 +50,16 @@ const PCNDepartamentaisSection: React.FC = () => {
 
   const filtered = departments.filter(
     (d) =>
-      d.code.toLowerCase().includes(filter.toLowerCase()) ||
+      (d.code ?? "").toLowerCase().includes(filter.toLowerCase()) ||
       d.name.toLowerCase().includes(filter.toLowerCase())
   );
 
-  const getSubItems = (dept: typeof departments[0]) => {
+  const getSubItems = (dept: Department) => {
     const items = [
       { key: "proc", label: lang === "pt" ? "Procedimentos" : "Procedures" },
       { key: "contacts", label: lang === "pt" ? "Lista de Contactos" : "Contact List" },
     ];
-    if (dept.hasCC) {
+    if (dept.has_cc) {
       items.push({ key: "cc", label: lang === "pt" ? "Lista de Acesso ao CC" : "CC Access List" });
     }
     items.push(
@@ -166,19 +143,25 @@ const PCNDepartamentaisSection: React.FC = () => {
       </p>
 
       <div className="grid gap-2">
-        {filtered.map((dept) => (
-          <Collapsible key={dept.code}>
+        {deptsLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : filtered.map((dept) => {
+          const deptKey = dept.code ?? dept.id;
+          return (
+          <Collapsible key={dept.id}>
             <Card className="overflow-hidden">
               <CollapsibleTrigger className="w-full text-left">
                 <CardHeader className="p-3 flex flex-row items-center gap-3 cursor-pointer hover:bg-accent/50 transition-colors group">
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                   <div className="flex items-center gap-2 min-w-0">
-                    <Badge variant="outline" className="font-mono text-xs shrink-0">
-                      {dept.code}
-                    </Badge>
+                    {dept.code && (
+                      <Badge variant="outline" className="font-mono text-xs shrink-0">
+                        {dept.code}
+                      </Badge>
+                    )}
                     <span className="text-sm font-medium truncate">{dept.name}</span>
                   </div>
-                  {dept.hasCC && (
+                  {dept.has_cc && (
                     <Badge className="ml-auto shrink-0 text-[10px] bg-primary/10 text-primary border-0">
                       CC
                     </Badge>
@@ -190,8 +173,8 @@ const PCNDepartamentaisSection: React.FC = () => {
                   <div className="divide-y divide-border">
                     {getSubItems(dept).map((sub) => {
                       const Icon = subItemIcon[sub.key];
-                      const docs = getDocsFor(dept.code, sub.key);
-                      const uploadKey = `${dept.code}-${sub.key}`;
+                      const docs = getDocsFor(deptKey, sub.key);
+                      const uploadKey = `${deptKey}-${sub.key}`;
                       const isUploading = uploading === uploadKey;
 
                       return (
@@ -257,7 +240,8 @@ const PCNDepartamentaisSection: React.FC = () => {
               </CollapsibleContent>
             </Card>
           </Collapsible>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
