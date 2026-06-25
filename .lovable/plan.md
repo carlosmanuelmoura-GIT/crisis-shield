@@ -1,37 +1,21 @@
-## Objetivo
+## Plan: Remover indicação de CC no Back Office - Departamentos
 
-Transformar a página **PCN Departamentais** numa página dinâmica baseada na tabela `departments`, mantendo as mesmas secções (Procedimentos, Lista de Contactos, Lista de Acesso ao CC, BIA, Documentos, Fornecedores). Importar os 22 departamentos hardcoded para a tabela `departments` sem duplicar os que já existam.
+### Goal
+Remover no Back Office, na entrada "Departamentos", qualquer indicação/visualização do "Comando e Controlo / Centro de Comando (CC)".
 
-## 1. Migração de base de dados
+### Changes
+1. **Listagem de departamentos** (`src/components/sections/BackOfficeSection.tsx`)
+   - Remover o `Badge` "CC" exibido ao lado do nome do departamento quando `has_cc` é verdadeiro.
 
-Alterar `public.departments`:
-- Adicionar `code TEXT UNIQUE` (ex: DAS, DSI…)
-- Adicionar `has_cc BOOLEAN NOT NULL DEFAULT false` (controla a secção "Lista de Acesso ao CC")
+2. **Diálogo de criação/edição de departamento** (`src/components/sections/BackOfficeSection.tsx`)
+   - Remover a checkbox e a label "Tem Centro de Comando (CC)" / "Has Command Center (CC)".
 
-Seed dos 22 departamentos atualmente hardcoded **sem duplicar**:
-- Inserir por `code` com `ON CONFLICT (code) DO NOTHING`
-- Para departamentos pré-existentes na tabela cujo `name` coincida com um dos 22, fazer `UPDATE` a preencher o `code` e `has_cc` em vez de inserir nova linha (match por `name` quando `code IS NULL`)
+### Scope
+- Apenas alterações de apresentação no componente `BackOfficeSection.tsx`.
+- O campo `has_cc` na base de dados e no hook `useDepartments` mantém-se inalterado (continua a ser usado pela página PCN Departamentais para decidir quais departamentos mostram a "Lista de Acesso ao CC").
+- Não são necessárias migrations.
 
-Departamentos com `has_cc = true`: DCR, DMR, DPG, DSI.
-
-Os `pcn_documents` continuam ligados via `dept_code` (texto), pelo que mantêm-se válidos.
-
-## 2. Refactor da página `PCNDepartamentaisSection.tsx`
-
-- Remover o array hardcoded `departments`.
-- Carregar departamentos via `useDepartments()` (já existe), ordenados por `code`/`name`.
-- Render dos cartões accordion usa `dept.code`, `dept.name` e `dept.has_cc` vindos da BD.
-- Mesma lógica de upload/listagem/eliminação de documentos por secção (`proc`, `contacts`, `cc`, `bia`, `fornecedores`).
-- Se `has_cc` for false, a secção "Lista de Acesso ao CC" não aparece (comportamento atual preservado).
-- Filtro de pesquisa por `code`/`name` mantém-se.
-
-## 3. CRUD dos departamentos
-
-Mantém-se no **Back Office > Departamentos** (já existente). Adicionar nesse formulário os novos campos `code` e `has_cc` para o utilizador poder criar/editar novos departamentos que aparecerão automaticamente na página PCN Departamentais.
-
-## Resumo técnico
-
-- Migration: `ALTER TABLE departments ADD COLUMN code`, `has_cc`; UPDATE por nome; INSERT ON CONFLICT.
-- `useDepartments` passa a devolver `code` e `has_cc` (tipos regenerados pós-migração).
-- `PCNDepartamentaisSection.tsx` consome a lista dinâmica.
-- `BackOfficeSection.tsx` (secção Departamentos) ganha inputs `code` e checkbox `has_cc`.
+### Validation
+- Abrir a página Back Office → Departamentos e confirmar que:
+  - Nenhuma linha da tabela mostra um badge "CC".
+  - O formulário de novo/editar departamento não apresenta a checkbox de CC.
