@@ -180,7 +180,7 @@ const BIASection: React.FC = () => {
     (listMacro === "__all__" || bp.macro_processo === listMacro)
   );
 
-  // Filter BIAs by list-level cascading + platform filters
+  // Filter BIAs by list-level cascading + action card filter
   const filteredByListCascade = (() => {
     let result = biaProcesses;
     // Filter by business process hierarchy
@@ -190,12 +190,12 @@ const BIASection: React.FC = () => {
       const validBpIds = listProcessos.map(bp => bp.id);
       result = result.filter(p => p.business_process_id && validBpIds.includes(p.business_process_id));
     }
-    // Filter by platforms
-    if (filterPlatformIds.length > 0) {
-      const biaIdsWithPlatform = procPlatLinks
-        .filter(l => filterPlatformIds.includes(l.platform_id))
+    // Filter by Action Card
+    if (filterActionCardId) {
+      const biaIdsWithAC = biaActionCardLinks
+        .filter(l => l.action_card_id === filterActionCardId)
         .map(l => l.bia_process_id);
-      result = result.filter(p => biaIdsWithPlatform.includes(p.id));
+      result = result.filter(p => biaIdsWithAC.includes(p.id));
     }
     return result;
   })();
