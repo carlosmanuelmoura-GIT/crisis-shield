@@ -473,11 +473,10 @@ const EmergencySection: React.FC = () => {
                   const done = items.filter(i => statesMap[i.id]).length;
                   const total = items.length;
                   const title = lang === "pt" ? card.title_pt : card.title_en;
-                  const bpLabel = [card.funcao, card.macro_processo].filter(Boolean).join(" › ");
                   const severity = severityLabels[card.severity];
                   const cenLabel = getCenarioLabel(card);
                   const deptLabel = getDeptLabel(card);
-                  const recLabel = getRecursoLabel(card);
+                  const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
 
                   return (
                     <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
@@ -489,10 +488,23 @@ const EmergencySection: React.FC = () => {
                               <Badge variant="secondary" className="text-[11px]">
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                               </Badge>
-                              {bpLabel && <Badge variant="outline" className="text-[11px] font-normal">{bpLabel}</Badge>}
                               {cenLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{cenLabel}</Badge>}
-                              {recLabel && <Badge variant="outline" className="text-[11px] font-normal">{recLabel}</Badge>}
                               {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                            </div>
+                            <div className="flex flex-wrap gap-1 items-center" onClick={e => e.stopPropagation()}>
+                              {linkedBias.map(l => {
+                                const b = biaProcesses.find(x => x.id === l.bia_process_id);
+                                if (!b) return null;
+                                return (
+                                  <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
+                                    BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
+                                    <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                                  </Badge>
+                                );
+                              })}
+                              <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
+                                <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
+                              </Button>
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
