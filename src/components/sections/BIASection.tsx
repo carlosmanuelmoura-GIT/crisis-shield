@@ -656,15 +656,15 @@ const BIASection: React.FC = () => {
               <div><Label className="text-xs">RPO ({t("horas", "hours")})</Label><Input type="number" step="0.5" min="0" value={form.rpo} onChange={e => setForm(f => ({ ...f, rpo: parseFloat(e.target.value) || 0 }))} /></div>
             </div>
 
-            {/* Criticality */}
+            {/* Tipo de BIA */}
             <div>
-              <Label className="text-xs">{t("Criticidade", "Criticality")}</Label>
+              <Label className="text-xs">{t("Tipo de BIA", "BIA Type")}</Label>
               <Select value={form.criticality} onValueChange={v => setForm(f => ({ ...f, criticality: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="critical">{t("Crítico", "Critical")}</SelectItem>
-                  <SelectItem value="high">{t("Alto", "High")}</SelectItem>
-                  <SelectItem value="medium">{t("Médio", "Medium")}</SelectItem>
+                  <SelectItem value="vital">VITAL</SelectItem>
+                  <SelectItem value="decisao">DECISÃO</SelectItem>
+                  <SelectItem value="analitica">ANALÍTICA</SelectItem>
                 </SelectContent>
               </Select>
             </div>
