@@ -194,8 +194,10 @@ const ImportExportSection: React.FC = () => {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
         Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
-        Criticidade?: string; DR_Type_ID?: string; Business_Process_ID?: string;
-        Business_Process_Nome?: string;
+        Criticidade?: string;
+        DR_Type_ID?: string; DR_Type_Nome?: string;
+        Business_Process_ID?: string; Business_Process_Nome?: string;
+        Departamento_ID?: string; Departamento_Nome?: string;
         Plataformas?: string; Action_Cards?: string;
       }>(ws);
 
@@ -203,6 +205,13 @@ const ImportExportSection: React.FC = () => {
       const platNameMap = new Map(platforms.map(p => [p.name.toLowerCase().trim(), p.id]));
       const bpNameMap = new Map(processes.map(p => [(p.processo || "").toLowerCase().trim(), p.id]));
       const acNameMap = new Map(actionCards.map(a => [(a.title_pt || "").toLowerCase().trim(), a.id]));
+      const drNameMap = new Map<string, string>();
+      drTypes.forEach(d => {
+        drNameMap.set((d.code || "").toLowerCase().trim(), d.id);
+        drNameMap.set((d.label || "").toLowerCase().trim(), d.id);
+        drNameMap.set(`${d.code} — ${d.label}`.toLowerCase().trim(), d.id);
+      });
+      const deptNameMap = new Map(departments.map(d => [(d.name || "").toLowerCase().trim(), d.id]));
 
       let count = 0;
       for (const row of rows) {
@@ -214,6 +223,18 @@ const ImportExportSection: React.FC = () => {
           bpId = bpNameMap.get(row.Business_Process_Nome.toLowerCase().trim()) || null;
         }
 
+        // Resolve dr_type_id: prefer explicit ID, else lookup by name/code
+        let drId: string | null = row.DR_Type_ID?.trim() || null;
+        if (!drId && row.DR_Type_Nome?.trim()) {
+          drId = drNameMap.get(row.DR_Type_Nome.toLowerCase().trim()) || null;
+        }
+
+        // Resolve department_id: prefer explicit ID, else lookup by name
+        let deptId: string | null = row.Departamento_ID?.trim() || null;
+        if (!deptId && row.Departamento_Nome?.trim()) {
+          deptId = deptNameMap.get(row.Departamento_Nome.toLowerCase().trim()) || null;
+        }
+
         // Insert BIA process and get the new id
         const { data: inserted, error: insertErr } = await supabase
           .from("bia_processes")
@@ -223,10 +244,11 @@ const ImportExportSection: React.FC = () => {
             rto: Number(row.RTO) || 0,
             rpo: Number(row.RPO) || 0,
             criticality: row.Criticidade?.trim() || "medium",
-            dr_type_id: row.DR_Type_ID?.trim() || null,
+            dr_type_id: drId,
             business_process_id: bpId,
+            department_id: deptId,
             owner_id: user?.id,
-          })
+          } as any)
           .select("id")
           .single();
 
