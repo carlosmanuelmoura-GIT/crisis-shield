@@ -836,9 +836,17 @@ const BackOfficeSection: React.FC = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>{editingDept ? (lang === "pt" ? "Editar Departamento" : "Edit Department") : (lang === "pt" ? "Novo Departamento" : "New Department")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
-              <Input value={deptName} onChange={e => setDeptName(e.target.value)} className="bg-secondary border-border" /></div>
-            <Button onClick={handleSaveDept} disabled={!deptName || createDept.isPending || updateDept.isPending} className="w-full">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Código" : "Code"}</Label>
+                <Input value={deptForm.code} onChange={e => setDeptForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DSI" className="bg-secondary border-border font-mono" /></div>
+              <div className="space-y-1.5 col-span-2"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
+                <Input value={deptForm.name} onChange={e => setDeptForm(f => ({ ...f, name: e.target.value }))} className="bg-secondary border-border" /></div>
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={deptForm.has_cc} onChange={e => setDeptForm(f => ({ ...f, has_cc: e.target.checked }))} className="h-4 w-4" />
+              {lang === "pt" ? "Tem Centro de Comando (CC)" : "Has Command Center (CC)"}
+            </label>
+            <Button onClick={handleSaveDept} disabled={!deptForm.name || createDept.isPending || updateDept.isPending} className="w-full">
               {(createDept.isPending || updateDept.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>
