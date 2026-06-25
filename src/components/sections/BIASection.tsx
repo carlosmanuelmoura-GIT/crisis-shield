@@ -44,6 +44,7 @@ const BIASection: React.FC = () => {
   const { data: biaActionCardLinks = [] } = useBIAActionCards();
   const linkActionCard = useLinkBIAActionCard();
   const unlinkActionCard = useUnlinkBIAActionCard();
+  const { data: departments = [] } = useDepartments();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
@@ -51,6 +52,7 @@ const BIASection: React.FC = () => {
     name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium",
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
+    department_id: null as string | null,
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
