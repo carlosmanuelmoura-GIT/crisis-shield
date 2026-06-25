@@ -115,7 +115,7 @@ const BackOfficeSection: React.FC = () => {
   const deleteDept = useDeleteDepartment();
   const [deptDialog, setDeptDialog] = useState(false);
   const [editingDept, setEditingDept] = useState<string | null>(null);
-  const [deptName, setDeptName] = useState("");
+  const [deptForm, setDeptForm] = useState<{ name: string; code: string; has_cc: boolean }>({ name: "", code: "", has_cc: false });
 
   // --- Document Categories ---
   const { data: docCats = [], isLoading: docCatLoading } = useDocumentCategories();
