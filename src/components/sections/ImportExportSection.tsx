@@ -7,6 +7,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCMDBPlatforms, useCreateCMDBPlatform, useDeleteCMDBPlatform, useBIAProcessPlatforms } from "@/hooks/useCMDBPlatforms";
 import { useBusinessProcesses, useCreateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useBIAProcesses, useCreateBIAProcess } from "@/hooks/useBIAProcesses";
+import { useActionCards } from "@/hooks/useActionCards";
+import { useBIAActionCards } from "@/hooks/useBIAActionCards";
 import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCriticas";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,6 +25,8 @@ const ImportExportSection: React.FC = () => {
   const { data: processes = [] } = useBusinessProcesses();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaPlatLinks = [] } = useBIAProcessPlatforms();
+  const { data: actionCards = [] } = useActionCards();
+  const { data: biaActionCardLinks = [] } = useBIAActionCards();
   const { data: pessoas = [] } = usePessoasCriticas();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
@@ -64,13 +68,15 @@ const ImportExportSection: React.FC = () => {
 
   // ── Export BIA ──
   const exportBIA = () => {
-    // Build platform name lookup
     const platMap = new Map(platforms.map(p => [p.id, p.name]));
+    const bpMap = new Map(processes.map(p => [p.id, p.processo]));
+    const acMap = new Map(actionCards.map(a => [a.id, a.title_pt]));
 
     const rows = biaProcesses.map(b => {
-      // Find linked platform names
       const linkedPlatIds = biaPlatLinks.filter(l => l.bia_process_id === b.id).map(l => l.platform_id);
       const platNames = linkedPlatIds.map(pid => platMap.get(pid) || pid).join("; ");
+      const linkedAcIds = biaActionCardLinks.filter(l => l.bia_process_id === b.id).map(l => l.action_card_id);
+      const acNames = linkedAcIds.map(aid => acMap.get(aid) || aid).join("; ");
 
       return {
         Nome_PT: b.name_pt,
@@ -80,7 +86,9 @@ const ImportExportSection: React.FC = () => {
         Criticidade: b.criticality,
         DR_Type_ID: b.dr_type_id || "",
         Business_Process_ID: b.business_process_id || "",
+        Business_Process_Nome: b.business_process_id ? (bpMap.get(b.business_process_id) || "") : "",
         Plataformas: platNames,
+        Action_Cards: acNames,
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -107,7 +115,8 @@ const ImportExportSection: React.FC = () => {
   const exportTemplateBIA = () => {
     const ws = XLSX.utils.json_to_sheet([{
       Nome_PT: "", Nome_EN: "", RTO: 0, RPO: 0, Criticidade: "medium",
-      DR_Type_ID: "", Business_Process_ID: "", Plataformas: "",
+      DR_Type_ID: "", Business_Process_ID: "", Business_Process_Nome: "",
+      Plataformas: "", Action_Cards: "",
     }]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "BIA");
@@ -175,15 +184,24 @@ const ImportExportSection: React.FC = () => {
       const rows = XLSX.utils.sheet_to_json<{
         Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
         Criticidade?: string; DR_Type_ID?: string; Business_Process_ID?: string;
-        Plataformas?: string;
+        Business_Process_Nome?: string;
+        Plataformas?: string; Action_Cards?: string;
       }>(ws);
 
-      // Build platform name -> id lookup (case-insensitive)
+      // Build name -> id lookups (case-insensitive)
       const platNameMap = new Map(platforms.map(p => [p.name.toLowerCase().trim(), p.id]));
+      const bpNameMap = new Map(processes.map(p => [(p.processo || "").toLowerCase().trim(), p.id]));
+      const acNameMap = new Map(actionCards.map(a => [(a.title_pt || "").toLowerCase().trim(), a.id]));
 
       let count = 0;
       for (const row of rows) {
         if (!row.Nome_PT?.trim()) continue;
+
+        // Resolve business_process_id: prefer explicit ID, else lookup by name
+        let bpId: string | null = row.Business_Process_ID?.trim() || null;
+        if (!bpId && row.Business_Process_Nome?.trim()) {
+          bpId = bpNameMap.get(row.Business_Process_Nome.toLowerCase().trim()) || null;
+        }
 
         // Insert BIA process and get the new id
         const { data: inserted, error: insertErr } = await supabase
@@ -195,7 +213,7 @@ const ImportExportSection: React.FC = () => {
             rpo: Number(row.RPO) || 0,
             criticality: row.Criticidade?.trim() || "medium",
             dr_type_id: row.DR_Type_ID?.trim() || null,
-            business_process_id: row.Business_Process_ID?.trim() || null,
+            business_process_id: bpId,
             owner_id: user?.id,
           })
           .select("id")
@@ -216,11 +234,26 @@ const ImportExportSection: React.FC = () => {
             }
           }
         }
+
+        // Link Action Cards by name if specified
+        if (row.Action_Cards?.trim() && inserted) {
+          const acNames = row.Action_Cards.split(";").map(s => s.trim()).filter(Boolean);
+          for (const acName of acNames) {
+            const acId = acNameMap.get(acName.toLowerCase());
+            if (acId) {
+              await supabase.from("bia_action_cards").insert({
+                bia_process_id: inserted.id,
+                action_card_id: acId,
+              });
+            }
+          }
+        }
         count++;
       }
 
       qc.invalidateQueries({ queryKey: ["bia_processes"] });
       qc.invalidateQueries({ queryKey: ["bia_process_platforms"] });
+      qc.invalidateQueries({ queryKey: ["bia_action_cards"] });
       toast({ title: t(`${count} processos BIA importados`, `${count} BIA processes imported`) });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -360,8 +393,8 @@ const ImportExportSection: React.FC = () => {
           onImportClick={() => biaFileRef.current?.click()}
           importKey="bia"
           hint={t(
-            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Plataformas (nomes separados por ;)",
-            "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Plataformas (names separated by ;)"
+            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Business_Process_Nome, Plataformas, Action_Cards (nomes separados por ;)",
+            "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Business_Process_Nome, Plataformas, Action_Cards (names separated by ;)"
           )}
         />
         <ImportCard

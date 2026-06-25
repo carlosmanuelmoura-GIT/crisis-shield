@@ -29,6 +29,8 @@ import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useCenarios } from "@/hooks/useCenarios";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useBIAProcesses } from "@/hooks/useBIAProcesses";
+import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { useCrises } from "@/hooks/useCrises";
@@ -56,6 +58,10 @@ const EmergencySection: React.FC = () => {
   const { data: recursos = [] } = useRecursos();
   const { data: cenarios = [] } = useCenarios();
   const { data: departments = [] } = useDepartments();
+  const { data: biaProcesses = [] } = useBIAProcesses();
+  const { data: biaACLinks = [] } = useBIAActionCards();
+  const linkBIA = useLinkBIAActionCard();
+  const unlinkBIA = useUnlinkBIAActionCard();
   const { data: dbCrises = [] } = useCrises();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
@@ -80,12 +86,15 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: "", cenario_id: "", department_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [expandedKanban, setExpandedKanban] = useState<Record<string, boolean>>({});
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [addBiaForCard, setAddBiaForCard] = useState<Record<string, string>>({});
+  const [linkBiaDialogCard, setLinkBiaDialogCard] = useState<string | null>(null);
+  const [biaToLink, setBiaToLink] = useState<string>("");
 
   // Confirmation dialog for checking items
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -110,46 +119,46 @@ const EmergencySection: React.FC = () => {
     });
   }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso]);
 
-  // Group cards by cenário (for list view)
+  // Group cards by Recurso (for both list and kanban views)
   const groupedCards = useMemo(() => {
-    const groups: { cenario: typeof cenarios[0] | null; cards: typeof filtered }[] = [];
-    const cenMap = new Map(cenarios.map(c => [c.id, c]));
+    const groups: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
+    const recMap = new Map(recursos.map(r => [r.id, r]));
 
-    const byCen = new Map<string, typeof filtered>();
+    const byRec = new Map<string, typeof filtered>();
     const unassigned: typeof filtered = [];
 
     filtered.forEach(card => {
-      const cId = (card as any).cenario_id;
-      if (cId && cenMap.has(cId)) {
-        const existing = byCen.get(cId) || [];
+      const rId = card.recurso_id;
+      if (rId && recMap.has(rId)) {
+        const existing = byRec.get(rId) || [];
         existing.push(card);
-        byCen.set(cId, existing);
+        byRec.set(rId, existing);
       } else {
         unassigned.push(card);
       }
     });
 
-    const sortedKeys = [...byCen.keys()].sort((a, b) => {
-      const ca = cenMap.get(a);
-      const cb = cenMap.get(b);
-      return (ca?.roman || ca?.name_pt || "").localeCompare(cb?.roman || cb?.name_pt || "");
+    const sortedKeys = [...byRec.keys()].sort((a, b) => {
+      const ra = recMap.get(a);
+      const rb = recMap.get(b);
+      return (ra?.name_pt || "").localeCompare(rb?.name_pt || "");
     });
 
     sortedKeys.forEach(id => {
-      groups.push({ cenario: cenMap.get(id)!, cards: byCen.get(id)! });
+      groups.push({ recurso: recMap.get(id)!, cards: byRec.get(id)! });
     });
     if (unassigned.length > 0) {
-      groups.push({ cenario: null, cards: unassigned });
+      groups.push({ recurso: null, cards: unassigned });
     }
     return groups;
-  }, [filtered, cenarios]);
+  }, [filtered, recursos]);
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "", cenario_id: "", department_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "" });
     setDialogOpen(true);
   };
 
@@ -157,10 +166,10 @@ const EmergencySection: React.FC = () => {
     setEditingCard(card.id);
     setForm({
       title_pt: card.title_pt, title_en: card.title_en, severity: card.severity,
-      capability: card.capability || "", funcao: card.funcao || "",
-      macro_processo: card.macro_processo || "", recurso_id: card.recurso_id || "",
-      cenario_id: (card as any).cenario_id || "",
-      department_id: (card as any).department_id || "",
+      capability: card.capability || "",
+      recurso_id: card.recurso_id || "",
+      cenario_id: card.cenario_id || "",
+      department_id: card.department_id || "",
     });
     setDialogOpen(true);
   };
@@ -169,8 +178,6 @@ const EmergencySection: React.FC = () => {
     try {
       const payload = {
         ...form,
-        funcao: form.funcao || undefined,
-        macro_processo: form.macro_processo || undefined,
         recurso_id: form.recurso_id || undefined,
         capability: form.capability || undefined,
         cenario_id: form.cenario_id || undefined,
@@ -425,9 +432,9 @@ const EmergencySection: React.FC = () => {
         <p className="text-sm text-muted-foreground py-4 text-center">{lang === "pt" ? "Nenhum action card encontrado." : "No action cards found."}</p>
       )}
 
-      {/* LIST VIEW - grouped by cenário */}
-      {viewMode === "list" && groupedCards.map(({ cenario, cards: groupCards }) => {
-        const groupId = cenario?.id || "__unassigned";
+      {/* LIST VIEW - grouped by Recurso */}
+      {viewMode === "list" && groupedCards.map(({ recurso, cards: groupCards }) => {
+        const groupId = recurso?.id || "__unassigned";
         const isGroupCollapsed = collapsedGroups[groupId];
         const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
         const groupDone = groupCards.reduce((sum, card) => {
@@ -435,9 +442,9 @@ const EmergencySection: React.FC = () => {
           return sum + items.filter(i => statesMap[i.id]).length;
         }, 0);
 
-        const groupLabel = cenario
-          ? `${cenario.roman ? cenario.roman + " — " : ""}${lang === "pt" ? cenario.name_pt : cenario.name_en || cenario.name_pt}`
-          : (lang === "pt" ? "Sem cenário associado" : "No scenario assigned");
+        const groupLabel = recurso
+          ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
+          : (lang === "pt" ? "Sem recurso associado" : "No resource assigned");
 
         return (
           <div key={groupId} className="space-y-3">
@@ -464,11 +471,10 @@ const EmergencySection: React.FC = () => {
                   const done = items.filter(i => statesMap[i.id]).length;
                   const total = items.length;
                   const title = lang === "pt" ? card.title_pt : card.title_en;
-                  const bpLabel = [card.funcao, card.macro_processo].filter(Boolean).join(" › ");
                   const severity = severityLabels[card.severity];
                   const cenLabel = getCenarioLabel(card);
                   const deptLabel = getDeptLabel(card);
-                  const recLabel = getRecursoLabel(card);
+                  const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
 
                   return (
                     <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
@@ -480,10 +486,23 @@ const EmergencySection: React.FC = () => {
                               <Badge variant="secondary" className="text-[11px]">
                                 {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                               </Badge>
-                              {bpLabel && <Badge variant="outline" className="text-[11px] font-normal">{bpLabel}</Badge>}
                               {cenLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{cenLabel}</Badge>}
-                              {recLabel && <Badge variant="outline" className="text-[11px] font-normal">{recLabel}</Badge>}
                               {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                            </div>
+                            <div className="flex flex-wrap gap-1 items-center" onClick={e => e.stopPropagation()}>
+                              {linkedBias.map(l => {
+                                const b = biaProcesses.find(x => x.id === l.bia_process_id);
+                                if (!b) return null;
+                                return (
+                                  <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
+                                    BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
+                                    <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                                  </Badge>
+                                );
+                              })}
+                              <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
+                                <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
+                              </Button>
                             </div>
                           </div>
                           <div className="flex items-center gap-0.5 shrink-0">
@@ -533,13 +552,13 @@ const EmergencySection: React.FC = () => {
         );
       })}
 
-      {/* KANBAN VIEW - columns by Cenário */}
+      {/* KANBAN VIEW - columns by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
-          {[...cenarios, null].map(cenario => {
-            const colId = cenario?.id || "__unassigned";
-            const colCards = filtered.filter(c => cenario ? (c as any).cenario_id === cenario.id : !(c as any).cenario_id || !cenarios.some(x => x.id === (c as any).cenario_id));
-            if (colCards.length === 0 && cenario) return null;
+          {[...recursos, null].map(recurso => {
+            const colId = recurso?.id || "__unassigned";
+            const colCards = filtered.filter(c => recurso ? c.recurso_id === recurso.id : !c.recurso_id || !recursos.some(x => x.id === c.recurso_id));
+            if (colCards.length === 0 && recurso) return null;
             const isDragOver = dragOverCol === colId;
 
             return (
@@ -553,15 +572,14 @@ const EmergencySection: React.FC = () => {
                   setDragOverCol(null);
                   if (!dragCardId) return;
                   const card = cards.find(c => c.id === dragCardId);
-                  const targetCenId = cenario?.id || null;
-                  if (!card || (card as any).cenario_id === targetCenId) { setDragCardId(null); return; }
+                  const targetRecId = recurso?.id || null;
+                  if (!card || card.recurso_id === targetRecId) { setDragCardId(null); return; }
                   updateCard.mutateAsync({
                     id: card.id, title_pt: card.title_pt, title_en: card.title_en,
                     severity: card.severity, capability: card.capability || undefined,
-                    funcao: card.funcao || undefined, macro_processo: card.macro_processo || undefined,
-                    recurso_id: card.recurso_id || undefined,
-                    cenario_id: targetCenId || undefined,
-                    department_id: (card as any).department_id || undefined,
+                    recurso_id: targetRecId || undefined,
+                    cenario_id: card.cenario_id || undefined,
+                    department_id: card.department_id || undefined,
                   }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
@@ -570,7 +588,7 @@ const EmergencySection: React.FC = () => {
                 <div className="p-3 border-b border-border/50 flex items-center gap-2">
                   <div className="flex-1 min-w-0">
                     <span className="text-xs font-bold truncate block">
-                      {cenario ? `${cenario.roman ? cenario.roman + " — " : ""}${lang === "pt" ? cenario.name_pt : cenario.name_en || cenario.name_pt}` : (lang === "pt" ? "Sem cenário" : "No scenario")}
+                      {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso" : "No resource")}
                     </span>
                   </div>
                   <Badge variant="secondary" className="text-[9px]">{colCards.length}</Badge>
@@ -586,8 +604,9 @@ const EmergencySection: React.FC = () => {
                       const severity = severityLabels[card.severity];
                       const isDragging = dragCardId === card.id;
                       const isCardExpanded = expandedKanban[card.id];
-                      const recLabel = getRecursoLabel(card);
                       const deptLabel = getDeptLabel(card);
+                      const cenLabel = getCenarioLabel(card);
+                      const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
 
                       return (
                         <Card
@@ -606,8 +625,23 @@ const EmergencySection: React.FC = () => {
                                   <Badge variant="secondary" className="text-[10px]">
                                     {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                                   </Badge>
-                                  {recLabel && <Badge variant="outline" className="text-[10px] font-normal">{recLabel}</Badge>}
+                                  {cenLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cenLabel}</Badge>}
                                   {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                </div>
+                                <div className="flex flex-wrap gap-1 items-center mt-1" onClick={e => e.stopPropagation()}>
+                                  {linkedBias.map(l => {
+                                    const b = biaProcesses.find(x => x.id === l.bia_process_id);
+                                    if (!b) return null;
+                                    return (
+                                      <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
+                                        BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
+                                        <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                                      </Badge>
+                                    );
+                                  })}
+                                  <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
+                                    <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
+                                  </Button>
                                 </div>
                               </div>
                               <div className="flex items-center gap-0.5 shrink-0">
@@ -717,34 +751,6 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Função" : "Function"}</Label>
-              <Select value={form.funcao || "none"} onValueChange={(v) => setForm(f => ({ ...f, funcao: v === "none" ? "" : v, macro_processo: "" }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhuma —" : "— None —"}</SelectItem>
-                  {[...new Set(businessProcesses.map(bp => bp.funcao).filter(Boolean))].map(f => (
-                    <SelectItem key={f} value={f}>{f}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Macro Processo" : "Macro Process"}</Label>
-              <Select value={form.macro_processo || "none"} onValueChange={(v) => setForm(f => ({ ...f, macro_processo: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {[...new Set(businessProcesses.filter(bp => !form.funcao || bp.funcao === form.funcao).map(bp => bp.macro_processo).filter(Boolean))].map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Departamento" : "Department"}</Label>
               <Select value={form.department_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, department_id: v === "none" ? "" : v }))}>
                 <SelectTrigger className="bg-secondary border-border">
@@ -813,6 +819,46 @@ const EmergencySection: React.FC = () => {
               {lang === "pt" ? "Confirmar" : "Confirm"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link BIA to Action Card dialog */}
+      <Dialog open={!!linkBiaDialogCard} onOpenChange={(o) => { if (!o) { setLinkBiaDialogCard(null); setBiaToLink(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Associar BIA" : "Link BIA"}</DialogTitle>
+          </DialogHeader>
+          {linkBiaDialogCard && (() => {
+            const linked = biaACLinks.filter(l => l.action_card_id === linkBiaDialogCard).map(l => l.bia_process_id);
+            const available = biaProcesses.filter(b => !linked.includes(b.id));
+            return (
+              <div className="space-y-3">
+                <Label className="text-sm">{lang === "pt" ? "Escolher BIA" : "Choose BIA"}</Label>
+                <Select value={biaToLink} onValueChange={setBiaToLink}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {available.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">{lang === "pt" ? "Sem BIAs disponíveis" : "No BIAs available"}</div>}
+                    {available.map(b => <SelectItem key={b.id} value={b.id}>{lang === "pt" ? b.name_pt : b.name_en || b.name_pt}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button onClick={async () => {
+                  if (!linkBiaDialogCard || !biaToLink) return;
+                  try {
+                    await linkBIA.mutateAsync({ action_card_id: linkBiaDialogCard, bia_process_id: biaToLink });
+                    setBiaToLink("");
+                    toast({ title: lang === "pt" ? "BIA associada" : "BIA linked" });
+                  } catch (err: any) {
+                    toast({ title: "Erro", description: err.message, variant: "destructive" });
+                  }
+                }} disabled={!biaToLink || linkBIA.isPending} className="w-full">
+                  {linkBIA.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {lang === "pt" ? "Associar" : "Link"}
+                </Button>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
