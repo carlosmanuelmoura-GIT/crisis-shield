@@ -243,7 +243,13 @@ const ImportExportSection: React.FC = () => {
             name_en: row.Nome_EN?.trim() || "",
             rto: Number(row.RTO) || 0,
             rpo: Number(row.RPO) || 0,
-            criticality: row.Criticidade?.trim() || "medium",
+            criticality: (() => {
+              const raw = (row.Tipo_BIA ?? row.Criticidade ?? "").toString().trim().toLowerCase();
+              if (["vital", "critical", "crítico", "critico"].includes(raw)) return "vital";
+              if (["decisao", "decisão", "high", "alto"].includes(raw)) return "decisao";
+              if (["analitica", "analítica", "medium", "low", "médio", "medio", "baixo"].includes(raw)) return "analitica";
+              return "analitica";
+            })(),
             dr_type_id: drId,
             business_process_id: bpId,
             department_id: deptId,
