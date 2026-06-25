@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText, Building2, Users, Truck, MapPin, Monitor, Home, UserCheck, Network, Zap } from "lucide-react";
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
@@ -20,7 +21,7 @@ import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding }
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useDocumentCategories, useCreateDocumentCategory, useUpdateDocumentCategory, useDeleteDocumentCategory } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
-import { Building2 as BuildingIcon } from "lucide-react";
+const BuildingIcon = Building2;
 
 const roleLabels: Record<string, string> = {
   steering_gcn: "Steering GCN",
@@ -56,7 +57,7 @@ const BackOfficeSection: React.FC = () => {
   const deleteRec = useDeleteRecurso();
   const [recDialog, setRecDialog] = useState(false);
   const [editingRec, setEditingRec] = useState<string | null>(null);
-  const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "" });
+  const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "", description_en: "", icon: "Monitor" });
 
   // --- Sub-Capacidades ---
   const { data: subCapacidades = [] } = useSubCapacidades();
@@ -198,8 +199,8 @@ const BackOfficeSection: React.FC = () => {
   };
 
   // Recursos
-  const openCreateRec = () => { setEditingRec(null); setRecForm({ name_pt: "", name_en: "", description_pt: "" }); setRecDialog(true); };
-  const openEditRec = (r: typeof recursos[0]) => { setEditingRec(r.id); setRecForm({ name_pt: r.name_pt, name_en: r.name_en, description_pt: r.description_pt }); setRecDialog(true); };
+  const openCreateRec = () => { setEditingRec(null); setRecForm({ name_pt: "", name_en: "", description_pt: "", description_en: "", icon: "Monitor" }); setRecDialog(true); };
+  const openEditRec = (r: typeof recursos[0]) => { setEditingRec(r.id); setRecForm({ name_pt: r.name_pt, name_en: r.name_en, description_pt: r.description_pt || "", description_en: r.description_en || "", icon: r.icon || "Monitor" }); setRecDialog(true); };
   const handleSaveRec = async () => {
     try {
       if (editingRec) await updateRec.mutateAsync({ id: editingRec, ...recForm });
@@ -697,21 +698,47 @@ const BackOfficeSection: React.FC = () => {
 
       {/* Recurso */}
       <Dialog open={recDialog} onOpenChange={setRecDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>{editingRec ? (lang === "pt" ? "Editar Recurso" : "Edit Resource") : (lang === "pt" ? "Novo Recurso" : "New Resource")}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
-              <Input value={recForm.name_pt} onChange={e => setRecForm(f => ({ ...f, name_pt: e.target.value }))} className="bg-secondary border-border" /></div>
-            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
-              <Input value={recForm.name_en} onChange={e => setRecForm(f => ({ ...f, name_en: e.target.value }))} className="bg-secondary border-border" /></div>
-            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Descrição" : "Description"}</Label>
-              <Input value={recForm.description_pt} onChange={e => setRecForm(f => ({ ...f, description_pt: e.target.value }))} className="bg-secondary border-border" /></div>
-            <Button onClick={handleSaveRec} disabled={!recForm.name_pt || createRec.isPending || updateRec.isPending} className="w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
+              <Input value={recForm.name_pt} onChange={e => setRecForm(f => ({ ...f, name_pt: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
+              <Input value={recForm.name_en} onChange={e => setRecForm(f => ({ ...f, name_en: e.target.value }))} />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <Label>{lang === "pt" ? "Ícone" : "Icon"}</Label>
+              <select
+                className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={recForm.icon}
+                onChange={e => setRecForm(f => ({ ...f, icon: e.target.value }))}
+              >
+                {["Server","Building2","Users","Truck","MapPin","ShieldAlert","Monitor","Home","UserCheck","Network","Zap"].map(k => (
+                  <option key={k} value={k}>{k}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <Label>{lang === "pt" ? "Descrição (PT)" : "Description (PT)"}</Label>
+              <Textarea rows={3} value={recForm.description_pt} onChange={e => setRecForm(f => ({ ...f, description_pt: e.target.value }))} />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <Label>{lang === "pt" ? "Descrição (EN)" : "Description (EN)"}</Label>
+              <Textarea rows={3} value={recForm.description_en} onChange={e => setRecForm(f => ({ ...f, description_en: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecDialog(false)}>{lang === "pt" ? "Cancelar" : "Cancel"}</Button>
+            <Button onClick={handleSaveRec} disabled={!recForm.name_pt || createRec.isPending || updateRec.isPending}>
               {(createRec.isPending || updateRec.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
       {/* Cenário */}
       <Dialog open={cenDialog} onOpenChange={setCenDialog}>
