@@ -16,9 +16,8 @@ import {
 import {
   useCenarios, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso,
 } from "@/hooks/useCenarios";
-import {
-  useRecursos, useCreateRecurso, useUpdateRecurso, DBRecurso,
-} from "@/hooks/useRecursos";
+import { useRecursos, useUpdateRecurso, DBRecurso } from "@/hooks/useRecursos";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
