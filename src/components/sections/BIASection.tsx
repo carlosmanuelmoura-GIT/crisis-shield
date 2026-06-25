@@ -229,9 +229,9 @@ const BIASection: React.FC = () => {
           <div className="flex items-center gap-2 mb-2">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("Filtros", "Filters")}</span>
-            {(listTipoFuncao !== "__all__" || listFuncao !== "__all__" || listMacro !== "__all__" || listProcesso !== "__all__" || filterPlatformIds.length > 0) && (
+            {(listTipoFuncao !== "__all__" || listFuncao !== "__all__" || listMacro !== "__all__" || listProcesso !== "__all__" || filterActionCardId) && (
               <Button variant="ghost" size="sm" className="h-5 text-[10px] ml-auto" onClick={() => {
-                setListTipoFuncao("__all__"); setListFuncao("__all__"); setListMacro("__all__"); setListProcesso("__all__"); setFilterPlatformIds([]);
+                setListTipoFuncao("__all__"); setListFuncao("__all__"); setListMacro("__all__"); setListProcesso("__all__"); setFilterActionCardId(null); setActionCardSearch("");
               }}>
                 <X className="h-3 w-3 mr-0.5" />{t("Limpar filtros", "Clear filters")}
               </Button>
