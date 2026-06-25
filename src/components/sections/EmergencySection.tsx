@@ -116,39 +116,39 @@ const EmergencySection: React.FC = () => {
     });
   }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso]);
 
-  // Group cards by cenário (for list view)
+  // Group cards by Recurso (for both list and kanban views)
   const groupedCards = useMemo(() => {
-    const groups: { cenario: typeof cenarios[0] | null; cards: typeof filtered }[] = [];
-    const cenMap = new Map(cenarios.map(c => [c.id, c]));
+    const groups: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
+    const recMap = new Map(recursos.map(r => [r.id, r]));
 
-    const byCen = new Map<string, typeof filtered>();
+    const byRec = new Map<string, typeof filtered>();
     const unassigned: typeof filtered = [];
 
     filtered.forEach(card => {
-      const cId = (card as any).cenario_id;
-      if (cId && cenMap.has(cId)) {
-        const existing = byCen.get(cId) || [];
+      const rId = card.recurso_id;
+      if (rId && recMap.has(rId)) {
+        const existing = byRec.get(rId) || [];
         existing.push(card);
-        byCen.set(cId, existing);
+        byRec.set(rId, existing);
       } else {
         unassigned.push(card);
       }
     });
 
-    const sortedKeys = [...byCen.keys()].sort((a, b) => {
-      const ca = cenMap.get(a);
-      const cb = cenMap.get(b);
-      return (ca?.roman || ca?.name_pt || "").localeCompare(cb?.roman || cb?.name_pt || "");
+    const sortedKeys = [...byRec.keys()].sort((a, b) => {
+      const ra = recMap.get(a);
+      const rb = recMap.get(b);
+      return (ra?.name_pt || "").localeCompare(rb?.name_pt || "");
     });
 
     sortedKeys.forEach(id => {
-      groups.push({ cenario: cenMap.get(id)!, cards: byCen.get(id)! });
+      groups.push({ recurso: recMap.get(id)!, cards: byRec.get(id)! });
     });
     if (unassigned.length > 0) {
-      groups.push({ cenario: null, cards: unassigned });
+      groups.push({ recurso: null, cards: unassigned });
     }
     return groups;
-  }, [filtered, cenarios]);
+  }, [filtered, recursos]);
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
