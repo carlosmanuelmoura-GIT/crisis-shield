@@ -16,6 +16,9 @@ import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers
 import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
+import { useActionCards } from "@/hooks/useActionCards";
+import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
+import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 const critColor: Record<string, string> = {
