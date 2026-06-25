@@ -454,139 +454,166 @@ const EmergencySection: React.FC = () => {
         <p className="text-sm text-muted-foreground py-4 text-center">{lang === "pt" ? "Nenhum action card encontrado." : "No action cards found."}</p>
       )}
 
-      {/* LIST VIEW - grouped by Recurso */}
-      {viewMode === "list" && groupedCards.map(({ recurso, cards: groupCards }) => {
-        const groupId = recurso?.id || "__unassigned";
-        const isGroupCollapsed = collapsedGroups[groupId];
-        const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
-        const groupDone = groupCards.reduce((sum, card) => {
-          const items = allItems.filter(i => i.action_card_id === card.id);
-          return sum + items.filter(i => statesMap[i.id]).length;
-        }, 0);
-
-        const groupLabel = recurso
-          ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-          : (lang === "pt" ? "Sem recurso associado" : "No resource assigned");
+      {/* Reusable card renderer (list variant) */}
+      {/* LIST VIEW - grouped by Cenário > Recurso */}
+      {viewMode === "list" && groupedByCenario.map(({ cenario, recursoGroups, total: cenTotal }) => {
+        const cenId = cenario?.id || "__no_cenario";
+        const isCenCollapsed = collapsedGroups[`cen:${cenId}`];
+        const cenLabel = cenario
+          ? `${cenario.roman ? cenario.roman + " — " : ""}${lang === "pt" ? cenario.name_pt : cenario.name_en || cenario.name_pt}`
+          : (lang === "pt" ? "Sem cenário associado" : "No scenario assigned");
 
         return (
-          <div key={groupId} className="space-y-3">
+          <div key={cenId} className="space-y-3">
             <div
-              className="flex items-center gap-3 px-3 py-2 bg-secondary/50 rounded-lg cursor-pointer border border-border/50"
-              onClick={() => toggleGroup(groupId)}
+              className="flex items-center gap-3 px-3 py-2 bg-primary/10 rounded-lg cursor-pointer border border-primary/30"
+              onClick={() => toggleGroup(`cen:${cenId}`)}
             >
-              <Package className="h-5 w-5 text-muted-foreground shrink-0" />
+              <AlertTriangle className="h-5 w-5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold">{groupLabel}</h3>
+                <h3 className="text-sm font-bold uppercase tracking-wide">{lang === "pt" ? "Cenário" : "Scenario"}: {cenLabel}</h3>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge variant="secondary" className="text-[10px]">{groupCards.length} cards</Badge>
-                <span className="text-[10px] text-muted-foreground">{groupDone}/{groupTotal}</span>
-                {isGroupCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                <Badge variant="secondary" className="text-[10px]">{cenTotal} cards</Badge>
+                {isCenCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
               </div>
             </div>
 
-            {!isGroupCollapsed && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 border-l-2 border-border/50 ml-3">
-                {groupCards.map(card => {
-                  const isOpen = expanded[card.id];
-                  const items = allItems.filter(i => i.action_card_id === card.id);
-                  const done = items.filter(i => statesMap[i.id]).length;
-                  const total = items.length;
-                  const title = lang === "pt" ? card.title_pt : card.title_en;
-                  const severity = severityLabels[card.severity];
-                  const cenLabel = getCenarioLabel(card);
-                  const deptLabel = getDeptLabel(card);
-                  const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
+            {!isCenCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
+              const groupId = `${cenId}:${recurso?.id || "__unassigned"}`;
+              const isGroupCollapsed = collapsedGroups[groupId];
+              const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
+              const groupDone = groupCards.reduce((sum, card) => {
+                const items = allItems.filter(i => i.action_card_id === card.id);
+                return sum + items.filter(i => statesMap[i.id]).length;
+              }, 0);
+              const groupLabel = recurso
+                ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
+                : (lang === "pt" ? "Sem recurso associado" : "No resource assigned");
 
-                  return (
-                    <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
-                      <CardHeader className="p-3 pb-1 cursor-pointer" onClick={() => toggle(card.id)}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="space-y-1 min-w-0 flex-1">
-                            <CardTitle className="text-base leading-tight">{title}</CardTitle>
-                            <div className="flex flex-wrap gap-1">
-                              <Badge variant="secondary" className="text-[11px]">
-                                {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
-                              </Badge>
-                              {cenLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{cenLabel}</Badge>}
-                              {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
-                            </div>
-                            <div className="flex flex-wrap gap-1 items-center" onClick={e => e.stopPropagation()}>
-                              {linkedBias.map(l => {
-                                const b = biaProcesses.find(x => x.id === l.bia_process_id);
-                                if (!b) return null;
-                                return (
-                                  <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
-                                    BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
-                                    <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                                  </Badge>
-                                );
-                              })}
-                              <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
-                                <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDuplicate(card); }} title={lang === "pt" ? "Duplicar" : "Duplicate"}><Copy className="h-3 w-3 sat-keep" /></Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(card); }}><Pencil className="h-3 w-3 sat-keep" /></Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}><Trash2 className="h-3 w-3 sat-keep" /></Button>
-                            {isOpen ? <ChevronUp className="h-3.5 w-3.5 sat-keep" /> : <ChevronDown className="h-3.5 w-3.5 sat-keep" />}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <div className="flex-1 h-1 bg-secondary rounded-full">
-                            <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-                          </div>
-                          <span className="text-xs text-muted-foreground font-medium">{done}/{total}</span>
-                        </div>
-                      </CardHeader>
-                      {isOpen && (
-                        <CardContent className="p-3 pt-1 space-y-1.5 border-t border-border/50">
-                          {items.map((item, idx) => {
-                            const checked = !!statesMap[item.id];
-                            const text = lang === "pt" ? item.text_pt : item.text_en;
-                            return (
-                              <div key={item.id} className="flex items-start gap-2 py-0.5 group">
-                                <span className="text-xs text-muted-foreground font-medium mt-0.5 w-5 shrink-0 text-right">{idx + 1}.</span>
-                                <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                  <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                                </label>
-                                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-3 w-3" /></Button>
+              return (
+                <div key={groupId} className="space-y-2 ml-4">
+                  <div
+                    className="flex items-center gap-3 px-3 py-1.5 bg-secondary/50 rounded-lg cursor-pointer border border-border/50"
+                    onClick={() => toggleGroup(groupId)}
+                  >
+                    <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold">{lang === "pt" ? "Recurso" : "Resource"}: {groupLabel}</h4>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Badge variant="secondary" className="text-[10px]">{groupCards.length} cards</Badge>
+                      <span className="text-[10px] text-muted-foreground">{groupDone}/{groupTotal}</span>
+                      {isGroupCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                    </div>
+                  </div>
+
+                  {!isGroupCollapsed && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 border-l-2 border-border/50 ml-3">
+                      {groupCards.map(card => {
+                        const isOpen = expanded[card.id];
+                        const items = allItems.filter(i => i.action_card_id === card.id);
+                        const done = items.filter(i => statesMap[i.id]).length;
+                        const total = items.length;
+                        const title = lang === "pt" ? card.title_pt : card.title_en;
+                        const severity = severityLabels[card.severity];
+                        const cLabel = getCenarioLabel(card);
+                        const deptLabel = getDeptLabel(card);
+                        const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
+
+                        return (
+                          <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
+                            <CardHeader className="p-3 pb-1 cursor-pointer" onClick={() => toggle(card.id)}>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-1 min-w-0 flex-1">
+                                  <CardTitle className="text-base leading-tight">{title}</CardTitle>
+                                  <div className="flex flex-wrap gap-1">
+                                    <Badge variant="secondary" className="text-[11px]">
+                                      {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                                    </Badge>
+                                    {cLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{cLabel}</Badge>}
+                                    {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                  </div>
+                                  <div className="flex flex-wrap gap-1 items-center" onClick={e => e.stopPropagation()}>
+                                    {linkedBias.map(l => {
+                                      const b = biaProcesses.find(x => x.id === l.bia_process_id);
+                                      if (!b) return null;
+                                      return (
+                                        <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
+                                          BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
+                                          <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                                        </Badge>
+                                      );
+                                    })}
+                                    <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
+                                      <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDuplicate(card); }} title={lang === "pt" ? "Duplicar" : "Duplicate"}><Copy className="h-3 w-3 sat-keep" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(card); }}><Pencil className="h-3 w-3 sat-keep" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}><Trash2 className="h-3 w-3 sat-keep" /></Button>
+                                  {isOpen ? <ChevronUp className="h-3.5 w-3.5 sat-keep" /> : <ChevronDown className="h-3.5 w-3.5 sat-keep" />}
+                                </div>
                               </div>
-                            );
-                          })}
-                          <div className="flex gap-2 pt-1">
-                            <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
-                              placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-7 text-xs bg-secondary border-border"
-                              onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
-                            <Button size="sm" variant="secondary" className="h-7 px-2" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
-                          </div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <div className="flex-1 h-1 bg-secondary rounded-full">
+                                  <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                                </div>
+                                <span className="text-xs text-muted-foreground font-medium">{done}/{total}</span>
+                              </div>
+                            </CardHeader>
+                            {isOpen && (
+                              <CardContent className="p-3 pt-1 space-y-1.5 border-t border-border/50">
+                                {items.map((item, idx) => {
+                                  const checked = !!statesMap[item.id];
+                                  const text = lang === "pt" ? item.text_pt : item.text_en;
+                                  return (
+                                    <div key={item.id} className="flex items-start gap-2 py-0.5 group">
+                                      <span className="text-xs text-muted-foreground font-medium mt-0.5 w-5 shrink-0 text-right">{idx + 1}.</span>
+                                      <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                        <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
+                                        <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                      </label>
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-3 w-3" /></Button>
+                                    </div>
+                                  );
+                                })}
+                                <div className="flex gap-2 pt-1">
+                                  <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
+                                    placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-7 text-xs bg-secondary border-border"
+                                    onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
+                                  <Button size="sm" variant="secondary" className="h-7 px-2" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
+                                </div>
+                              </CardContent>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       })}
 
-      {/* KANBAN VIEW - columns by Recurso */}
+      {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
-          {[...recursos, null].map(recurso => {
-            const colId = recurso?.id || "__unassigned";
-            const colCards = filtered.filter(c => recurso ? c.recurso_id === recurso.id : !c.recurso_id || !recursos.some(x => x.id === c.recurso_id));
-            if (colCards.length === 0 && recurso) return null;
+          {groupedByCenario.map(({ cenario, recursoGroups, total: colCount }) => {
+            const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
+            const colTitle = cenario
+              ? `${cenario.roman ? cenario.roman + " — " : ""}${lang === "pt" ? cenario.name_pt : cenario.name_en || cenario.name_pt}`
+              : (lang === "pt" ? "Sem cenário" : "No scenario");
 
             return (
               <div
                 key={colId}
-                className={`flex-shrink-0 w-72 flex flex-col rounded-lg border transition-colors ${isDragOver ? "border-primary bg-primary/5" : "border-border bg-secondary/30"}`}
+                className={`flex-shrink-0 w-80 flex flex-col rounded-lg border transition-colors ${isDragOver ? "border-primary bg-primary/5" : "border-border bg-secondary/30"}`}
                 onDragOver={(e) => handleDragOver(e, colId)}
                 onDragLeave={() => setDragOverCol(null)}
                 onDrop={(e) => {
@@ -594,124 +621,134 @@ const EmergencySection: React.FC = () => {
                   setDragOverCol(null);
                   if (!dragCardId) return;
                   const card = cards.find(c => c.id === dragCardId);
-                  const targetRecId = recurso?.id || null;
-                  if (!card || card.recurso_id === targetRecId) { setDragCardId(null); return; }
+                  const targetCenId = cenario?.id || null;
+                  if (!card || (card as any).cenario_id === targetCenId) { setDragCardId(null); return; }
                   updateCard.mutateAsync({
                     id: card.id, title_pt: card.title_pt, title_en: card.title_en,
                     severity: card.severity, capability: card.capability || undefined,
-                    recurso_id: targetRecId || undefined,
-                    cenario_id: card.cenario_id || undefined,
+                    recurso_id: card.recurso_id || undefined,
+                    cenario_id: targetCenId || undefined,
                     department_id: card.department_id || undefined,
                   }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
                 }}
               >
-                <div className="p-3 border-b border-border/50 flex items-center gap-2">
+                <div className="p-3 border-b border-border/50 flex items-center gap-2 bg-primary/10">
+                  <AlertTriangle className="h-3.5 w-3.5 text-primary shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-bold truncate block">
-                      {recurso ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt) : (lang === "pt" ? "Sem recurso" : "No resource")}
-                    </span>
+                    <span className="text-xs font-bold truncate block uppercase tracking-wide">{colTitle}</span>
                   </div>
-                  <Badge variant="secondary" className="text-[9px]">{colCards.length}</Badge>
+                  <Badge variant="secondary" className="text-[9px]">{colCount}</Badge>
                 </div>
 
                 <ScrollArea className="flex-1 p-2">
-                  <div className="space-y-2">
-                    {colCards.map(card => {
-                      const items = allItems.filter(i => i.action_card_id === card.id);
-                      const done = items.filter(i => statesMap[i.id]).length;
-                      const total = items.length;
-                      const title = lang === "pt" ? card.title_pt : card.title_en;
-                      const severity = severityLabels[card.severity];
-                      const isDragging = dragCardId === card.id;
-                      const isCardExpanded = expandedKanban[card.id];
-                      const deptLabel = getDeptLabel(card);
-                      const cenLabel = getCenarioLabel(card);
-                      const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
-
+                  <div className="space-y-3">
+                    {recursoGroups.map(({ recurso, cards: subCards }) => {
+                      const subLabel = recurso
+                        ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
+                        : (lang === "pt" ? "Sem recurso" : "No resource");
                       return (
-                        <Card
-                          key={card.id}
-                          draggable
-                          onDragStart={() => handleDragStart(card.id)}
-                          onDragEnd={handleDragEnd}
-                          className={`border-l-4 ${severityColors[card.severity] || ""} cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? "opacity-40" : ""}`}
-                        >
-                          <CardContent className="p-2.5 space-y-1.5">
-                            <div className="flex items-start gap-1.5">
-                              <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
-                              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))}>
-                                <p className="text-sm font-medium leading-tight">{title}</p>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
-                                  </Badge>
-                                  {cenLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cenLabel}</Badge>}
-                                  {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
-                                </div>
-                                <div className="flex flex-wrap gap-1 items-center mt-1" onClick={e => e.stopPropagation()}>
-                                  {linkedBias.map(l => {
-                                    const b = biaProcesses.find(x => x.id === l.bia_process_id);
-                                    if (!b) return null;
-                                    return (
-                                      <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
-                                        BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
-                                        <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                                      </Badge>
-                                    );
-                                  })}
-                                  <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
-                                    <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-0.5 shrink-0">
-                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(card)}><Pencil className="h-2.5 w-2.5 sat-keep" /></Button>
-                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(card)}><Copy className="h-2.5 w-2.5 sat-keep" /></Button>
-                                <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(card.id)}><Trash2 className="h-2.5 w-2.5 sat-keep" /></Button>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1 bg-secondary rounded-full">
-                                <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-                              </div>
-                              <span className="text-[10px] text-muted-foreground">{done}/{total}</span>
-                              <button onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))} className="text-muted-foreground">
-                                {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                              </button>
-                            </div>
-                            {isCardExpanded && (
-                              <div className="space-y-1 pt-1 border-t border-border/50">
-                                {items.map((item, idx) => {
-                                  const checked = !!statesMap[item.id];
-                                  const text = lang === "pt" ? item.text_pt : item.text_en;
-                                  return (
-                                    <div key={item.id} className="flex items-start gap-1.5 group">
-                                      <span className="text-[10px] text-muted-foreground font-medium mt-0.5 w-4 shrink-0 text-right">{idx + 1}.</span>
-                                      <label className={`flex items-start gap-1.5 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                        <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
-                                        <span className={`text-xs leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                                      </label>
-                                      <Button variant="ghost" size="icon" className="h-4 w-4 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-2.5 w-2.5" /></Button>
+                        <div key={`${colId}:${recurso?.id || "__unassigned"}`} className="space-y-1.5">
+                          <div className="flex items-center gap-1.5 px-1 py-0.5 border-b border-border/40">
+                            <Package className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground truncate">{subLabel}</span>
+                            <Badge variant="outline" className="text-[9px] ml-auto">{subCards.length}</Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {subCards.map(card => {
+                              const items = allItems.filter(i => i.action_card_id === card.id);
+                              const done = items.filter(i => statesMap[i.id]).length;
+                              const total = items.length;
+                              const title = lang === "pt" ? card.title_pt : card.title_en;
+                              const severity = severityLabels[card.severity];
+                              const isDragging = dragCardId === card.id;
+                              const isCardExpanded = expandedKanban[card.id];
+                              const deptLabel = getDeptLabel(card);
+                              const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
+
+                              return (
+                                <Card
+                                  key={card.id}
+                                  draggable
+                                  onDragStart={() => handleDragStart(card.id)}
+                                  onDragEnd={handleDragEnd}
+                                  className={`border-l-4 ${severityColors[card.severity] || ""} cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? "opacity-40" : ""}`}
+                                >
+                                  <CardContent className="p-2.5 space-y-1.5">
+                                    <div className="flex items-start gap-1.5">
+                                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
+                                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))}>
+                                        <p className="text-sm font-medium leading-tight">{title}</p>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          <Badge variant="secondary" className="text-[10px]">
+                                            {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                                          </Badge>
+                                          {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1 items-center mt-1" onClick={e => e.stopPropagation()}>
+                                          {linkedBias.map(l => {
+                                            const b = biaProcesses.find(x => x.id === l.bia_process_id);
+                                            if (!b) return null;
+                                            return (
+                                              <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
+                                                BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
+                                                <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                                              </Badge>
+                                            );
+                                          })}
+                                          <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
+                                            <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
+                                          </Button>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-0.5 shrink-0">
+                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(card)}><Pencil className="h-2.5 w-2.5 sat-keep" /></Button>
+                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(card)}><Copy className="h-2.5 w-2.5 sat-keep" /></Button>
+                                        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(card.id)}><Trash2 className="h-2.5 w-2.5 sat-keep" /></Button>
+                                      </div>
                                     </div>
-                                  );
-                                })}
-                                <div className="flex gap-1.5 pt-1">
-                                  <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
-                                    placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-6 text-[10px] bg-secondary border-border px-2"
-                                    onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
-                                  <Button size="sm" variant="secondary" className="h-6 px-1.5" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex-1 h-1 bg-secondary rounded-full">
+                                        <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                                      </div>
+                                      <span className="text-[10px] text-muted-foreground">{done}/{total}</span>
+                                      <button onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))} className="text-muted-foreground">
+                                        {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                      </button>
+                                    </div>
+                                    {isCardExpanded && (
+                                      <div className="space-y-1 pt-1 border-t border-border/50">
+                                        {items.map((item, idx) => {
+                                          const checked = !!statesMap[item.id];
+                                          const text = lang === "pt" ? item.text_pt : item.text_en;
+                                          return (
+                                            <div key={item.id} className="flex items-start gap-1.5 group">
+                                              <span className="text-[10px] text-muted-foreground font-medium mt-0.5 w-4 shrink-0 text-right">{idx + 1}.</span>
+                                              <label className={`flex items-start gap-1.5 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                                <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
+                                                <span className={`text-xs leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                              </label>
+                                              <Button variant="ghost" size="icon" className="h-4 w-4 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-2.5 w-2.5" /></Button>
+                                            </div>
+                                          );
+                                        })}
+                                        <div className="flex gap-1.5 pt-1">
+                                          <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
+                                            placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-6 text-[10px] bg-secondary border-border px-2"
+                                            onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
+                                          <Button size="sm" variant="secondary" className="h-6 px-1.5" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
-                    {colCards.length === 0 && (
-                      <p className="text-[10px] text-muted-foreground text-center py-6">{lang === "pt" ? "Arraste cards para aqui" : "Drag cards here"}</p>
-                    )}
                   </div>
                 </ScrollArea>
               </div>
