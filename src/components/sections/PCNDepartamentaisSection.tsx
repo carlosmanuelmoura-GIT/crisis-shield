@@ -240,7 +240,8 @@ const PCNDepartamentaisSection: React.FC = () => {
               </CollapsibleContent>
             </Card>
           </Collapsible>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
