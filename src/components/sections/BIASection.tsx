@@ -279,45 +279,72 @@ const BIASection: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label className="text-[10px] text-muted-foreground">{t("Plataformas", "Platforms")}</Label>
-              <Popover>
+              <Label className="text-[10px] text-muted-foreground">{t("Action Card", "Action Card")}</Label>
+              <Popover open={actionCardPopoverOpen} onOpenChange={setActionCardPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="h-8 w-full text-xs justify-between font-normal">
-                    <span className="truncate">
-                      {filterPlatformIds.length === 0
-                        ? t("Todas", "All")
-                        : `${filterPlatformIds.length} ${t("selecionadas", "selected")}`}
-                    </span>
-                    <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
-                  </Button>
+                  <div className="relative">
+                    <Input
+                      className="h-8 text-xs pr-7"
+                      placeholder={t("Escreva nome...", "Type name...")}
+                      value={
+                        filterActionCardId
+                          ? (() => {
+                              const ac = actionCards.find(a => a.id === filterActionCardId);
+                              return ac ? (lang === "pt" ? ac.title_pt : ac.title_en) : actionCardSearch;
+                            })()
+                          : actionCardSearch
+                      }
+                      onChange={e => {
+                        setActionCardSearch(e.target.value);
+                        setFilterActionCardId(null);
+                        setActionCardPopoverOpen(true);
+                      }}
+                      onFocus={() => setActionCardPopoverOpen(true)}
+                    />
+                    {(filterActionCardId || actionCardSearch) && (
+                      <button
+                        type="button"
+                        onClick={() => { setFilterActionCardId(null); setActionCardSearch(""); }}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2 bg-popover z-50" align="start">
+                <PopoverContent className="w-72 p-1 bg-popover z-50" align="start" onOpenAutoFocus={e => e.preventDefault()}>
                   <ScrollArea className="max-h-52">
-                    <div className="space-y-1">
-                      {platforms.map(p => {
-                        const dr = drTypes.find(d => d.id === p.dr_type_id);
-                        const checked = filterPlatformIds.includes(p.id);
-                        return (
-                          <label key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={(c) => {
-                                setFilterPlatformIds(prev =>
-                                  c ? [...prev, p.id] : prev.filter(id => id !== p.id)
-                                );
-                              }}
-                            />
-                            <span className="truncate">{p.name} {dr ? `(${dr.code})` : ""}</span>
-                          </label>
-                        );
-                      })}
+                    <div className="space-y-0.5">
+                      {actionCards
+                        .filter(ac => {
+                          if (!actionCardSearch.trim()) return true;
+                          const q = actionCardSearch.toLowerCase();
+                          return ac.title_pt.toLowerCase().includes(q) || ac.title_en.toLowerCase().includes(q);
+                        })
+                        .slice(0, 50)
+                        .map(ac => (
+                          <button
+                            key={ac.id}
+                            type="button"
+                            onClick={() => {
+                              setFilterActionCardId(ac.id);
+                              setActionCardSearch("");
+                              setActionCardPopoverOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-1.5 rounded hover:bg-accent text-xs truncate"
+                          >
+                            {lang === "pt" ? ac.title_pt : ac.title_en}
+                          </button>
+                        ))}
+                      {actionCards.filter(ac => {
+                        if (!actionCardSearch.trim()) return true;
+                        const q = actionCardSearch.toLowerCase();
+                        return ac.title_pt.toLowerCase().includes(q) || ac.title_en.toLowerCase().includes(q);
+                      }).length === 0 && (
+                        <div className="px-2 py-3 text-[10px] text-muted-foreground text-center">{t("Sem resultados", "No results")}</div>
+                      )}
                     </div>
                   </ScrollArea>
-                  {filterPlatformIds.length > 0 && (
-                    <Button variant="ghost" size="sm" className="w-full mt-1 h-7 text-[10px]" onClick={() => setFilterPlatformIds([])}>
-                      {t("Limpar seleção", "Clear selection")}
-                    </Button>
-                  )}
                 </PopoverContent>
               </Popover>
             </div>
