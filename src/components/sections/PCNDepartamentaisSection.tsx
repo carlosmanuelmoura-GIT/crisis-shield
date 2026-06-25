@@ -22,35 +22,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { usePCNDocuments, useCreatePCNDocument, useDeletePCNDocument } from "@/hooks/usePCNDocuments";
+import { useDepartments, type Department } from "@/hooks/useDepartments";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const ACCEPTED = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx";
-
-const departments = [
-  { code: "DAS", name: "Departamento de Auditoria e Supervisão", hasCC: false },
-  { code: "DAU", name: "Departamento de Auditoria", hasCC: false },
-  { code: "DCC", name: "Departamento de Contabilidade e Controlo", hasCC: false },
-  { code: "DCM", name: "Departamento de Comunicação", hasCC: false },
-  { code: "DCR", name: "Departamento de Controlo de Risco", hasCC: true },
-  { code: "DDE", name: "Departamento de Desenvolvimento Económico", hasCC: false },
-  { code: "DEE", name: "Departamento de Estudos Económicos", hasCC: false },
-  { code: "DES", name: "Departamento de Estatística", hasCC: false },
-  { code: "DET", name: "Departamento de Estabilidade", hasCC: false },
-  { code: "DJU", name: "Departamento Jurídico", hasCC: false },
-  { code: "DMR", name: "Departamento de Mercados e Reservas", hasCC: true },
-  { code: "DPE", name: "Departamento de Pessoas", hasCC: false },
-  { code: "DPG", name: "Departamento de Pagamentos", hasCC: true },
-  { code: "DRE", name: "Departamento de Relações Internacionais", hasCC: false },
-  { code: "DLI", name: "Departamento de Logística e Instalações", hasCC: false },
-  { code: "DSC", name: "Departamento de Supervisão Comportamental", hasCC: false },
-  { code: "DSI", name: "Departamento de Sistemas de Informação", hasCC: true },
-  { code: "DSP", name: "Departamento de Supervisão Prudencial", hasCC: false },
-  { code: "GAB", name: "Gabinete", hasCC: false },
-  { code: "GPD", name: "Gabinete de Planeamento e Design", hasCC: false },
-  { code: "SEC", name: "Secretariado", hasCC: false },
-  { code: "SEC-DRC", name: "Secretariado - DRC", hasCC: false },
-];
 
 const subItemIcon: Record<string, React.ElementType> = {
   proc: FileText,
@@ -64,6 +40,7 @@ const PCNDepartamentaisSection: React.FC = () => {
   const { lang } = useApp();
   const { toast } = useToast();
   const [filter, setFilter] = useState("");
+  const { data: departments = [], isLoading: deptsLoading } = useDepartments();
   const { data: pcnDocs = [] } = usePCNDocuments();
   const createDoc = useCreatePCNDocument();
   const deleteDoc = useDeletePCNDocument();
@@ -73,7 +50,7 @@ const PCNDepartamentaisSection: React.FC = () => {
 
   const filtered = departments.filter(
     (d) =>
-      d.code.toLowerCase().includes(filter.toLowerCase()) ||
+      (d.code ?? "").toLowerCase().includes(filter.toLowerCase()) ||
       d.name.toLowerCase().includes(filter.toLowerCase())
   );
 
