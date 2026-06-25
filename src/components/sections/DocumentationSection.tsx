@@ -115,7 +115,7 @@ const DocumentationSection: React.FC = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[280px]">{lang === "pt" ? "Documentação" : "Documentation"}</TableHead>
+            <TableHead className="w-[280px]">{lang === "pt" ? "Documentação GCN" : "Documentation"}</TableHead>
             <TableHead>{lang === "pt" ? "Documentos" : "Documents"}</TableHead>
             <TableHead className="w-[120px]">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
           </TableRow>
