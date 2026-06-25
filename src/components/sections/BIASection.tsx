@@ -18,6 +18,7 @@ import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
 import { useActionCards } from "@/hooks/useActionCards";
 import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
+import { useDepartments } from "@/hooks/useDepartments";
 import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,6 +44,7 @@ const BIASection: React.FC = () => {
   const { data: biaActionCardLinks = [] } = useBIAActionCards();
   const linkActionCard = useLinkBIAActionCard();
   const unlinkActionCard = useUnlinkBIAActionCard();
+  const { data: departments = [] } = useDepartments();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
@@ -50,6 +52,7 @@ const BIASection: React.FC = () => {
     name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium",
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
+    department_id: null as string | null,
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
@@ -112,7 +115,7 @@ const BIASection: React.FC = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null });
+    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "medium", business_process_id: null, dr_type_id: null, department_id: null });
     resetCascade();
     setDialogOpen(true);
   };
@@ -124,6 +127,7 @@ const BIASection: React.FC = () => {
       criticality: p.criticality,
       business_process_id: p.business_process_id || null,
       dr_type_id: p.dr_type_id || null,
+      department_id: (p as any).department_id || null,
     });
     const bp = p.business_process_id ? businessProcesses.find(b => b.id === p.business_process_id) : undefined;
     resetCascade(bp);
@@ -455,6 +459,7 @@ const BIASection: React.FC = () => {
             <CardContent className="p-3 pt-1 space-y-2">
               {bias.map(p => {
                 const dr = p.dr_type_id ? drTypes.find(d => d.id === p.dr_type_id) : null;
+                const dept = (p as any).department_id ? departments.find(d => d.id === (p as any).department_id) : null;
                 const pLinks = procPlatLinks.filter(l => l.bia_process_id === p.id);
                 const linkedPlats = pLinks.map(l => ({
                   link: l,
@@ -470,6 +475,9 @@ const BIASection: React.FC = () => {
                           <span className="text-sm font-semibold">{t(p.name_pt, p.name_en)}</span>
                           {dr && (
                             <Badge variant="outline" className="text-[10px] h-5">{dr.code}</Badge>
+                          )}
+                          {dept && (
+                            <Badge variant="secondary" className="text-[10px] h-5">{dept.name}</Badge>
                           )}
                           <span className="text-[10px] text-muted-foreground">
                             RTO: {p.rto}h · RPO: {p.rpo}h
@@ -618,6 +626,25 @@ const BIASection: React.FC = () => {
                     <SelectItem key={dr.id} value={dr.id}>
                       {dr.code} — {dr.label} (RTO: {dr.rto}h / RPO: {dr.rpo}h)
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Departamento */}
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {t("Departamento", "Department")}
+              </Label>
+              <Select
+                value={form.department_id || "__none"}
+                onValueChange={v => setForm(f => ({ ...f, department_id: v === "__none" ? null : v }))}
+              >
+                <SelectTrigger><SelectValue placeholder={t("Selecionar departamento...", "Select department...")} /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__none">{t("— Nenhum —", "— None —")}</SelectItem>
+                  {departments.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

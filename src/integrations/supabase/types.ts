@@ -161,6 +161,7 @@ export type Database = {
           business_process_id: string | null
           created_at: string
           criticality: string
+          department_id: string | null
           dependencies: string[]
           dr_type_id: string | null
           id: string
@@ -175,6 +176,7 @@ export type Database = {
           business_process_id?: string | null
           created_at?: string
           criticality?: string
+          department_id?: string | null
           dependencies?: string[]
           dr_type_id?: string | null
           id?: string
@@ -189,6 +191,7 @@ export type Database = {
           business_process_id?: string | null
           created_at?: string
           criticality?: string
+          department_id?: string | null
           dependencies?: string[]
           dr_type_id?: string | null
           id?: string
@@ -205,6 +208,13 @@ export type Database = {
             columns: ["business_process_id"]
             isOneToOne: false
             referencedRelation: "business_processes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bia_processes_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
           {

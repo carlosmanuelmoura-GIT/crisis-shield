@@ -12,6 +12,7 @@ export interface DBBIAProcess {
   dependencies: string[];
   business_process_id: string | null;
   dr_type_id: string | null;
+  department_id: string | null;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -39,8 +40,9 @@ export function useCreateBIAProcess() {
       name_pt: string; name_en: string; rto: number; rpo: number;
       criticality: string;
       business_process_id?: string | null; dr_type_id?: string | null;
+      department_id?: string | null;
     }) => {
-      const { error } = await supabase.from("bia_processes").insert({ ...data, owner_id: user?.id });
+      const { error } = await supabase.from("bia_processes").insert({ ...data, owner_id: user?.id } as any);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bia_processes"] }),
@@ -54,8 +56,9 @@ export function useUpdateBIAProcess() {
       id: string; name_pt: string; name_en: string; rto: number; rpo: number;
       criticality: string;
       business_process_id?: string | null; dr_type_id?: string | null;
+      department_id?: string | null;
     }) => {
-      const { error } = await supabase.from("bia_processes").update(data).eq("id", id);
+      const { error } = await supabase.from("bia_processes").update(data as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bia_processes"] }),

@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useCMDBPlatforms, useCreateCMDBPlatform, useDeleteCMDBPlatform, useBIAProcessPlatforms } from "@/hooks/useCMDBPlatforms";
+import { useCMDBPlatforms, useCreateCMDBPlatform, useDeleteCMDBPlatform, useBIAProcessPlatforms, useDRTypes } from "@/hooks/useCMDBPlatforms";
 import { useBusinessProcesses, useCreateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useBIAProcesses, useCreateBIAProcess } from "@/hooks/useBIAProcesses";
 import { useActionCards } from "@/hooks/useActionCards";
 import { useBIAActionCards } from "@/hooks/useBIAActionCards";
+import { useDepartments } from "@/hooks/useDepartments";
 import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCriticas";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,11 +23,13 @@ const ImportExportSection: React.FC = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: platforms = [] } = useCMDBPlatforms();
+  const { data: drTypes = [] } = useDRTypes();
   const { data: processes = [] } = useBusinessProcesses();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaPlatLinks = [] } = useBIAProcessPlatforms();
   const { data: actionCards = [] } = useActionCards();
   const { data: biaActionCardLinks = [] } = useBIAActionCards();
+  const { data: departments = [] } = useDepartments();
   const { data: pessoas = [] } = usePessoasCriticas();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
@@ -71,12 +74,15 @@ const ImportExportSection: React.FC = () => {
     const platMap = new Map(platforms.map(p => [p.id, p.name]));
     const bpMap = new Map(processes.map(p => [p.id, p.processo]));
     const acMap = new Map(actionCards.map(a => [a.id, a.title_pt]));
+    const drMap = new Map(drTypes.map(d => [d.id, `${d.code} — ${d.label}`]));
+    const deptMap = new Map(departments.map(d => [d.id, d.name]));
 
     const rows = biaProcesses.map(b => {
       const linkedPlatIds = biaPlatLinks.filter(l => l.bia_process_id === b.id).map(l => l.platform_id);
       const platNames = linkedPlatIds.map(pid => platMap.get(pid) || pid).join("; ");
       const linkedAcIds = biaActionCardLinks.filter(l => l.bia_process_id === b.id).map(l => l.action_card_id);
       const acNames = linkedAcIds.map(aid => acMap.get(aid) || aid).join("; ");
+      const deptId = (b as any).department_id || "";
 
       return {
         Nome_PT: b.name_pt,
@@ -85,8 +91,11 @@ const ImportExportSection: React.FC = () => {
         RPO: b.rpo,
         Criticidade: b.criticality,
         DR_Type_ID: b.dr_type_id || "",
+        DR_Type_Nome: b.dr_type_id ? (drMap.get(b.dr_type_id) || "") : "",
         Business_Process_ID: b.business_process_id || "",
         Business_Process_Nome: b.business_process_id ? (bpMap.get(b.business_process_id) || "") : "",
+        Departamento_ID: deptId,
+        Departamento_Nome: deptId ? (deptMap.get(deptId) || "") : "",
         Plataformas: platNames,
         Action_Cards: acNames,
       };
@@ -115,7 +124,9 @@ const ImportExportSection: React.FC = () => {
   const exportTemplateBIA = () => {
     const ws = XLSX.utils.json_to_sheet([{
       Nome_PT: "", Nome_EN: "", RTO: 0, RPO: 0, Criticidade: "medium",
-      DR_Type_ID: "", Business_Process_ID: "", Business_Process_Nome: "",
+      DR_Type_ID: "", DR_Type_Nome: "",
+      Business_Process_ID: "", Business_Process_Nome: "",
+      Departamento_ID: "", Departamento_Nome: "",
       Plataformas: "", Action_Cards: "",
     }]);
     const wb = XLSX.utils.book_new();
@@ -183,8 +194,10 @@ const ImportExportSection: React.FC = () => {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
         Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
-        Criticidade?: string; DR_Type_ID?: string; Business_Process_ID?: string;
-        Business_Process_Nome?: string;
+        Criticidade?: string;
+        DR_Type_ID?: string; DR_Type_Nome?: string;
+        Business_Process_ID?: string; Business_Process_Nome?: string;
+        Departamento_ID?: string; Departamento_Nome?: string;
         Plataformas?: string; Action_Cards?: string;
       }>(ws);
 
@@ -192,6 +205,13 @@ const ImportExportSection: React.FC = () => {
       const platNameMap = new Map(platforms.map(p => [p.name.toLowerCase().trim(), p.id]));
       const bpNameMap = new Map(processes.map(p => [(p.processo || "").toLowerCase().trim(), p.id]));
       const acNameMap = new Map(actionCards.map(a => [(a.title_pt || "").toLowerCase().trim(), a.id]));
+      const drNameMap = new Map<string, string>();
+      drTypes.forEach(d => {
+        drNameMap.set((d.code || "").toLowerCase().trim(), d.id);
+        drNameMap.set((d.label || "").toLowerCase().trim(), d.id);
+        drNameMap.set(`${d.code} — ${d.label}`.toLowerCase().trim(), d.id);
+      });
+      const deptNameMap = new Map(departments.map(d => [(d.name || "").toLowerCase().trim(), d.id]));
 
       let count = 0;
       for (const row of rows) {
@@ -203,6 +223,18 @@ const ImportExportSection: React.FC = () => {
           bpId = bpNameMap.get(row.Business_Process_Nome.toLowerCase().trim()) || null;
         }
 
+        // Resolve dr_type_id: prefer explicit ID, else lookup by name/code
+        let drId: string | null = row.DR_Type_ID?.trim() || null;
+        if (!drId && row.DR_Type_Nome?.trim()) {
+          drId = drNameMap.get(row.DR_Type_Nome.toLowerCase().trim()) || null;
+        }
+
+        // Resolve department_id: prefer explicit ID, else lookup by name
+        let deptId: string | null = row.Departamento_ID?.trim() || null;
+        if (!deptId && row.Departamento_Nome?.trim()) {
+          deptId = deptNameMap.get(row.Departamento_Nome.toLowerCase().trim()) || null;
+        }
+
         // Insert BIA process and get the new id
         const { data: inserted, error: insertErr } = await supabase
           .from("bia_processes")
@@ -212,10 +244,11 @@ const ImportExportSection: React.FC = () => {
             rto: Number(row.RTO) || 0,
             rpo: Number(row.RPO) || 0,
             criticality: row.Criticidade?.trim() || "medium",
-            dr_type_id: row.DR_Type_ID?.trim() || null,
+            dr_type_id: drId,
             business_process_id: bpId,
+            department_id: deptId,
             owner_id: user?.id,
-          })
+          } as any)
           .select("id")
           .single();
 
@@ -393,8 +426,8 @@ const ImportExportSection: React.FC = () => {
           onImportClick={() => biaFileRef.current?.click()}
           importKey="bia"
           hint={t(
-            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Business_Process_Nome, Plataformas, Action_Cards (nomes separados por ;)",
-            "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID, Business_Process_ID, Business_Process_Nome, Plataformas, Action_Cards (names separated by ;)"
+            "Colunas: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (nomes separados por ;)",
+            "Columns: Nome_PT, Nome_EN, RTO, RPO, Criticidade, DR_Type_ID/DR_Type_Nome, Business_Process_ID/Business_Process_Nome, Departamento_ID/Departamento_Nome, Plataformas, Action_Cards (names separated by ;)"
           )}
         />
         <ImportCard
