@@ -71,7 +71,7 @@ const ScenariosSection: React.FC = () => {
   const cloneRecurso = async (rec: DBRecurso, cenarioId: string) => {
     try {
       const suffix = lang === "pt" ? " (cópia)" : " (copy)";
-      const { data, error } = await (await import("@/integrations/supabase/client")).supabase
+      const { data, error } = await supabase
         .from("recursos")
         .insert({
           name_pt: (rec.name_pt || "") + suffix,
