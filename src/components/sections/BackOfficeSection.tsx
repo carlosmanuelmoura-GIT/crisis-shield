@@ -609,7 +609,7 @@ const BackOfficeSection: React.FC = () => {
                 <TableBody>
                   {departmentsList.map(d => (
                     <TableRow key={d.id}>
-                      <TableCell className="text-sm">{d.name}</TableCell>
+                      <TableCell className="text-sm"><span className="font-mono text-xs mr-2 text-muted-foreground">{d.code || "—"}</span>{d.name}{d.has_cc && <Badge variant="secondary" className="ml-2 text-[10px]">CC</Badge>}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDept(d)}><Pencil className="h-3.5 w-3.5" /></Button>
