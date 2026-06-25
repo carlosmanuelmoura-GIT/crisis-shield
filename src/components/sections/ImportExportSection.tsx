@@ -23,11 +23,13 @@ const ImportExportSection: React.FC = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: platforms = [] } = useCMDBPlatforms();
+  const { data: drTypes = [] } = useDRTypes();
   const { data: processes = [] } = useBusinessProcesses();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaPlatLinks = [] } = useBIAProcessPlatforms();
   const { data: actionCards = [] } = useActionCards();
   const { data: biaActionCardLinks = [] } = useBIAActionCards();
+  const { data: departments = [] } = useDepartments();
   const { data: pessoas = [] } = usePessoasCriticas();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
