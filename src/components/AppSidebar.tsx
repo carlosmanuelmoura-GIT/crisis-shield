@@ -96,7 +96,7 @@ const AppSidebar: React.FC = () => {
         <SidebarContent className="pt-14 pb-6">
           {renderGroup(lang === "pt" ? "OPERACIONAL" : "OPERATIONAL", null, operationalItems)}
           {renderGroup(lang === "pt" ? "WAR ROOM / Gestão Crise" : "WAR ROOM / Crisis Mgmt", null, warRoomItems)}
-          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO" : "DOCUMENTATION", Eye, documentacaoItems)}
+          {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO GCN" : "DOCUMENTATION", Eye, documentacaoItems)}
 
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-bold tracking-wider text-sidebar-primary">
