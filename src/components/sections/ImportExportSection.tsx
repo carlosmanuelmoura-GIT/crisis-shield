@@ -74,12 +74,15 @@ const ImportExportSection: React.FC = () => {
     const platMap = new Map(platforms.map(p => [p.id, p.name]));
     const bpMap = new Map(processes.map(p => [p.id, p.processo]));
     const acMap = new Map(actionCards.map(a => [a.id, a.title_pt]));
+    const drMap = new Map(drTypes.map(d => [d.id, `${d.code} — ${d.label}`]));
+    const deptMap = new Map(departments.map(d => [d.id, d.name]));
 
     const rows = biaProcesses.map(b => {
       const linkedPlatIds = biaPlatLinks.filter(l => l.bia_process_id === b.id).map(l => l.platform_id);
       const platNames = linkedPlatIds.map(pid => platMap.get(pid) || pid).join("; ");
       const linkedAcIds = biaActionCardLinks.filter(l => l.bia_process_id === b.id).map(l => l.action_card_id);
       const acNames = linkedAcIds.map(aid => acMap.get(aid) || aid).join("; ");
+      const deptId = (b as any).department_id || "";
 
       return {
         Nome_PT: b.name_pt,
@@ -88,8 +91,11 @@ const ImportExportSection: React.FC = () => {
         RPO: b.rpo,
         Criticidade: b.criticality,
         DR_Type_ID: b.dr_type_id || "",
+        DR_Type_Nome: b.dr_type_id ? (drMap.get(b.dr_type_id) || "") : "",
         Business_Process_ID: b.business_process_id || "",
         Business_Process_Nome: b.business_process_id ? (bpMap.get(b.business_process_id) || "") : "",
+        Departamento_ID: deptId,
+        Departamento_Nome: deptId ? (deptMap.get(deptId) || "") : "",
         Plataformas: platNames,
         Action_Cards: acNames,
       };
