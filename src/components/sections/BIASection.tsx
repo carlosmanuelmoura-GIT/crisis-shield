@@ -23,9 +23,9 @@ import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
 const critColor: Record<string, string> = {
-  critical: "hsl(0, 72%, 51%)",
-  high: "hsl(45, 90%, 55%)",
-  medium: "hsl(220, 5%, 55%)",
+  vital: "hsl(0, 72%, 51%)",
+  decisao: "hsl(35, 92%, 52%)",
+  analitica: "hsl(220, 5%, 55%)",
 };
 
 const BIASection: React.FC = () => {
