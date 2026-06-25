@@ -110,12 +110,6 @@ const BIASection: React.FC = () => {
     setSelMacro(bp?.macro_processo || "__all");
   };
 
-  const chartData = biaProcesses.map(p => ({
-    name: t(p.name_pt, p.name_en),
-    RTO: p.rto,
-    RPO: p.rpo,
-    criticality: p.criticality,
-  }));
 
   const openNew = () => {
     setEditing(null);
