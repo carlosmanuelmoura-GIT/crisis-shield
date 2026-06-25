@@ -627,6 +627,25 @@ const BIASection: React.FC = () => {
               </Select>
             </div>
 
+            {/* Departamento */}
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {t("Departamento", "Department")}
+              </Label>
+              <Select
+                value={form.department_id || "__none"}
+                onValueChange={v => setForm(f => ({ ...f, department_id: v === "__none" ? null : v }))}
+              >
+                <SelectTrigger><SelectValue placeholder={t("Selecionar departamento...", "Select department...")} /></SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="__none">{t("— Nenhum —", "— None —")}</SelectItem>
+                  {departments.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* RTO / RPO */}
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">RTO ({t("horas", "hours")})</Label><Input type="number" step="0.5" min="0" value={form.rto} onChange={e => setForm(f => ({ ...f, rto: parseFloat(e.target.value) || 0 }))} /></div>
