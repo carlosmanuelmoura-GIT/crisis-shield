@@ -18,6 +18,7 @@ import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
 import { useActionCards } from "@/hooks/useActionCards";
 import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
+import { useDepartments } from "@/hooks/useDepartments";
 import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
