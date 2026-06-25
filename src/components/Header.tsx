@@ -19,7 +19,7 @@ const roleLabels: Record<string, string> = {
 /* ── searchable section index ── */
 const sectionIndex: { id: string; keywords: string[]; label: { pt: string; en: string } }[] = [
   { id: "scenarios", keywords: ["cenários", "crise", "crisis", "scenarios"], label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
-  { id: "procedures", keywords: ["procedimentos", "gcn", "bcm", "procedures"], label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
+  { id: "procedures", keywords: ["procedimentos", "gcn", "bcm", "procedures"], label: { pt: "Procedimentos Gestão Crise", en: "BCM Procedures" } },
   { id: "bia", keywords: ["bia", "impacto", "impact", "rto", "rpo"], label: { pt: "BIA", en: "BIA" } },
   { id: "pcn-departamentais", keywords: ["pcn", "departamentais", "departmental", "bcp"], label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
   { id: "contacts", keywords: ["contactos", "contacts", "telefone", "phone", "email"], label: { pt: "Contactos", en: "Contacts" } },
