@@ -821,6 +821,46 @@ const EmergencySection: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Link BIA to Action Card dialog */}
+      <Dialog open={!!linkBiaDialogCard} onOpenChange={(o) => { if (!o) { setLinkBiaDialogCard(null); setBiaToLink(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Associar BIA" : "Link BIA"}</DialogTitle>
+          </DialogHeader>
+          {linkBiaDialogCard && (() => {
+            const linked = biaACLinks.filter(l => l.action_card_id === linkBiaDialogCard).map(l => l.bia_process_id);
+            const available = biaProcesses.filter(b => !linked.includes(b.id));
+            return (
+              <div className="space-y-3">
+                <Label className="text-sm">{lang === "pt" ? "Escolher BIA" : "Choose BIA"}</Label>
+                <Select value={biaToLink} onValueChange={setBiaToLink}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {available.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">{lang === "pt" ? "Sem BIAs disponíveis" : "No BIAs available"}</div>}
+                    {available.map(b => <SelectItem key={b.id} value={b.id}>{lang === "pt" ? b.name_pt : b.name_en || b.name_pt}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Button onClick={async () => {
+                  if (!linkBiaDialogCard || !biaToLink) return;
+                  try {
+                    await linkBIA.mutateAsync({ action_card_id: linkBiaDialogCard, bia_process_id: biaToLink });
+                    setBiaToLink("");
+                    toast({ title: lang === "pt" ? "BIA associada" : "BIA linked" });
+                  } catch (err: any) {
+                    toast({ title: "Erro", description: err.message, variant: "destructive" });
+                  }
+                }} disabled={!biaToLink || linkBIA.isPending} className="w-full">
+                  {linkBIA.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {lang === "pt" ? "Associar" : "Link"}
+                </Button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
