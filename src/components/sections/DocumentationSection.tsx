@@ -97,7 +97,7 @@ const DocumentationSection: React.FC = () => {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-bold uppercase tracking-wider">
-        {lang === "pt" ? "Documentação" : "Documentation"}
+        {lang === "pt" ? "Documentação GCN" : "Documentation"}
       </h2>
 
       <input
@@ -115,7 +115,7 @@ const DocumentationSection: React.FC = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[280px]">{lang === "pt" ? "Documentação" : "Documentation"}</TableHead>
+            <TableHead className="w-[280px]">{lang === "pt" ? "Documentação GCN" : "Documentation"}</TableHead>
             <TableHead>{lang === "pt" ? "Documentos" : "Documents"}</TableHead>
             <TableHead className="w-[120px]">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
           </TableRow>
