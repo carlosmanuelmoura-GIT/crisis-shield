@@ -1,14 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Pencil, Trash2, Loader2, ChevronDown, ChevronRight, Shield, FlaskConical, Clock, FileText, AlertCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Pencil, Trash2, Loader2, Shield, FlaskConical, Clock, FileText, AlertCircle, X } from "lucide-react";
 import {
   useDecisionLog, useCreateDecisionLog, useUpdateDecisionLog, useDeleteDecisionLog,
   type DBDecisionLog,
@@ -22,8 +22,10 @@ interface CrisisGroup {
   entries: DBDecisionLog[];
 }
 
+const ALL = "__all__";
+
 const DecisionLogSection: React.FC = () => {
-  const { lang, crisisActive, crisisStartTime } = useApp();
+  const { lang, crisisStartTime } = useApp();
   const { data: entries = [], isLoading } = useDecisionLog();
   const { data: crises = [] } = useCrises();
   const createEntry = useCreateDecisionLog();
@@ -34,9 +36,9 @@ const DecisionLogSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", text: "", author: "" });
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [yearFilter, setYearFilter] = useState<string>(ALL);
+  const [monthFilter, setMonthFilter] = useState<string>(ALL);
 
-  // Find the active declared crisis for adding new entries
   const activeCrisis = useMemo(() => {
     return crises.find(c =>
       (c.status === "crise_em_curso" || c.status === "em_alerta" || c.status === "retorno") &&
@@ -44,7 +46,6 @@ const DecisionLogSection: React.FC = () => {
     );
   }, [crises]);
 
-  // Group entries by crisis_id, only show real/simulated crises
   const groups = useMemo((): CrisisGroup[] => {
     const crisesMap = new Map(crises.map(c => [c.id, c]));
     const byCrisis = new Map<string, DBDecisionLog[]>();
@@ -53,7 +54,6 @@ const DecisionLogSection: React.FC = () => {
       const cId = (e as any).crisis_id;
       if (cId && crisesMap.has(cId)) {
         const crisis = crisesMap.get(cId)!;
-        // Only include real or simulated crises
         if (crisis.crisis_type === "real" || crisis.crisis_type === "simulated") {
           if (!byCrisis.has(cId)) byCrisis.set(cId, []);
           byCrisis.get(cId)!.push(e);
@@ -61,39 +61,37 @@ const DecisionLogSection: React.FC = () => {
       }
     });
 
-    const result: CrisisGroup[] = [];
-
-    // Sort by crisis date descending
     const sortedKeys = Array.from(byCrisis.keys()).sort((a, b) => {
       const ca = crisesMap.get(a);
       const cb = crisesMap.get(b);
       return new Date(cb?.crisis_date || 0).getTime() - new Date(ca?.crisis_date || 0).getTime();
     });
 
-    for (const key of sortedKeys) {
-      result.push({
-        key,
-        crisis: crisesMap.get(key) || null,
-        entries: byCrisis.get(key)!,
-      });
-    }
+    return sortedKeys.map(key => ({
+      key,
+      crisis: crisesMap.get(key) || null,
+      entries: byCrisis.get(key)!,
+    }));
+  }, [entries, crises]);
 
-    // Auto-expand active crisis group
-    if (activeCrisis && !expandedGroups.has(activeCrisis.id)) {
-      setExpandedGroups(prev => new Set([...prev, activeCrisis.id]));
-    }
-
-    return result;
-  }, [entries, crises, activeCrisis]);
-
-  const toggleGroup = (key: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
+  const availableYears = useMemo(() => {
+    const set = new Set<number>();
+    groups.forEach(g => {
+      if (g.crisis?.crisis_date) set.add(new Date(g.crisis.crisis_date).getFullYear());
     });
-  };
+    return Array.from(set).sort((a, b) => b - a);
+  }, [groups]);
+
+  const filteredGroups = useMemo(() => {
+    if (yearFilter === ALL) return groups;
+    return groups.filter(g => {
+      if (!g.crisis?.crisis_date) return false;
+      const d = new Date(g.crisis.crisis_date);
+      if (d.getFullYear() !== Number(yearFilter)) return false;
+      if (monthFilter !== ALL && d.getMonth() !== Number(monthFilter)) return false;
+      return true;
+    });
+  }, [groups, yearFilter, monthFilter]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -150,7 +148,7 @@ const DecisionLogSection: React.FC = () => {
   const formatCrisisDate = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", {
-      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+      day: "2-digit", month: "short", year: "numeric",
     });
   };
 
@@ -162,18 +160,24 @@ const DecisionLogSection: React.FC = () => {
     fim: { pt: "Terminada", en: "Ended" },
   };
 
+  const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const MONTHS_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const months = lang === "pt" ? MONTHS_PT : MONTHS_EN;
+
+  const hasFilter = yearFilter !== ALL || monthFilter !== ALL;
+
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-bold uppercase tracking-wider">
             {lang === "pt" ? "Log das Acções" : "Action Log"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {lang === "pt"
-              ? "Registo cronológico de acções por crise"
-              : "Chronological action record by crisis"}
+              ? "Vista Kanban — uma coluna por crise"
+              : "Kanban view — one column per crisis"}
           </p>
         </div>
         {activeCrisis && (
@@ -184,112 +188,143 @@ const DecisionLogSection: React.FC = () => {
         )}
       </div>
 
-      {/* No active crisis message */}
-      {!activeCrisis && groups.length === 0 && (
+      {/* Filters */}
+      <div className="flex items-end gap-2 flex-wrap">
+        <div className="space-y-1">
+          <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            {lang === "pt" ? "Ano" : "Year"}
+          </Label>
+          <Select value={yearFilter} onValueChange={(v) => { setYearFilter(v); if (v === ALL) setMonthFilter(ALL); }}>
+            <SelectTrigger className="h-9 w-[140px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{lang === "pt" ? "Todos" : "All"}</SelectItem>
+              {availableYears.map(y => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+            {lang === "pt" ? "Mês" : "Month"}
+          </Label>
+          <Select value={monthFilter} onValueChange={setMonthFilter} disabled={yearFilter === ALL}>
+            <SelectTrigger className="h-9 w-[160px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>{lang === "pt" ? "Todos" : "All"}</SelectItem>
+              {months.map((m, i) => (
+                <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {hasFilter && (
+          <Button variant="ghost" size="sm" onClick={() => { setYearFilter(ALL); setMonthFilter(ALL); }} className="h-9 text-xs gap-1">
+            <X className="h-3.5 w-3.5" />
+            {lang === "pt" ? "Limpar" : "Clear"}
+          </Button>
+        )}
+        <div className="ml-auto text-xs text-muted-foreground">
+          {filteredGroups.length} {lang === "pt" ? "crises" : "crises"}
+        </div>
+      </div>
+
+      {/* Empty state */}
+      {filteredGroups.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="p-6 flex flex-col items-center justify-center text-center gap-3">
             <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
               <AlertCircle className="h-6 w-6 text-muted-foreground" />
             </div>
-            <div>
-              <p className="text-sm font-medium">
-                {lang === "pt" ? "Sem registos de crises" : "No crisis records"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {lang === "pt"
-                  ? "Os logs de acções são agrupados por crise do tipo Real ou Simulada."
-                  : "Action logs are grouped by Real or Simulated crisis type."}
-              </p>
-            </div>
+            <p className="text-sm font-medium">
+              {hasFilter
+                ? (lang === "pt" ? "Sem crises no período seleccionado" : "No crises in the selected period")
+                : (lang === "pt" ? "Sem registos de crises" : "No crisis records")}
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Crisis groups */}
-      {groups.map(group => {
-        const isOpen = expandedGroups.has(group.key);
-        const crisis = group.crisis;
-        const isActive = activeCrisis?.id === group.key;
-        const isSimulated = crisis?.crisis_type === "simulated";
-        const systemEntries = group.entries.filter(e => e.title === "" && (e.text.startsWith("🚨") || e.text.startsWith("✅") || e.text.startsWith("📋")));
-        const decisionEntries = group.entries.filter(e => !systemEntries.includes(e));
+      {/* Kanban board */}
+      {filteredGroups.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto pb-3">
+          {filteredGroups.map(group => {
+            const crisis = group.crisis;
+            const isActive = activeCrisis?.id === group.key;
+            const isSimulated = crisis?.crisis_type === "simulated";
+            const systemEntries = group.entries.filter(e => e.title === "" && (e.text.startsWith("🚨") || e.text.startsWith("✅") || e.text.startsWith("📋")));
+            const decisionEntries = group.entries.filter(e => !systemEntries.includes(e));
 
-        return (
-          <Collapsible key={group.key} open={isOpen} onOpenChange={() => toggleGroup(group.key)}>
-            <Card className={isActive ? "border-crisis/40 shadow-sm" : ""}>
-              <CollapsibleTrigger asChild>
-                <CardHeader className="p-3 cursor-pointer hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    {isOpen ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
-                      <span className="text-sm font-semibold truncate">
-                        {crisis?.title || (lang === "pt" ? "Crise" : "Crisis")}
+            return (
+              <Card key={group.key} className={`w-[320px] shrink-0 flex flex-col ${isActive ? "border-crisis/40 shadow-sm" : ""}`}>
+                <CardHeader className="p-3 border-b">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
+                    <span className="text-sm font-semibold truncate flex-1 min-w-0">
+                      {crisis?.title || (lang === "pt" ? "Crise" : "Crisis")}
+                    </span>
+                    {isActive && (
+                      <Badge variant="destructive" className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
+                        {lang === "pt" ? "Ativa" : "Active"}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    {crisis && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatCrisisDate(crisis.crisis_date)}
                       </span>
-                      {crisis && (
-                        <span className="text-[10px] text-muted-foreground shrink-0">
-                          {formatCrisisDate(crisis.crisis_date)}
-                        </span>
-                      )}
-                      <Badge variant={isSimulated ? "secondary" : "destructive"} className="text-[10px] h-5 px-1.5 uppercase tracking-wider shrink-0">
-                        {isSimulated ? (lang === "pt" ? "Simulada" : "Simulated") : (lang === "pt" ? "Real" : "Real")}
+                    )}
+                    <Badge variant={isSimulated ? "secondary" : "destructive"} className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
+                      {isSimulated ? (lang === "pt" ? "Simulada" : "Simulated") : (lang === "pt" ? "Real" : "Real")}
+                    </Badge>
+                    {crisis && (
+                      <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                        {STATUS_LABELS[crisis.status]?.[lang] || crisis.status}
                       </Badge>
-                      {crisis && (
-                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0">
-                          {STATUS_LABELS[crisis.status]?.[lang] || crisis.status}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                      {isActive && (
-                        <Badge variant="destructive" className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
-                          {lang === "pt" ? "Ativa" : "Active"}
-                        </Badge>
-                      )}
-                      <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                        {decisionEntries.length} {lang === "pt" ? "acções" : "actions"}
-                      </Badge>
-                    </div>
+                    )}
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto">
+                      {decisionEntries.length} {lang === "pt" ? "acções" : "actions"}
+                    </Badge>
                   </div>
                 </CardHeader>
-              </CollapsibleTrigger>
 
-              <CollapsibleContent>
-                <CardContent className="p-3 pt-0 space-y-2">
-                  {/* System entries */}
+                <CardContent className="p-2 space-y-2 max-h-[70vh] overflow-y-auto flex-1">
                   {systemEntries.map(entry => (
-                    <div key={entry.id} className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 text-xs">
+                    <div key={entry.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/60 text-xs">
                       <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                      <span className="flex-1 font-medium">{entry.text}</span>
-                      <span className="text-muted-foreground shrink-0">
+                      <span className="flex-1 font-medium truncate">{entry.text}</span>
+                      <span className="text-muted-foreground shrink-0 text-[10px]">
                         {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
                   ))}
 
-                  {decisionEntries.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-3">
-                      {lang === "pt" ? "Sem acções registadas nesta crise." : "No actions logged for this crisis."}
+                  {decisionEntries.length === 0 && systemEntries.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-6">
+                      {lang === "pt" ? "Sem acções registadas." : "No actions logged."}
                     </p>
                   )}
 
                   {decisionEntries.map(entry => (
                     <Card key={entry.id} className="bg-secondary/30 border-border/50">
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between gap-2">
+                      <CardContent className="p-2.5">
+                        <div className="flex items-start justify-between gap-1.5">
                           <div className="min-w-0 flex-1 space-y-1">
                             {entry.title && (
                               <div className="flex items-center gap-1.5">
                                 <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                                <span className="text-sm font-semibold">{entry.title}</span>
+                                <span className="text-xs font-semibold truncate">{entry.title}</span>
                               </div>
                             )}
-                            <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                            <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
                               {entry.text}
                             </p>
-                            <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <span className="font-medium">{entry.author}</span>
                               <span>·</span>
                               <span>
@@ -299,12 +334,12 @@ const DecisionLogSection: React.FC = () => {
                               </span>
                             </p>
                           </div>
-                          <div className="flex gap-0.5 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(entry)}>
-                              <Pencil className="h-3.5 w-3.5" />
+                          <div className="flex flex-col gap-0.5 shrink-0">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(entry)}>
+                              <Pencil className="h-3 w-3" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(entry.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(entry.id)}>
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
                         </div>
@@ -312,11 +347,11 @@ const DecisionLogSection: React.FC = () => {
                     </Card>
                   ))}
                 </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-        );
-      })}
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
