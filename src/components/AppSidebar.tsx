@@ -32,7 +32,7 @@ import {
 /* ── Operacional ── */
 const operationalItems = [
 { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
-{ id: "procedures", icon: FileText, label: { pt: "Procedimentos GCN", en: "BCM Procedures" } },
+{ id: "procedures", icon: FileText, label: { pt: "Procedimentos Gestão Crise", en: "BCM Procedures" } },
 { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
 { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
 { id: "pessoas-criticas", icon: Users, label: { pt: "Pessoas Críticas", en: "Critical People" } },
