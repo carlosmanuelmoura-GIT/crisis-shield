@@ -686,21 +686,27 @@ export type Database = {
       }
       departments: {
         Row: {
+          code: string | null
           created_at: string
+          has_cc: boolean
           id: string
           name: string
           owner_id: string | null
           updated_at: string
         }
         Insert: {
+          code?: string | null
           created_at?: string
+          has_cc?: boolean
           id?: string
           name: string
           owner_id?: string | null
           updated_at?: string
         }
         Update: {
+          code?: string | null
           created_at?: string
+          has_cc?: boolean
           id?: string
           name?: string
           owner_id?: string | null
