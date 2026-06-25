@@ -609,7 +609,7 @@ const BackOfficeSection: React.FC = () => {
                 <TableBody>
                   {departmentsList.map(d => (
                     <TableRow key={d.id}>
-                      <TableCell className="text-sm"><span className="font-mono text-xs mr-2 text-muted-foreground">{d.code || "—"}</span>{d.name}{d.has_cc && <Badge variant="secondary" className="ml-2 text-[10px]">CC</Badge>}</TableCell>
+                      <TableCell className="text-sm"><span className="font-mono text-xs mr-2 text-muted-foreground">{d.code || "—"}</span>{d.name}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditDept(d)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -842,10 +842,6 @@ const BackOfficeSection: React.FC = () => {
               <div className="space-y-1.5 col-span-2"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
                 <Input value={deptForm.name} onChange={e => setDeptForm(f => ({ ...f, name: e.target.value }))} className="bg-secondary border-border" /></div>
             </div>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" checked={deptForm.has_cc} onChange={e => setDeptForm(f => ({ ...f, has_cc: e.target.checked }))} className="h-4 w-4" />
-              {lang === "pt" ? "Tem Centro de Comando (CC)" : "Has Command Center (CC)"}
-            </label>
             <Button onClick={handleSaveDept} disabled={!deptForm.name || createDept.isPending || updateDept.isPending} className="w-full">
               {(createDept.isPending || updateDept.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
