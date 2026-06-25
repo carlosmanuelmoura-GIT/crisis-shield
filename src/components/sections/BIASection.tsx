@@ -59,7 +59,9 @@ const BIASection: React.FC = () => {
   const [linkActionDialog, setLinkActionDialog] = useState<string | null>(null);
   const [linkActionCardId, setLinkActionCardId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
-  const [filterPlatformIds, setFilterPlatformIds] = useState<string[]>([]);
+  const [filterActionCardId, setFilterActionCardId] = useState<string | null>(null);
+  const [actionCardSearch, setActionCardSearch] = useState<string>("");
+  const [actionCardPopoverOpen, setActionCardPopoverOpen] = useState(false);
 
   // List-level cascading filters
   const [listTipoFuncao, setListTipoFuncao] = useState<string>("__all__");
@@ -160,18 +162,8 @@ const BIASection: React.FC = () => {
 
   if (isLoading) return <div className="text-sm text-muted-foreground">{t("A carregar...", "Loading...")}</div>;
 
-  // Platform impact analysis (multi-select)
-  const platformImpact = filterPlatformIds.length > 0 ? (() => {
-    const affectedBiaIds = procPlatLinks
-      .filter(l => filterPlatformIds.includes(l.platform_id))
-      .map(l => l.bia_process_id);
-    const affectedBias = biaProcesses.filter(b => affectedBiaIds.includes(b.id));
-    const affectedBpIds = [...new Set(affectedBias.map(b => b.business_process_id).filter(Boolean))];
-    const affectedBps = businessProcesses.filter(bp => affectedBpIds.includes(bp.id));
-    const affectedFuncoes = [...new Set(affectedBps.map(bp => bp.funcao))];
-    const selectedPlats = platforms.filter(p => filterPlatformIds.includes(p.id));
-    return { affectedBias, affectedBps, affectedFuncoes, selectedPlats };
-  })() : null;
+  // (Platform impact panel removed — filter replaced by Action Card)
+
 
   // List-level cascading filter options
   const listTipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao))].sort();
@@ -188,7 +180,7 @@ const BIASection: React.FC = () => {
     (listMacro === "__all__" || bp.macro_processo === listMacro)
   );
 
-  // Filter BIAs by list-level cascading + platform filters
+  // Filter BIAs by list-level cascading + action card filter
   const filteredByListCascade = (() => {
     let result = biaProcesses;
     // Filter by business process hierarchy
@@ -198,12 +190,12 @@ const BIASection: React.FC = () => {
       const validBpIds = listProcessos.map(bp => bp.id);
       result = result.filter(p => p.business_process_id && validBpIds.includes(p.business_process_id));
     }
-    // Filter by platforms
-    if (filterPlatformIds.length > 0) {
-      const biaIdsWithPlatform = procPlatLinks
-        .filter(l => filterPlatformIds.includes(l.platform_id))
+    // Filter by Action Card
+    if (filterActionCardId) {
+      const biaIdsWithAC = biaActionCardLinks
+        .filter(l => l.action_card_id === filterActionCardId)
         .map(l => l.bia_process_id);
-      result = result.filter(p => biaIdsWithPlatform.includes(p.id));
+      result = result.filter(p => biaIdsWithAC.includes(p.id));
     }
     return result;
   })();
@@ -237,9 +229,9 @@ const BIASection: React.FC = () => {
           <div className="flex items-center gap-2 mb-2">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t("Filtros", "Filters")}</span>
-            {(listTipoFuncao !== "__all__" || listFuncao !== "__all__" || listMacro !== "__all__" || listProcesso !== "__all__" || filterPlatformIds.length > 0) && (
+            {(listTipoFuncao !== "__all__" || listFuncao !== "__all__" || listMacro !== "__all__" || listProcesso !== "__all__" || filterActionCardId) && (
               <Button variant="ghost" size="sm" className="h-5 text-[10px] ml-auto" onClick={() => {
-                setListTipoFuncao("__all__"); setListFuncao("__all__"); setListMacro("__all__"); setListProcesso("__all__"); setFilterPlatformIds([]);
+                setListTipoFuncao("__all__"); setListFuncao("__all__"); setListMacro("__all__"); setListProcesso("__all__"); setFilterActionCardId(null); setActionCardSearch("");
               }}>
                 <X className="h-3 w-3 mr-0.5" />{t("Limpar filtros", "Clear filters")}
               </Button>
@@ -287,45 +279,72 @@ const BIASection: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label className="text-[10px] text-muted-foreground">{t("Plataformas", "Platforms")}</Label>
-              <Popover>
+              <Label className="text-[10px] text-muted-foreground">{t("Action Card", "Action Card")}</Label>
+              <Popover open={actionCardPopoverOpen} onOpenChange={setActionCardPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="h-8 w-full text-xs justify-between font-normal">
-                    <span className="truncate">
-                      {filterPlatformIds.length === 0
-                        ? t("Todas", "All")
-                        : `${filterPlatformIds.length} ${t("selecionadas", "selected")}`}
-                    </span>
-                    <ChevronDown className="h-3 w-3 ml-1 shrink-0 opacity-50" />
-                  </Button>
+                  <div className="relative">
+                    <Input
+                      className="h-8 text-xs pr-7"
+                      placeholder={t("Escreva nome...", "Type name...")}
+                      value={
+                        filterActionCardId
+                          ? (() => {
+                              const ac = actionCards.find(a => a.id === filterActionCardId);
+                              return ac ? (lang === "pt" ? ac.title_pt : ac.title_en) : actionCardSearch;
+                            })()
+                          : actionCardSearch
+                      }
+                      onChange={e => {
+                        setActionCardSearch(e.target.value);
+                        setFilterActionCardId(null);
+                        setActionCardPopoverOpen(true);
+                      }}
+                      onFocus={() => setActionCardPopoverOpen(true)}
+                    />
+                    {(filterActionCardId || actionCardSearch) && (
+                      <button
+                        type="button"
+                        onClick={() => { setFilterActionCardId(null); setActionCardSearch(""); }}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2 bg-popover z-50" align="start">
+                <PopoverContent className="w-72 p-1 bg-popover z-50" align="start" onOpenAutoFocus={e => e.preventDefault()}>
                   <ScrollArea className="max-h-52">
-                    <div className="space-y-1">
-                      {platforms.map(p => {
-                        const dr = drTypes.find(d => d.id === p.dr_type_id);
-                        const checked = filterPlatformIds.includes(p.id);
-                        return (
-                          <label key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-accent cursor-pointer text-xs">
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={(c) => {
-                                setFilterPlatformIds(prev =>
-                                  c ? [...prev, p.id] : prev.filter(id => id !== p.id)
-                                );
-                              }}
-                            />
-                            <span className="truncate">{p.name} {dr ? `(${dr.code})` : ""}</span>
-                          </label>
-                        );
-                      })}
+                    <div className="space-y-0.5">
+                      {actionCards
+                        .filter(ac => {
+                          if (!actionCardSearch.trim()) return true;
+                          const q = actionCardSearch.toLowerCase();
+                          return ac.title_pt.toLowerCase().includes(q) || ac.title_en.toLowerCase().includes(q);
+                        })
+                        .slice(0, 50)
+                        .map(ac => (
+                          <button
+                            key={ac.id}
+                            type="button"
+                            onClick={() => {
+                              setFilterActionCardId(ac.id);
+                              setActionCardSearch("");
+                              setActionCardPopoverOpen(false);
+                            }}
+                            className="w-full text-left px-2 py-1.5 rounded hover:bg-accent text-xs truncate"
+                          >
+                            {lang === "pt" ? ac.title_pt : ac.title_en}
+                          </button>
+                        ))}
+                      {actionCards.filter(ac => {
+                        if (!actionCardSearch.trim()) return true;
+                        const q = actionCardSearch.toLowerCase();
+                        return ac.title_pt.toLowerCase().includes(q) || ac.title_en.toLowerCase().includes(q);
+                      }).length === 0 && (
+                        <div className="px-2 py-3 text-[10px] text-muted-foreground text-center">{t("Sem resultados", "No results")}</div>
+                      )}
                     </div>
                   </ScrollArea>
-                  {filterPlatformIds.length > 0 && (
-                    <Button variant="ghost" size="sm" className="w-full mt-1 h-7 text-[10px]" onClick={() => setFilterPlatformIds([])}>
-                      {t("Limpar seleção", "Clear selection")}
-                    </Button>
-                  )}
                 </PopoverContent>
               </Popover>
             </div>
@@ -333,97 +352,6 @@ const BIASection: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Platform Impact Panel */}
-      {platformImpact && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
-              <Server className="h-4 w-4 text-primary" />
-              {t("Impacto das Plataformas", "Platform Impact")}:
-              {platformImpact.selectedPlats.map(p => (
-                <Badge key={p.id} variant="secondary" className="text-[10px]">{p.name}</Badge>
-              ))}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            {platformImpact.affectedBias.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">{t("Nenhuma BIA associada a esta plataforma.", "No BIA linked to this platform.")}</p>
-            ) : (
-              <div className="space-y-3">
-                {/* Summary stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-lg border border-border bg-background p-3 text-center">
-                    <div className="text-2xl font-bold text-primary">{platformImpact.affectedBias.length}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{t("BIAs Afetadas", "Affected BIAs")}</div>
-                  </div>
-                  <div className="rounded-lg border border-border bg-background p-3 text-center">
-                    <div className="text-2xl font-bold text-primary">{platformImpact.affectedBps.length}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{t("Processos", "Processes")}</div>
-                  </div>
-                  <div className="rounded-lg border border-border bg-background p-3 text-center">
-                    <div className="text-2xl font-bold text-primary">{platformImpact.affectedFuncoes.length}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{t("Funções", "Functions")}</div>
-                  </div>
-                </div>
-
-                {/* Affected functions & processes */}
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers className="h-3 w-3" />
-                    {t("Funções e Processos Afetados", "Affected Functions & Processes")}
-                  </div>
-                  {platformImpact.affectedFuncoes.map(funcao => {
-                    const bpsInFunc = platformImpact.affectedBps.filter(bp => bp.funcao === funcao);
-                    return (
-                      <div key={funcao} className="rounded-md border border-border bg-background p-2.5">
-                        <div className="text-xs font-bold text-foreground mb-1.5 flex items-center gap-1.5">
-                          <Database className="h-3 w-3 text-muted-foreground" />
-                          {funcao}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {bpsInFunc.map(bp => (
-                            <Badge key={bp.id} variant="secondary" className="text-[10px] py-0.5">
-                              {bp.macro_processo} › {bp.processo}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Affected BIAs detail */}
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <AlertTriangle className="h-3 w-3" />
-                    {t("BIAs Afetadas", "Affected BIAs")}
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {platformImpact.affectedBias.map(bia => {
-                      const dr = bia.dr_type_id ? drTypes.find(d => d.id === bia.dr_type_id) : null;
-                      const bp = bia.business_process_id ? businessProcesses.find(b => b.id === bia.business_process_id) : null;
-                      return (
-                        <div key={bia.id} className="rounded-md border border-border bg-background p-2.5 space-y-1">
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[bia.criticality] }} />
-                            <span className="text-xs font-semibold truncate">{t(bia.name_pt, bia.name_en)}</span>
-                            {dr && <Badge variant="outline" className="text-[9px] h-4 px-1 ml-auto shrink-0">{dr.code}</Badge>}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground flex items-center gap-2">
-                            <span>RTO: {bia.rto}h</span>
-                            <span>RPO: {bia.rpo}h</span>
-                            {bp && <span className="truncate">· {bp.funcao} › {bp.processo}</span>}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Chart */}
       {biaProcesses.length > 0 && (
