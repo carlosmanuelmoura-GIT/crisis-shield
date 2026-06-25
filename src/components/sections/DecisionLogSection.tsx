@@ -298,11 +298,15 @@ const DecisionLogSection: React.FC = () => {
                 <CardContent className="p-2 space-y-2 max-h-[70vh] overflow-y-auto flex-1">
                   {systemEntries.map(entry => (
                     <div key={entry.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/60 text-xs">
-                      <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                      <div className="flex flex-col items-center justify-center px-2 py-1 rounded bg-muted/80 min-w-[60px]">
+                        <span className="text-[10px] font-bold text-foreground leading-none">
+                          {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit" })}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
+                          {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
                       <span className="flex-1 font-medium truncate">{entry.text}</span>
-                      <span className="text-muted-foreground shrink-0 text-[10px]">
-                        {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
                     </div>
                   ))}
 
@@ -315,7 +319,20 @@ const DecisionLogSection: React.FC = () => {
                   {decisionEntries.map(entry => (
                     <Card key={entry.id} className="bg-secondary/30 border-border/50">
                       <CardContent className="p-2.5">
-                        <div className="flex items-start justify-between gap-1.5">
+                        <div className="flex items-start gap-2.5">
+                          {/* Dia / Hora */}
+                          <div className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md bg-muted/70 min-w-[64px] shrink-0">
+                            <span className="text-sm font-bold text-foreground leading-tight">
+                              {new Date(entry.created_at).getDate().toString().padStart(2, "0")}
+                            </span>
+                            <span className="text-[10px] uppercase font-medium text-muted-foreground leading-tight">
+                              {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { month: "short" })}
+                            </span>
+                            <span className="text-[10px] font-semibold text-primary leading-tight">
+                              {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
+
                           <div className="min-w-0 flex-1 space-y-1">
                             {entry.title && (
                               <div className="flex items-center gap-1.5">
@@ -328,14 +345,9 @@ const DecisionLogSection: React.FC = () => {
                             </p>
                             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                               <span className="font-medium">{entry.author}</span>
-                              <span>·</span>
-                              <span>
-                                {new Date(entry.created_at).toLocaleString(lang === "pt" ? "pt-PT" : "en-GB", {
-                                  hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short",
-                                })}
-                              </span>
                             </p>
                           </div>
+
                           <div className="flex flex-col gap-0.5 shrink-0">
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(entry)}>
                               <Pencil className="h-3 w-3" />
