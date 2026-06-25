@@ -25,6 +25,8 @@ const ImportExportSection: React.FC = () => {
   const { data: processes = [] } = useBusinessProcesses();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaPlatLinks = [] } = useBIAProcessPlatforms();
+  const { data: actionCards = [] } = useActionCards();
+  const { data: biaActionCardLinks = [] } = useBIAActionCards();
   const { data: pessoas = [] } = usePessoasCriticas();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
