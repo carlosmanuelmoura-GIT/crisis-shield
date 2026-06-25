@@ -184,15 +184,24 @@ const ImportExportSection: React.FC = () => {
       const rows = XLSX.utils.sheet_to_json<{
         Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
         Criticidade?: string; DR_Type_ID?: string; Business_Process_ID?: string;
-        Plataformas?: string;
+        Business_Process_Nome?: string;
+        Plataformas?: string; Action_Cards?: string;
       }>(ws);
 
-      // Build platform name -> id lookup (case-insensitive)
+      // Build name -> id lookups (case-insensitive)
       const platNameMap = new Map(platforms.map(p => [p.name.toLowerCase().trim(), p.id]));
+      const bpNameMap = new Map(processes.map(p => [(p.processo || "").toLowerCase().trim(), p.id]));
+      const acNameMap = new Map(actionCards.map(a => [(a.title_pt || "").toLowerCase().trim(), a.id]));
 
       let count = 0;
       for (const row of rows) {
         if (!row.Nome_PT?.trim()) continue;
+
+        // Resolve business_process_id: prefer explicit ID, else lookup by name
+        let bpId: string | null = row.Business_Process_ID?.trim() || null;
+        if (!bpId && row.Business_Process_Nome?.trim()) {
+          bpId = bpNameMap.get(row.Business_Process_Nome.toLowerCase().trim()) || null;
+        }
 
         // Insert BIA process and get the new id
         const { data: inserted, error: insertErr } = await supabase
@@ -204,7 +213,7 @@ const ImportExportSection: React.FC = () => {
             rpo: Number(row.RPO) || 0,
             criticality: row.Criticidade?.trim() || "medium",
             dr_type_id: row.DR_Type_ID?.trim() || null,
-            business_process_id: row.Business_Process_ID?.trim() || null,
+            business_process_id: bpId,
             owner_id: user?.id,
           })
           .select("id")
@@ -225,11 +234,26 @@ const ImportExportSection: React.FC = () => {
             }
           }
         }
+
+        // Link Action Cards by name if specified
+        if (row.Action_Cards?.trim() && inserted) {
+          const acNames = row.Action_Cards.split(";").map(s => s.trim()).filter(Boolean);
+          for (const acName of acNames) {
+            const acId = acNameMap.get(acName.toLowerCase());
+            if (acId) {
+              await supabase.from("bia_action_cards").insert({
+                bia_process_id: inserted.id,
+                action_card_id: acId,
+              });
+            }
+          }
+        }
         count++;
       }
 
       qc.invalidateQueries({ queryKey: ["bia_processes"] });
       qc.invalidateQueries({ queryKey: ["bia_process_platforms"] });
+      qc.invalidateQueries({ queryKey: ["bia_action_cards"] });
       toast({ title: t(`${count} processos BIA importados`, `${count} BIA processes imported`) });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
