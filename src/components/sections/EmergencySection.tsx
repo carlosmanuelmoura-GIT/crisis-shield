@@ -58,6 +58,10 @@ const EmergencySection: React.FC = () => {
   const { data: recursos = [] } = useRecursos();
   const { data: cenarios = [] } = useCenarios();
   const { data: departments = [] } = useDepartments();
+  const { data: biaProcesses = [] } = useBIAProcesses();
+  const { data: biaACLinks = [] } = useBIAActionCards();
+  const linkBIA = useLinkBIAActionCard();
+  const unlinkBIA = useUnlinkBIAActionCard();
   const { data: dbCrises = [] } = useCrises();
   const toggleCheck = useToggleChecklistState();
   const createCard = useCreateActionCard();
