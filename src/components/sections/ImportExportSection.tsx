@@ -89,7 +89,7 @@ const ImportExportSection: React.FC = () => {
         Nome_EN: b.name_en,
         RTO: b.rto,
         RPO: b.rpo,
-        Criticidade: b.criticality,
+        Tipo_BIA: b.criticality,
         DR_Type_ID: b.dr_type_id || "",
         DR_Type_Nome: b.dr_type_id ? (drMap.get(b.dr_type_id) || "") : "",
         Business_Process_ID: b.business_process_id || "",
