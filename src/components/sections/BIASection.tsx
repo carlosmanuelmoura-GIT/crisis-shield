@@ -39,6 +39,10 @@ const BIASection: React.FC = () => {
   const { data: procPlatLinks = [] } = useBIAProcessPlatforms();
   const linkPlatform = useLinkBIAProcessPlatform();
   const unlinkPlatform = useUnlinkBIAProcessPlatform();
+  const { data: actionCards = [] } = useActionCards();
+  const { data: biaActionCardLinks = [] } = useBIAActionCards();
+  const linkActionCard = useLinkBIAActionCard();
+  const unlinkActionCard = useUnlinkBIAActionCard();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBBIAProcess | null>(null);
@@ -49,6 +53,8 @@ const BIASection: React.FC = () => {
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
+  const [linkActionDialog, setLinkActionDialog] = useState<string | null>(null);
+  const [linkActionCardId, setLinkActionCardId] = useState("");
   const [filterBPId, setFilterBPId] = useState<string>("__all");
   const [filterPlatformIds, setFilterPlatformIds] = useState<string[]>([]);
 
