@@ -54,12 +54,12 @@ const PCNDepartamentaisSection: React.FC = () => {
       d.name.toLowerCase().includes(filter.toLowerCase())
   );
 
-  const getSubItems = (dept: typeof departments[0]) => {
+  const getSubItems = (dept: Department) => {
     const items = [
       { key: "proc", label: lang === "pt" ? "Procedimentos" : "Procedures" },
       { key: "contacts", label: lang === "pt" ? "Lista de Contactos" : "Contact List" },
     ];
-    if (dept.hasCC) {
+    if (dept.has_cc) {
       items.push({ key: "cc", label: lang === "pt" ? "Lista de Acesso ao CC" : "CC Access List" });
     }
     items.push(
