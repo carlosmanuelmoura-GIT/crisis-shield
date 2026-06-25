@@ -12,6 +12,7 @@ export interface DBBIAProcess {
   dependencies: string[];
   business_process_id: string | null;
   dr_type_id: string | null;
+  department_id: string | null;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
