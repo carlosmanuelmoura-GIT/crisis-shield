@@ -459,6 +459,7 @@ const BIASection: React.FC = () => {
             <CardContent className="p-3 pt-1 space-y-2">
               {bias.map(p => {
                 const dr = p.dr_type_id ? drTypes.find(d => d.id === p.dr_type_id) : null;
+                const dept = (p as any).department_id ? departments.find(d => d.id === (p as any).department_id) : null;
                 const pLinks = procPlatLinks.filter(l => l.bia_process_id === p.id);
                 const linkedPlats = pLinks.map(l => ({
                   link: l,
@@ -474,6 +475,9 @@ const BIASection: React.FC = () => {
                           <span className="text-sm font-semibold">{t(p.name_pt, p.name_en)}</span>
                           {dr && (
                             <Badge variant="outline" className="text-[10px] h-5">{dr.code}</Badge>
+                          )}
+                          {dept && (
+                            <Badge variant="secondary" className="text-[10px] h-5">{dept.name}</Badge>
                           )}
                           <span className="text-[10px] text-muted-foreground">
                             RTO: {p.rto}h · RPO: {p.rpo}h
