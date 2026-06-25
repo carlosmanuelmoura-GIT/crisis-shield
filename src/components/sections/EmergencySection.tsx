@@ -158,7 +158,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", funcao: "", macro_processo: "", recurso_id: recursoId || "", cenario_id: "", department_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "" });
     setDialogOpen(true);
   };
 
@@ -166,10 +166,10 @@ const EmergencySection: React.FC = () => {
     setEditingCard(card.id);
     setForm({
       title_pt: card.title_pt, title_en: card.title_en, severity: card.severity,
-      capability: card.capability || "", funcao: card.funcao || "",
-      macro_processo: card.macro_processo || "", recurso_id: card.recurso_id || "",
-      cenario_id: (card as any).cenario_id || "",
-      department_id: (card as any).department_id || "",
+      capability: card.capability || "",
+      recurso_id: card.recurso_id || "",
+      cenario_id: card.cenario_id || "",
+      department_id: card.department_id || "",
     });
     setDialogOpen(true);
   };
@@ -178,8 +178,6 @@ const EmergencySection: React.FC = () => {
     try {
       const payload = {
         ...form,
-        funcao: form.funcao || undefined,
-        macro_processo: form.macro_processo || undefined,
         recurso_id: form.recurso_id || undefined,
         capability: form.capability || undefined,
         cenario_id: form.cenario_id || undefined,
