@@ -143,19 +143,25 @@ const PCNDepartamentaisSection: React.FC = () => {
       </p>
 
       <div className="grid gap-2">
-        {filtered.map((dept) => (
-          <Collapsible key={dept.code}>
+        {deptsLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : filtered.map((dept) => {
+          const deptKey = dept.code ?? dept.id;
+          return (
+          <Collapsible key={dept.id}>
             <Card className="overflow-hidden">
               <CollapsibleTrigger className="w-full text-left">
                 <CardHeader className="p-3 flex flex-row items-center gap-3 cursor-pointer hover:bg-accent/50 transition-colors group">
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                   <div className="flex items-center gap-2 min-w-0">
-                    <Badge variant="outline" className="font-mono text-xs shrink-0">
-                      {dept.code}
-                    </Badge>
+                    {dept.code && (
+                      <Badge variant="outline" className="font-mono text-xs shrink-0">
+                        {dept.code}
+                      </Badge>
+                    )}
                     <span className="text-sm font-medium truncate">{dept.name}</span>
                   </div>
-                  {dept.hasCC && (
+                  {dept.has_cc && (
                     <Badge className="ml-auto shrink-0 text-[10px] bg-primary/10 text-primary border-0">
                       CC
                     </Badge>
@@ -167,8 +173,8 @@ const PCNDepartamentaisSection: React.FC = () => {
                   <div className="divide-y divide-border">
                     {getSubItems(dept).map((sub) => {
                       const Icon = subItemIcon[sub.key];
-                      const docs = getDocsFor(dept.code, sub.key);
-                      const uploadKey = `${dept.code}-${sub.key}`;
+                      const docs = getDocsFor(deptKey, sub.key);
+                      const uploadKey = `${deptKey}-${sub.key}`;
                       const isUploading = uploading === uploadKey;
 
                       return (
