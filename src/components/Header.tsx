@@ -29,7 +29,7 @@ const sectionIndex: { id: string; keywords: string[]; label: { pt: string; en: s
   { id: "emergency", keywords: ["action", "cards", "emergência", "emergency", "checklist"], label: { pt: "Action Cards", en: "Action Cards" } },
   { id: "meetings", keywords: ["reuniões", "meetings", "sala", "virtual", "video"], label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" } },
   { id: "log", keywords: ["log", "acções", "decisão", "decision", "actions"], label: { pt: "Log das Acções Gestão Crise", en: "Action Log" } },
-  { id: "documentacao", keywords: ["documentação", "documentation", "documentos", "documents"], label: { pt: "Documentação", en: "Documentation" } },
+  { id: "documentacao", keywords: ["documentação", "documentation", "documentos", "documents"], label: { pt: "Documentação GCN", en: "Documentation" } },
   { id: "backoffice", keywords: ["back", "office", "administração", "admin", "settings"], label: { pt: "Back Office", en: "Back Office" } },
   { id: "import-export", keywords: ["import", "export", "xls", "excel"], label: { pt: "Import / Export", en: "Import / Export" } },
 ];
