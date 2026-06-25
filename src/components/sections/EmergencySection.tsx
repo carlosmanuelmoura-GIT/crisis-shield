@@ -29,6 +29,8 @@ import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useCenarios } from "@/hooks/useCenarios";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useBIAProcesses } from "@/hooks/useBIAProcesses";
+import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
 import { useToast } from "@/hooks/use-toast";
 import { useCreateDecisionLog } from "@/hooks/useDecisionLog";
 import { useCrises } from "@/hooks/useCrises";
