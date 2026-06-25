@@ -64,13 +64,15 @@ const DecisionLogSection: React.FC = () => {
     const sortedKeys = Array.from(byCrisis.keys()).sort((a, b) => {
       const ca = crisesMap.get(a);
       const cb = crisesMap.get(b);
-      return new Date(cb?.crisis_date || 0).getTime() - new Date(ca?.crisis_date || 0).getTime();
+      return new Date(ca?.crisis_date || 0).getTime() - new Date(cb?.crisis_date || 0).getTime();
     });
 
     return sortedKeys.map(key => ({
       key,
       crisis: crisesMap.get(key) || null,
-      entries: byCrisis.get(key)!,
+      entries: byCrisis.get(key)!.slice().sort((a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      ),
     }));
   }, [entries, crises]);
 
