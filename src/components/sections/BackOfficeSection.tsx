@@ -57,7 +57,7 @@ const BackOfficeSection: React.FC = () => {
   const deleteRec = useDeleteRecurso();
   const [recDialog, setRecDialog] = useState(false);
   const [editingRec, setEditingRec] = useState<string | null>(null);
-  const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "" });
+  const [recForm, setRecForm] = useState({ name_pt: "", name_en: "", description_pt: "", description_en: "", icon: "Monitor" });
 
   // --- Sub-Capacidades ---
   const { data: subCapacidades = [] } = useSubCapacidades();
