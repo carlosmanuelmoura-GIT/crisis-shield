@@ -199,8 +199,8 @@ const BackOfficeSection: React.FC = () => {
   };
 
   // Recursos
-  const openCreateRec = () => { setEditingRec(null); setRecForm({ name_pt: "", name_en: "", description_pt: "" }); setRecDialog(true); };
-  const openEditRec = (r: typeof recursos[0]) => { setEditingRec(r.id); setRecForm({ name_pt: r.name_pt, name_en: r.name_en, description_pt: r.description_pt }); setRecDialog(true); };
+  const openCreateRec = () => { setEditingRec(null); setRecForm({ name_pt: "", name_en: "", description_pt: "", description_en: "", icon: "Monitor" }); setRecDialog(true); };
+  const openEditRec = (r: typeof recursos[0]) => { setEditingRec(r.id); setRecForm({ name_pt: r.name_pt, name_en: r.name_en, description_pt: r.description_pt || "", description_en: r.description_en || "", icon: r.icon || "Monitor" }); setRecDialog(true); };
   const handleSaveRec = async () => {
     try {
       if (editingRec) await updateRec.mutateAsync({ id: editingRec, ...recForm });
