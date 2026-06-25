@@ -119,39 +119,61 @@ const EmergencySection: React.FC = () => {
     });
   }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso]);
 
-  // Group cards by Recurso (for both list and kanban views)
-  const groupedCards = useMemo(() => {
-    const groups: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
+  // Group cards: primary by Cenário, secondary by Recurso (used by both views)
+  const groupedByCenario = useMemo(() => {
+    const cenMap = new Map(cenarios.map(c => [c.id, c]));
     const recMap = new Map(recursos.map(r => [r.id, r]));
 
-    const byRec = new Map<string, typeof filtered>();
-    const unassigned: typeof filtered = [];
+    const byCen = new Map<string, typeof filtered>();
+    const cenUnassigned: typeof filtered = [];
 
     filtered.forEach(card => {
-      const rId = card.recurso_id;
-      if (rId && recMap.has(rId)) {
-        const existing = byRec.get(rId) || [];
-        existing.push(card);
-        byRec.set(rId, existing);
+      const cId = (card as any).cenario_id;
+      if (cId && cenMap.has(cId)) {
+        const arr = byCen.get(cId) || [];
+        arr.push(card);
+        byCen.set(cId, arr);
       } else {
-        unassigned.push(card);
+        cenUnassigned.push(card);
       }
     });
 
-    const sortedKeys = [...byRec.keys()].sort((a, b) => {
-      const ra = recMap.get(a);
-      const rb = recMap.get(b);
-      return (ra?.name_pt || "").localeCompare(rb?.name_pt || "");
+    const sortedCenKeys = [...byCen.keys()].sort((a, b) => {
+      const ca = cenMap.get(a); const cb = cenMap.get(b);
+      const ra = ca?.roman || ""; const rb = cb?.roman || "";
+      if (ra && rb && ra !== rb) return ra.localeCompare(rb);
+      return (ca?.name_pt || "").localeCompare(cb?.name_pt || "");
     });
 
-    sortedKeys.forEach(id => {
-      groups.push({ recurso: recMap.get(id)!, cards: byRec.get(id)! });
+    const buildRecGroups = (cardList: typeof filtered) => {
+      const byRec = new Map<string, typeof filtered>();
+      const recUnassigned: typeof filtered = [];
+      cardList.forEach(c => {
+        if (c.recurso_id && recMap.has(c.recurso_id)) {
+          const arr = byRec.get(c.recurso_id) || [];
+          arr.push(c); byRec.set(c.recurso_id, arr);
+        } else recUnassigned.push(c);
+      });
+      const keys = [...byRec.keys()].sort((a, b) =>
+        (recMap.get(a)?.name_pt || "").localeCompare(recMap.get(b)?.name_pt || "")
+      );
+      const out: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
+      keys.forEach(k => out.push({ recurso: recMap.get(k)!, cards: byRec.get(k)! }));
+      if (recUnassigned.length) out.push({ recurso: null, cards: recUnassigned });
+      return out;
+    };
+
+    const groups: { cenario: typeof cenarios[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
+    sortedCenKeys.forEach(id => {
+      const list = byCen.get(id)!;
+      groups.push({ cenario: cenMap.get(id)!, recursoGroups: buildRecGroups(list), total: list.length });
     });
-    if (unassigned.length > 0) {
-      groups.push({ recurso: null, cards: unassigned });
+    if (cenUnassigned.length) {
+      groups.push({ cenario: null, recursoGroups: buildRecGroups(cenUnassigned), total: cenUnassigned.length });
     }
     return groups;
-  }, [filtered, recursos]);
+  }, [filtered, cenarios, recursos]);
+
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
