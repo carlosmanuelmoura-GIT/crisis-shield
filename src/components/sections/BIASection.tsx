@@ -202,17 +202,38 @@ const BIASection: React.FC = () => {
     return result;
   })();
 
-  // Filter and group BIAs by business process
-  const filtered = filterBPId === "__all"
+  // Filter by business process selection
+  const filteredByBP = filterBPId === "__all"
     ? filteredByListCascade
     : filteredByListCascade.filter(p => p.business_process_id === filterBPId);
 
-  const grouped = new Map<string | null, DBBIAProcess[]>();
+  // Filter by selected pie slice (Tipo de BIA)
+  const filtered = selectedTipoBIA
+    ? filteredByBP.filter(p => p.criticality === selectedTipoBIA)
+    : filteredByBP;
+
+  // Pie chart data — count by Tipo de BIA (uses filteredByBP so slice highlighting reflects current filters)
+  const tipoLabel: Record<string, string> = { vital: "VITAL", decisao: "DECISÃO", analitica: "ANALÍTICA" };
+  const pieData = ["vital", "decisao", "analitica"].map(k => ({
+    key: k,
+    name: tipoLabel[k],
+    value: filteredByBP.filter(p => p.criticality === k).length,
+    color: critColor[k],
+  })).filter(d => d.value > 0);
+
+  // Group BIAs by department
+  const groupedByDept = new Map<string | null, DBBIAProcess[]>();
   filtered.forEach(p => {
-    const key = p.business_process_id || null;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(p);
+    const key = (p as any).department_id || null;
+    if (!groupedByDept.has(key)) groupedByDept.set(key, []);
+    groupedByDept.get(key)!.push(p);
   });
+  const sortedDeptGroups = Array.from(groupedByDept.entries()).sort((a, b) => {
+    const an = a[0] ? (departments.find(d => d.id === a[0])?.name || "") : "\uffff";
+    const bn = b[0] ? (departments.find(d => d.id === b[0])?.name || "") : "\uffff";
+    return an.localeCompare(bn);
+  });
+
 
   return (
     <div className="space-y-4">
