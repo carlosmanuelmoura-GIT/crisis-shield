@@ -162,18 +162,8 @@ const BIASection: React.FC = () => {
 
   if (isLoading) return <div className="text-sm text-muted-foreground">{t("A carregar...", "Loading...")}</div>;
 
-  // Platform impact analysis (multi-select)
-  const platformImpact = filterPlatformIds.length > 0 ? (() => {
-    const affectedBiaIds = procPlatLinks
-      .filter(l => filterPlatformIds.includes(l.platform_id))
-      .map(l => l.bia_process_id);
-    const affectedBias = biaProcesses.filter(b => affectedBiaIds.includes(b.id));
-    const affectedBpIds = [...new Set(affectedBias.map(b => b.business_process_id).filter(Boolean))];
-    const affectedBps = businessProcesses.filter(bp => affectedBpIds.includes(bp.id));
-    const affectedFuncoes = [...new Set(affectedBps.map(bp => bp.funcao))];
-    const selectedPlats = platforms.filter(p => filterPlatformIds.includes(p.id));
-    return { affectedBias, affectedBps, affectedFuncoes, selectedPlats };
-  })() : null;
+  // (Platform impact panel removed — filter replaced by Action Card)
+
 
   // List-level cascading filter options
   const listTipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao))].sort();
