@@ -68,13 +68,15 @@ const ImportExportSection: React.FC = () => {
 
   // ── Export BIA ──
   const exportBIA = () => {
-    // Build platform name lookup
     const platMap = new Map(platforms.map(p => [p.id, p.name]));
+    const bpMap = new Map(processes.map(p => [p.id, p.processo]));
+    const acMap = new Map(actionCards.map(a => [a.id, a.title_pt]));
 
     const rows = biaProcesses.map(b => {
-      // Find linked platform names
       const linkedPlatIds = biaPlatLinks.filter(l => l.bia_process_id === b.id).map(l => l.platform_id);
       const platNames = linkedPlatIds.map(pid => platMap.get(pid) || pid).join("; ");
+      const linkedAcIds = biaActionCardLinks.filter(l => l.bia_process_id === b.id).map(l => l.action_card_id);
+      const acNames = linkedAcIds.map(aid => acMap.get(aid) || aid).join("; ");
 
       return {
         Nome_PT: b.name_pt,
@@ -84,7 +86,9 @@ const ImportExportSection: React.FC = () => {
         Criticidade: b.criticality,
         DR_Type_ID: b.dr_type_id || "",
         Business_Process_ID: b.business_process_id || "",
+        Business_Process_Nome: b.business_process_id ? (bpMap.get(b.business_process_id) || "") : "",
         Plataformas: platNames,
+        Action_Cards: acNames,
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
