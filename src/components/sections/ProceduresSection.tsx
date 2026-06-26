@@ -153,7 +153,7 @@ const ProceduresSection: React.FC = () => {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold uppercase tracking-wider">
-          {lang === "pt" ? "Procedimentos Críticos Gestão Crise" : "Critical Procedures BCM"}
+          {lang === "pt" ? "Action Cards Gestão de Crise" : "Crisis Action Cards"}
         </h2>
         <Button size="sm" variant="outline" onClick={() => openNew("gestao")}>
           <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Novo" : "New"}
