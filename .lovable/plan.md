@@ -1,17 +1,13 @@
-## Alterações em Procedimentos Gestão Crise
+Adicionar a possibilidade de editar o nome de cada ação (checklist item) dentro dos Action Cards, em ambas as vistas (lista e Kanban).
 
-**Ficheiro:** `src/components/sections/ProceduresSection.tsx`
+Alterações previstas:
+1. **Novo hook** em `src/hooks/useActionCards.ts`: `useUpdateChecklistItem` para atualizar `text_pt` e `text_en` de um item existente na tabela `checklist_items`.
+2. **Edição inline** em `src/components/sections/EmergencySection.tsx`:
+   - Adicionar um ícone de lápis (Pencil) ao lado do ícone de eliminar (Trash2) em cada linha de ação, em ambas as vistas.
+   - Ao clicar no lápis, o texto passa a ser uma `Input` com o valor atual.
+   - Guardar ao pressionar `Enter` ou ao perder foco (`onBlur`); cancelar com `Escape`.
+   - Na atualização, guardar o novo texto em ambos os campos `text_pt` e `text_en` (o mesmo comportamento usado na criação de novos itens).
+   - Manter o checkbox e o botão de eliminar funcionalmente inalterados durante a edição.
+3. **Sem migração de base de dados** necessária: a tabela `checklist_items` já tem os campos `text_pt` e `text_en`.
 
-1. **Layout 2 colunas em vez de 3**
-   - Mudar grid de `lg:grid-cols-3` para `lg:grid-cols-2`.
-   - Manter as 3 fases (PREPARAÇÃO, GESTÃO DA CRISE, FIM DA CRISE) — duas na primeira linha, uma na segunda (ou ajustar conforme preferência; por defeito fluxo natural do grid).
-
-2. **Drag-and-drop dentro da mesma caixa (reordenação)**
-   - Adicionar campo `sort_order` (int) à tabela `procedures` via migração; inicializar com base na ordem atual.
-   - Atualizar `useProcedures` para ler/escrever `sort_order` e ordenar por `phase` + `sort_order`.
-   - No `onDrop`:
-     - Se o destino é a mesma fase → reordenar (recalcular `sort_order` dos itens da coluna conforme posição do alvo).
-     - Se é outra fase → comportamento atual (mudar `phase`) + colocar no fim (maior `sort_order`).
-   - Adicionar handlers `onDragOver`/`onDrop` em cada cartão para detetar a posição alvo dentro da coluna (inserir antes do cartão sobre o qual se larga).
-
-Sem outras alterações de UI ou lógica.
+Após a implementação, validar que o nome da ação pode ser editado, guardado e que as alterações refletem imediatamente em ambas as línguas.
