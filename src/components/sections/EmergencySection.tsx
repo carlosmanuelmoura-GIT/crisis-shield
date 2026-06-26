@@ -69,6 +69,7 @@ const EmergencySection: React.FC = () => {
   const deleteCard = useDeleteActionCard();
   const createItem = useCreateChecklistItem();
   const deleteItem = useDeleteChecklistItem();
+  const updateItem = useUpdateChecklistItem();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createLog = useCreateDecisionLog();
