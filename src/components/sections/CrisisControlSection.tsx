@@ -115,11 +115,27 @@ const CrisisControlSection: React.FC = () => {
     setFormTitle("");
     setFormDate(new Date().toISOString().slice(0, 16));
     setFormType("real");
+    setFormTemplateId("none");
     setCabinetMembers([]);
     setNewMemberName("");
     setNewMemberRole("");
     setCloneFromId(null);
     setEditingCrisisId(null);
+  };
+
+  const openCreate = (cloneId?: string) => {
+    resetForm();
+    if (cloneId) {
+      const source = crises.find((c) => c.id === cloneId);
+      if (source) {
+        setFormTitle(`${source.title} (cópia)`);
+        setFormType(source.crisis_type);
+        setCloneFromId(cloneId);
+      }
+    } else {
+      setFormType(activeTab === "template" ? "template" : "real");
+    }
+    setShowDialog(true);
   };
 
   const openCreate = (cloneId?: string) => {
