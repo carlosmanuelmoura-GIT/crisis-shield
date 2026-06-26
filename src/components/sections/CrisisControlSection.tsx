@@ -78,9 +78,12 @@ const CrisisControlSection: React.FC = () => {
   const [formTitle, setFormTitle] = useState("");
   const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 16));
   const [formType, setFormType] = useState<string>("real");
+  const [formTemplateId, setFormTemplateId] = useState<string>("none");
   const [cabinetMembers, setCabinetMembers] = useState<{ name: string; role: string }[]>([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
+
+  const templates = useMemo(() => crises.filter((c) => c.crisis_type === "template"), [crises]);
 
   const selectedCrisis = crises.find((c) => c.id === selectedCrisisId);
 
@@ -112,6 +115,7 @@ const CrisisControlSection: React.FC = () => {
     setFormTitle("");
     setFormDate(new Date().toISOString().slice(0, 16));
     setFormType("real");
+    setFormTemplateId("none");
     setCabinetMembers([]);
     setNewMemberName("");
     setNewMemberRole("");
@@ -161,7 +165,7 @@ const CrisisControlSection: React.FC = () => {
         crisis_date: new Date(formDate).toISOString(),
         crisis_type: formType,
         cabinet_members: cabinetMembers.filter((m) => m.name.trim()),
-        clone_from_id: cloneFromId || undefined,
+        clone_from_id: cloneFromId || (formTemplateId !== "none" ? formTemplateId : undefined),
       });
     }
     setShowDialog(false);
@@ -374,6 +378,9 @@ const CrisisControlSection: React.FC = () => {
         setFormDate={setFormDate}
         formType={formType}
         setFormType={setFormType}
+        formTemplateId={formTemplateId}
+        setFormTemplateId={setFormTemplateId}
+        templates={templates}
         cabinetMembers={cabinetMembers}
         setCabinetMembers={setCabinetMembers}
         newMemberName={newMemberName}
@@ -406,6 +413,9 @@ interface FormDialogProps {
   setFormDate: (v: string) => void;
   formType: string;
   setFormType: (v: string) => void;
+  formTemplateId: string;
+  setFormTemplateId: (v: string) => void;
+  templates: DBCrisis[];
   cabinetMembers: { name: string; role: string }[];
   setCabinetMembers: React.Dispatch<React.SetStateAction<{ name: string; role: string }[]>>;
   newMemberName: string;
@@ -421,6 +431,7 @@ interface FormDialogProps {
 const CrisisFormDialog: React.FC<FormDialogProps> = ({
   open, onOpenChange, lang, isEditing, editingCrisisId, cloneFromId,
   formTitle, setFormTitle, formDate, setFormDate, formType, setFormType,
+  formTemplateId, setFormTemplateId, templates,
   cabinetMembers, setCabinetMembers, newMemberName, setNewMemberName,
   newMemberRole, setNewMemberRole, addMember, removeMember, onSubmit, isPending,
 }) => {
@@ -475,6 +486,30 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
+
+          {!isEditing && !cloneFromId && formType !== "template" && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                {lang === "pt" ? "Template base (opcional)" : "Base template (optional)"}
+              </label>
+              <Select value={formTemplateId} onValueChange={setFormTemplateId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    {lang === "pt" ? "Nenhum — crise vazia" : "None — empty crisis"}
+                  </SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formTemplateId !== "none" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  ℹ️ {lang === "pt" ? "Todas as acções do template serão copiadas." : "All template actions will be copied."}
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="text-xs font-medium text-muted-foreground">
