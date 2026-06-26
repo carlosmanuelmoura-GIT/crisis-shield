@@ -437,12 +437,18 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
 }) => {
   const { data: existingMembers = [] } = useCrisisCabinetMembers(isEditing ? editingCrisisId! : undefined);
   const updateCabinetMembers = useUpdateCabinetMembers();
+  const loadedForRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (isEditing && existingMembers.length > 0) {
+    if (!open) {
+      loadedForRef.current = null;
+      return;
+    }
+    if (isEditing && editingCrisisId && loadedForRef.current !== editingCrisisId) {
+      loadedForRef.current = editingCrisisId;
       setCabinetMembers(existingMembers.map((m) => ({ name: m.name, role: m.role })));
     }
-  }, [isEditing, existingMembers, setCabinetMembers]);
+  }, [open, isEditing, editingCrisisId, existingMembers, setCabinetMembers]);
 
   const handleSave = async () => {
     await onSubmit();
