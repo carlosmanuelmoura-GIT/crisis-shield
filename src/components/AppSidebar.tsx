@@ -41,7 +41,7 @@ const operationalItems = [
 { id: "test-calendar", icon: ClipboardList, label: { pt: "Calendário de Testes", en: "Test Calendar" } }];
 
 
-/* ── War Room ── */
+/* ── Operações GCN ── */
 const warRoomItems = [
 { id: "crisis-control", icon: Shield, label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
 { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards Departamentos", en: "Departmental Action Cards" } },
@@ -95,7 +95,7 @@ const AppSidebar: React.FC = () => {
       <ScrollArea className="h-full">
         <SidebarContent className="pt-14 pb-6">
           {renderGroup(lang === "pt" ? "GOVERNO GCN" : "BCM GOVERNANCE", null, operationalItems)}
-          {renderGroup(lang === "pt" ? "WAR ROOM / Gestão Crise" : "WAR ROOM / Crisis Mgmt", null, warRoomItems)}
+          {renderGroup(lang === "pt" ? "OPERAÇÕES GCN" : "GCN OPERATIONS", null, warRoomItems)}
           {renderGroup(lang === "pt" ? "DOCUMENTAÇÃO GCN" : "DOCUMENTATION", Eye, documentacaoItems)}
 
           <SidebarGroup>
