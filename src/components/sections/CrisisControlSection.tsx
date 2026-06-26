@@ -78,9 +78,12 @@ const CrisisControlSection: React.FC = () => {
   const [formTitle, setFormTitle] = useState("");
   const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 16));
   const [formType, setFormType] = useState<string>("real");
+  const [formTemplateId, setFormTemplateId] = useState<string>("none");
   const [cabinetMembers, setCabinetMembers] = useState<{ name: string; role: string }[]>([]);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("");
+
+  const templates = useMemo(() => crises.filter((c) => c.crisis_type === "template"), [crises]);
 
   const selectedCrisis = crises.find((c) => c.id === selectedCrisisId);
 
