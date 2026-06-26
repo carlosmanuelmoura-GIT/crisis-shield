@@ -413,6 +413,9 @@ interface FormDialogProps {
   setFormDate: (v: string) => void;
   formType: string;
   setFormType: (v: string) => void;
+  formTemplateId: string;
+  setFormTemplateId: (v: string) => void;
+  templates: DBCrisis[];
   cabinetMembers: { name: string; role: string }[];
   setCabinetMembers: React.Dispatch<React.SetStateAction<{ name: string; role: string }[]>>;
   newMemberName: string;
