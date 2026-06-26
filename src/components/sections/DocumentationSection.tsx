@@ -82,12 +82,18 @@ const DocumentationSection: React.FC = () => {
     }
   };
 
-  const getFileUrl = (f: typeof files[0]) => {
-    if (f.file_path) {
-      const { data } = supabase.storage.from("documents").getPublicUrl(f.file_path);
-      return data.publicUrl;
+  const openFile = async (f: typeof files[0]) => {
+    try {
+      if (f.file_path) {
+        const { data, error } = await supabase.storage.from("documents").createSignedUrl(f.file_path, 3600);
+        if (error) throw error;
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      } else if (f.url) {
+        window.open(f.url, "_blank", "noopener,noreferrer");
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
-    return f.url;
   };
 
   if (catLoading) {
