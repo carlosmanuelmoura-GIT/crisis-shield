@@ -100,7 +100,7 @@ const AppSidebar: React.FC = () => {
 
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-bold tracking-wider text-sidebar-primary">
-              🔧 {lang === "pt" ? "ADMINISTRAÇÃO" : "ADMINISTRATION"}
+              🔧 {lang === "pt" ? "BACK OFFICE" : "BACK OFFICE"}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
