@@ -165,7 +165,7 @@ const CrisisControlSection: React.FC = () => {
         crisis_date: new Date(formDate).toISOString(),
         crisis_type: formType,
         cabinet_members: cabinetMembers.filter((m) => m.name.trim()),
-        clone_from_id: cloneFromId || undefined,
+        clone_from_id: cloneFromId || (formTemplateId !== "none" ? formTemplateId : undefined),
       });
     }
     setShowDialog(false);
