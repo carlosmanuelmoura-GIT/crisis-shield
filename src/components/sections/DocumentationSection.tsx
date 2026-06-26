@@ -144,15 +144,14 @@ const DocumentationSection: React.FC = () => {
                     {catFiles.map((f) => (
                       <div key={f.id} className="flex items-center gap-2">
                         {f.file_path ? (
-                          <a
-                            href={getFileUrl(f)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => openFile(f)}
+                            className="flex items-center gap-1.5 text-sm text-primary hover:underline text-left"
                           >
                             <FileText className="h-4 w-4 shrink-0" />
                             <span className="truncate max-w-[300px]">{f.file_name}</span>
-                          </a>
+                          </button>
                         ) : f.url ? (
                           <a
                             href={f.url}
