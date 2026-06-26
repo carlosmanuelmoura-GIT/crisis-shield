@@ -431,6 +431,7 @@ interface FormDialogProps {
 const CrisisFormDialog: React.FC<FormDialogProps> = ({
   open, onOpenChange, lang, isEditing, editingCrisisId, cloneFromId,
   formTitle, setFormTitle, formDate, setFormDate, formType, setFormType,
+  formTemplateId, setFormTemplateId, templates,
   cabinetMembers, setCabinetMembers, newMemberName, setNewMemberName,
   newMemberRole, setNewMemberRole, addMember, removeMember, onSubmit, isPending,
 }) => {
