@@ -104,7 +104,7 @@ const AppSidebar: React.FC = () => {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <MenuBtn id="backoffice" icon={Settings} label="Back Office" />
+                <MenuBtn id="backoffice" icon={Settings} label={lang === "pt" ? "Tabelas" : "Tables"} />
                 <MenuBtn id="import-export" icon={ArrowUpDown} label="Import / Export" />
               </SidebarMenu>
             </SidebarGroupContent>
