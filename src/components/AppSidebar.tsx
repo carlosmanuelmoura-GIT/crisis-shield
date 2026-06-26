@@ -29,7 +29,7 @@ import {
 "lucide-react";
 
 
-/* ── Operacional ── */
+/* ── Governo GCN ── */
 const operationalItems = [
 { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
 { id: "procedures", icon: FileText, label: { pt: "Action Cards Gestão de Crise", en: "Crisis Action Cards" } },
