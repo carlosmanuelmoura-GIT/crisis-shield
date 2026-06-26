@@ -929,6 +929,7 @@ export type Database = {
           created_at: string
           id: string
           owner_id: string | null
+          phase: string
           title_en: string
           title_pt: string
           updated_at: string
@@ -941,6 +942,7 @@ export type Database = {
           created_at?: string
           id?: string
           owner_id?: string | null
+          phase?: string
           title_en?: string
           title_pt: string
           updated_at?: string
@@ -953,6 +955,7 @@ export type Database = {
           created_at?: string
           id?: string
           owner_id?: string | null
+          phase?: string
           title_en?: string
           title_pt?: string
           updated_at?: string
