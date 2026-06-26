@@ -378,6 +378,9 @@ const CrisisControlSection: React.FC = () => {
         setFormDate={setFormDate}
         formType={formType}
         setFormType={setFormType}
+        formTemplateId={formTemplateId}
+        setFormTemplateId={setFormTemplateId}
+        templates={templates}
         cabinetMembers={cabinetMembers}
         setCabinetMembers={setCabinetMembers}
         newMemberName={newMemberName}
