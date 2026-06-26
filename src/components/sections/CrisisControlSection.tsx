@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useCurrentUserRoles } from "@/hooks/useUserRoles";
 import {
