@@ -26,7 +26,7 @@ const sectionIndex: { id: string; keywords: string[]; label: { pt: string; en: s
   { id: "sms", keywords: ["sms", "express", "mensagem", "message"], label: { pt: "SMS Express", en: "SMS Express" } },
   { id: "test-calendar", keywords: ["calendário", "testes", "test", "calendar"], label: { pt: "Calendário de Testes", en: "Test Calendar" } },
   { id: "crisis-control", keywords: ["controlo", "gestão", "crise", "crisis", "management", "kanban"], label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
-  { id: "emergency", keywords: ["action", "cards", "emergência", "emergency", "checklist"], label: { pt: "Action Cards", en: "Action Cards" } },
+  { id: "emergency", keywords: ["action", "cards", "emergência", "emergency", "checklist"], label: { pt: "Action Cards Departamentos", en: "Departmental Action Cards" } },
   { id: "meetings", keywords: ["reuniões", "meetings", "sala", "virtual", "video"], label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" } },
   { id: "log", keywords: ["log", "acções", "decisão", "decision", "actions"], label: { pt: "Log das Acções Gestão Crise", en: "Action Log" } },
   { id: "documentacao", keywords: ["documentação", "documentation", "documentos", "documents"], label: { pt: "Documentação GCN", en: "Documentation" } },
