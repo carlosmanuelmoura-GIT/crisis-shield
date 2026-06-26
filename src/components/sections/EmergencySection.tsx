@@ -89,6 +89,8 @@ const EmergencySection: React.FC = () => {
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemText, setEditingItemText] = useState<string>("");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [expandedKanban, setExpandedKanban] = useState<Record<string, boolean>>({});
   const [dragCardId, setDragCardId] = useState<string | null>(null);
