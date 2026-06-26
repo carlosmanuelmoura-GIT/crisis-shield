@@ -105,9 +105,14 @@ const PCNDepartamentaisSection: React.FC = () => {
     }
   };
 
-  const getFileUrl = (filePath: string) => {
-    const { data } = supabase.storage.from("documents").getPublicUrl(filePath);
-    return data.publicUrl;
+  const openDoc = async (filePath: string) => {
+    try {
+      const { data, error } = await supabase.storage.from("documents").createSignedUrl(filePath, 3600);
+      if (error) throw error;
+      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    }
   };
 
   return (
