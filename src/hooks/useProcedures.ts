@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+export type ProcedurePhase = "preparacao" | "gestao" | "fim";
+
 export interface DBProcedure {
   id: string;
   title_pt: string;
@@ -10,10 +12,18 @@ export interface DBProcedure {
   category_en: string;
   content_pt: string;
   content_en: string;
+  phase: ProcedurePhase;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
 }
+
+type ProcInput = {
+  title_pt: string; title_en: string;
+  category_pt: string; category_en: string;
+  content_pt: string; content_en: string;
+  phase?: ProcedurePhase;
+};
 
 export function useProcedures() {
   return useQuery({
@@ -34,7 +44,7 @@ export function useCreateProcedure() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { title_pt: string; title_en: string; category_pt: string; category_en: string; content_pt: string; content_en: string }) => {
+    mutationFn: async (data: ProcInput) => {
       const { error } = await supabase.from("procedures").insert({ ...data, owner_id: user?.id });
       if (error) throw error;
     },
@@ -46,7 +56,7 @@ export function useUpdateProcedure() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; category_pt: string; category_en: string; content_pt: string; content_en: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<ProcInput>) => {
       const { error } = await supabase.from("procedures").update(data).eq("id", id);
       if (error) throw error;
     },
