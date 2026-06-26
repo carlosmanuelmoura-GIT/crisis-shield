@@ -94,17 +94,44 @@ const ProceduresSection: React.FC = () => {
     }
   };
 
-  const handleDrop = async (phase: ProcedurePhase, e: React.DragEvent) => {
+  const reorderInPhase = async (phase: ProcedurePhase, draggedId: string, targetId: string | null) => {
+    const items = procedures.filter(p => (p.phase ?? "gestao") === phase && p.id !== draggedId);
+    const dragged = procedures.find(p => p.id === draggedId);
+    if (!dragged) return;
+    const targetIdx = targetId ? items.findIndex(p => p.id === targetId) : items.length;
+    const insertAt = targetIdx < 0 ? items.length : targetIdx;
+    const newList = [...items.slice(0, insertAt), dragged, ...items.slice(insertAt)];
+    try {
+      await Promise.all(newList.map((p, i) => {
+        const newOrder = (i + 1) * 10;
+        if (p.id === draggedId && (dragged.phase !== phase || dragged.sort_order !== newOrder)) {
+          return updateMut.mutateAsync({ id: p.id, phase, sort_order: newOrder });
+        }
+        if (p.sort_order !== newOrder) {
+          return updateMut.mutateAsync({ id: p.id, sort_order: newOrder });
+        }
+        return Promise.resolve();
+      }));
+    } catch {
+      toast.error(lang === "pt" ? "Erro ao reordenar" : "Error reordering");
+    }
+  };
+
+  const handleColumnDrop = async (phase: ProcedurePhase, e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(null);
     const id = e.dataTransfer.getData("text/plain");
-    const proc = procedures.find(p => p.id === id);
-    if (!proc || proc.phase === phase) return;
-    try {
-      await updateMut.mutateAsync({ id, phase });
-    } catch {
-      toast.error(lang === "pt" ? "Erro ao mover" : "Error moving");
-    }
+    if (!id) return;
+    await reorderInPhase(phase, id, null);
+  };
+
+  const handleCardDrop = async (phase: ProcedurePhase, targetId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(null);
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id || id === targetId) return;
+    await reorderInPhase(phase, id, targetId);
   };
 
   const renderMd = (md: string) => md.split("\n").map((line, i) => {
@@ -133,7 +160,7 @@ const ProceduresSection: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {PHASES.map(ph => {
           const items = filtered.filter(p => (p.phase ?? "gestao") === ph.key);
           return (
@@ -141,7 +168,7 @@ const ProceduresSection: React.FC = () => {
               key={ph.key}
               onDragOver={e => { e.preventDefault(); setDragOver(ph.key); }}
               onDragLeave={() => setDragOver(cur => cur === ph.key ? null : cur)}
-              onDrop={e => handleDrop(ph.key, e)}
+              onDrop={e => handleColumnDrop(ph.key, e)}
               className={`rounded-lg border-2 ${ph.color} p-2 min-h-[200px] transition-all ${dragOver === ph.key ? "ring-2 ring-primary" : ""}`}
             >
               <div className="flex items-center justify-between px-1 py-2">
@@ -155,7 +182,9 @@ const ProceduresSection: React.FC = () => {
                   <Card
                     key={proc.id}
                     draggable
-                    onDragStart={e => e.dataTransfer.setData("text/plain", proc.id)}
+                    onDragStart={e => { e.dataTransfer.setData("text/plain", proc.id); e.dataTransfer.effectAllowed = "move"; }}
+                    onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={e => handleCardDrop(ph.key, proc.id, e)}
                     className="cursor-move"
                   >
                     <CardHeader className="p-2.5">
@@ -198,6 +227,7 @@ const ProceduresSection: React.FC = () => {
           );
         })}
       </div>
+
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
