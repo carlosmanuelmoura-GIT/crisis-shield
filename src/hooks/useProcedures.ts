@@ -13,6 +13,7 @@ export interface DBProcedure {
   content_pt: string;
   content_en: string;
   phase: ProcedurePhase;
+  sort_order: number;
   owner_id: string | null;
   created_at: string;
   updated_at: string;
@@ -23,6 +24,7 @@ type ProcInput = {
   category_pt: string; category_en: string;
   content_pt: string; content_en: string;
   phase?: ProcedurePhase;
+  sort_order?: number;
 };
 
 export function useProcedures() {
@@ -32,6 +34,8 @@ export function useProcedures() {
       const { data, error } = await supabase
         .from("procedures")
         .select("*")
+        .order("phase")
+        .order("sort_order")
         .order("created_at");
       if (error) throw error;
       return data as DBProcedure[];

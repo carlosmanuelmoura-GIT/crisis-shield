@@ -930,6 +930,7 @@ export type Database = {
           id: string
           owner_id: string | null
           phase: string
+          sort_order: number
           title_en: string
           title_pt: string
           updated_at: string
@@ -943,6 +944,7 @@ export type Database = {
           id?: string
           owner_id?: string | null
           phase?: string
+          sort_order?: number
           title_en?: string
           title_pt: string
           updated_at?: string
@@ -956,6 +958,7 @@ export type Database = {
           id?: string
           owner_id?: string | null
           phase?: string
+          sort_order?: number
           title_en?: string
           title_pt?: string
           updated_at?: string
