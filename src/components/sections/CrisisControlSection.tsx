@@ -487,6 +487,30 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
             </Select>
           </div>
 
+          {!isEditing && !cloneFromId && formType !== "template" && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                {lang === "pt" ? "Template base (opcional)" : "Base template (optional)"}
+              </label>
+              <Select value={formTemplateId} onValueChange={setFormTemplateId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    {lang === "pt" ? "Nenhum — crise vazia" : "None — empty crisis"}
+                  </SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formTemplateId !== "none" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  ℹ️ {lang === "pt" ? "Todas as acções do template serão copiadas." : "All template actions will be copied."}
+                </p>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="text-xs font-medium text-muted-foreground">
               {lang === "pt" ? "Constituição do Gabinete de Crise" : "Crisis Cabinet Members"}
