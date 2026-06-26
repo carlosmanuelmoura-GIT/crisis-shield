@@ -216,15 +216,14 @@ const PCNDepartamentaisSection: React.FC = () => {
                             <div className="space-y-1 ml-6">
                               {docs.map((doc) => (
                                 <div key={doc.id} className="flex items-center gap-2">
-                                  <a
-                                    href={getFileUrl(doc.file_path)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 text-xs text-primary hover:underline truncate"
+                                  <button
+                                    type="button"
+                                    onClick={() => openDoc(doc.file_path)}
+                                    className="flex items-center gap-1.5 text-xs text-primary hover:underline truncate text-left"
                                   >
                                     <FileText className="h-3.5 w-3.5 shrink-0" />
                                     {doc.file_name}
-                                  </a>
+                                  </button>
                                   <Button
                                     variant="ghost"
                                     size="icon"
