@@ -517,13 +517,18 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
             </div>
           )}
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              {lang === "pt" ? "Constituição do Gabinete de Crise" : "Crisis Cabinet Members"}
-            </label>
-            <div className="space-y-1 mt-1">
+          <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
+            <div className="font-semibold text-sm">
+              {lang === "pt" ? "Constituição do Gabinete de Gestão de Crise" : "Crisis Management Cabinet Members"}
+            </div>
+            <div className="space-y-1">
+              {cabinetMembers.length === 0 && (
+                <div className="text-xs text-muted-foreground italic">
+                  {lang === "pt" ? "Sem membros adicionados." : "No members added."}
+                </div>
+              )}
               {cabinetMembers.map((m, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1">
+                <div key={i} className="flex items-center gap-2 text-xs bg-background rounded px-2 py-1 border">
                   <span className="font-medium">{m.name}</span>
                   {m.role && <span className="text-muted-foreground">— {m.role}</span>}
                   <Button variant="ghost" size="icon" className="h-5 w-5 ml-auto" onClick={() => removeMember(i)}>
@@ -532,7 +537,7 @@ const CrisisFormDialog: React.FC<FormDialogProps> = ({
                 </div>
               ))}
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2">
               <Input placeholder={lang === "pt" ? "Nome" : "Name"} value={newMemberName} onChange={(e) => setNewMemberName(e.target.value)} className="h-8 text-xs" />
               <Input placeholder={lang === "pt" ? "Função" : "Role"} value={newMemberRole} onChange={(e) => setNewMemberRole(e.target.value)} className="h-8 text-xs" />
               <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={addMember}>
