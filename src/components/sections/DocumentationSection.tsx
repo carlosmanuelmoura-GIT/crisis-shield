@@ -82,12 +82,18 @@ const DocumentationSection: React.FC = () => {
     }
   };
 
-  const getFileUrl = (f: typeof files[0]) => {
-    if (f.file_path) {
-      const { data } = supabase.storage.from("documents").getPublicUrl(f.file_path);
-      return data.publicUrl;
+  const openFile = async (f: typeof files[0]) => {
+    try {
+      if (f.file_path) {
+        const { data, error } = await supabase.storage.from("documents").createSignedUrl(f.file_path, 3600);
+        if (error) throw error;
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      } else if (f.url) {
+        window.open(f.url, "_blank", "noopener,noreferrer");
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     }
-    return f.url;
   };
 
   if (catLoading) {
@@ -138,15 +144,14 @@ const DocumentationSection: React.FC = () => {
                     {catFiles.map((f) => (
                       <div key={f.id} className="flex items-center gap-2">
                         {f.file_path ? (
-                          <a
-                            href={getFileUrl(f)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+                          <button
+                            type="button"
+                            onClick={() => openFile(f)}
+                            className="flex items-center gap-1.5 text-sm text-primary hover:underline text-left"
                           >
                             <FileText className="h-4 w-4 shrink-0" />
                             <span className="truncate max-w-[300px]">{f.file_name}</span>
-                          </a>
+                          </button>
                         ) : f.url ? (
                           <a
                             href={f.url}
