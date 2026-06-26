@@ -197,3 +197,18 @@ export function useDeleteChecklistItem() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist_items"] }),
   });
 }
+
+export function useUpdateChecklistItem() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, text }: { id: string; text: string }) => {
+      const { error } = await supabase
+        .from("checklist_items")
+        .update({ text_pt: text, text_en: text })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist_items"] }),
+  });
+}

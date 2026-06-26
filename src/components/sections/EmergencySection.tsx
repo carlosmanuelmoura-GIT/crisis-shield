@@ -23,7 +23,7 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 import {
   useActionCards, useChecklistItems, useChecklistStates, useToggleChecklistState,
   useCreateActionCard, useUpdateActionCard, useDeleteActionCard,
-  useCreateChecklistItem, useDeleteChecklistItem,
+  useCreateChecklistItem, useDeleteChecklistItem, useUpdateChecklistItem,
 } from "@/hooks/useActionCards";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
@@ -69,6 +69,7 @@ const EmergencySection: React.FC = () => {
   const deleteCard = useDeleteActionCard();
   const createItem = useCreateChecklistItem();
   const deleteItem = useDeleteChecklistItem();
+  const updateItem = useUpdateChecklistItem();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createLog = useCreateDecisionLog();
@@ -88,6 +89,8 @@ const EmergencySection: React.FC = () => {
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editingItemText, setEditingItemText] = useState<string>("");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [expandedKanban, setExpandedKanban] = useState<Record<string, boolean>>({});
   const [dragCardId, setDragCardId] = useState<string | null>(null);
@@ -284,6 +287,32 @@ const EmergencySection: React.FC = () => {
       }
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
+
+  const startEditItem = (itemId: string, currentText: string) => {
+    setEditingItemId(itemId);
+    setEditingItemText(currentText);
+  };
+  const cancelEditItem = () => { setEditingItemId(null); setEditingItemText(""); };
+  const commitEditItem = async (itemId: string, originalText: string) => {
+    const newText = editingItemText.trim();
+    if (!newText || newText === originalText) { cancelEditItem(); return; }
+    try {
+      await updateItem.mutateAsync({ id: itemId, text: newText });
+      const item = allItems.find(i => i.id === itemId);
+      const card = item ? cards.find(c => c.id === item.action_card_id) : null;
+      if (canCheck && card) {
+        const author = profile?.display_name || "Sistema";
+        const cardTitle = lang === "pt" ? card.title_pt : card.title_en;
+        await createLog.mutateAsync({ text: `✏️ Ação editada em "${cardTitle}": "${originalText}" → "${newText}"`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      cancelEditItem();
+    }
+  };
+
+
 
   const handleToggleCheck = async (itemId: string, checked: boolean, itemText: string, cardId: string) => {
     if (!canCheck) return;
@@ -585,10 +614,27 @@ const EmergencySection: React.FC = () => {
                                   return (
                                     <div key={item.id} className="flex items-start gap-2 py-0.5 group">
                                       <span className="text-xs text-muted-foreground font-medium mt-0.5 w-5 shrink-0 text-right">{idx + 1}.</span>
-                                      <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                        <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                        <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                                      </label>
+                                      {editingItemId === item.id ? (
+                                        <Input
+                                          autoFocus
+                                          value={editingItemText}
+                                          onChange={(e) => setEditingItemText(e.target.value)}
+                                          onBlur={() => commitEditItem(item.id, text)}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") { e.preventDefault(); commitEditItem(item.id, text); }
+                                            else if (e.key === "Escape") { e.preventDefault(); cancelEditItem(); }
+                                          }}
+                                          className="h-7 text-sm flex-1 bg-secondary border-border"
+                                        />
+                                      ) : (
+                                        <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                          <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
+                                          <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                        </label>
+                                      )}
+                                      {editingItemId !== item.id && (
+                                        <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100" onClick={() => startEditItem(item.id, text)} title={lang === "pt" ? "Editar nome" : "Edit name"}><Pencil className="h-3 w-3" /></Button>
+                                      )}
                                       <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-3 w-3" /></Button>
                                     </div>
                                   );
@@ -738,10 +784,27 @@ const EmergencySection: React.FC = () => {
                                           return (
                                             <div key={item.id} className="flex items-start gap-1.5 group">
                                               <span className="text-[10px] text-muted-foreground font-medium mt-0.5 w-4 shrink-0 text-right">{idx + 1}.</span>
-                                              <label className={`flex items-start gap-1.5 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                                <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
-                                                <span className={`text-xs leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                                              </label>
+                                              {editingItemId === item.id ? (
+                                                <Input
+                                                  autoFocus
+                                                  value={editingItemText}
+                                                  onChange={(e) => setEditingItemText(e.target.value)}
+                                                  onBlur={() => commitEditItem(item.id, text)}
+                                                  onKeyDown={(e) => {
+                                                    if (e.key === "Enter") { e.preventDefault(); commitEditItem(item.id, text); }
+                                                    else if (e.key === "Escape") { e.preventDefault(); cancelEditItem(); }
+                                                  }}
+                                                  className="h-6 text-xs flex-1 bg-secondary border-border px-2"
+                                                />
+                                              ) : (
+                                                <label className={`flex items-start gap-1.5 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
+                                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
+                                                  <span className={`text-xs leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
+                                                </label>
+                                              )}
+                                              {editingItemId !== item.id && (
+                                                <Button variant="ghost" size="icon" className="h-4 w-4 opacity-0 group-hover:opacity-100" onClick={() => startEditItem(item.id, text)} title={lang === "pt" ? "Editar nome" : "Edit name"}><Pencil className="h-2.5 w-2.5" /></Button>
+                                              )}
                                               <Button variant="ghost" size="icon" className="h-4 w-4 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-2.5 w-2.5" /></Button>
                                             </div>
                                           );
