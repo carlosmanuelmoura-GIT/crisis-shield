@@ -288,6 +288,32 @@ const EmergencySection: React.FC = () => {
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
+  const startEditItem = (itemId: string, currentText: string) => {
+    setEditingItemId(itemId);
+    setEditingItemText(currentText);
+  };
+  const cancelEditItem = () => { setEditingItemId(null); setEditingItemText(""); };
+  const commitEditItem = async (itemId: string, originalText: string) => {
+    const newText = editingItemText.trim();
+    if (!newText || newText === originalText) { cancelEditItem(); return; }
+    try {
+      await updateItem.mutateAsync({ id: itemId, text: newText });
+      const item = allItems.find(i => i.id === itemId);
+      const card = item ? cards.find(c => c.id === item.action_card_id) : null;
+      if (canCheck && card) {
+        const author = profile?.display_name || "Sistema";
+        const cardTitle = lang === "pt" ? card.title_pt : card.title_en;
+        await createLog.mutateAsync({ text: `✏️ Ação editada em "${cardTitle}": "${originalText}" → "${newText}"`, author, crisis_started_at: crisisStartTime, crisis_id: activeDeclaredCrisis?.id || null }).catch(() => {});
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      cancelEditItem();
+    }
+  };
+
+
+
   const handleToggleCheck = async (itemId: string, checked: boolean, itemText: string, cardId: string) => {
     if (!canCheck) return;
     if (checked) {
