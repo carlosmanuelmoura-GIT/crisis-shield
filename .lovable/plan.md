@@ -1,31 +1,17 @@
-## Objetivo
+## Alterações em Procedimentos Gestão Crise
 
-Criar, a partir do documento anexo, um conjunto de procedimentos de Gestão de Crise na tabela existente `procedures` — visíveis na secção **Procedimentos Gestão Crise**. Sem alterações de schema, sem alterações de UI.
+**Ficheiro:** `src/components/sections/ProceduresSection.tsx`
 
-## Procedimentos a inserir
+1. **Layout 2 colunas em vez de 3**
+   - Mudar grid de `lg:grid-cols-3` para `lg:grid-cols-2`.
+   - Manter as 3 fases (PREPARAÇÃO, GESTÃO DA CRISE, FIM DA CRISE) — duas na primeira linha, uma na segunda (ou ajustar conforme preferência; por defeito fluxo natural do grid).
 
-Categoria comum: **"Gestão de Crise"** (PT/EN).
-Conteúdo em Markdown no campo `content_pt`; `content_en` recebe o mesmo conteúdo (placeholder, até existir tradução). Todos sem `owner_id` (geridos centralmente).
+2. **Drag-and-drop dentro da mesma caixa (reordenação)**
+   - Adicionar campo `sort_order` (int) à tabela `procedures` via migração; inicializar com base na ordem atual.
+   - Atualizar `useProcedures` para ler/escrever `sort_order` e ordenar por `phase` + `sort_order`.
+   - No `onDrop`:
+     - Se o destino é a mesma fase → reordenar (recalcular `sort_order` dos itens da coluna conforme posição do alvo).
+     - Se é outra fase → comportamento atual (mudar `phase`) + colocar no fim (maior `sort_order`).
+   - Adicionar handlers `onDragOver`/`onDrop` em cada cartão para detetar a posição alvo dentro da coluna (inserir antes do cartão sobre o qual se larga).
 
-| # | Título PT |
-|---|-----------|
-| 1 | Classificação do Tipo de Crise |
-| 2 | Gabinete de Gestão de Crise — Modelo de Governação |
-| 3 | Preparação Antes da Crise |
-| 4 | Ativação da Crise |
-| 5 | Gestão da Crise em Curso |
-| 6 | Registo de Decisões e Evidências |
-| 7 | Recuperação, Retorno e Encerramento |
-| 8 | Lições Aprendidas e Melhoria Contínua |
-
-O conteúdo de cada procedimento reproduz fielmente o texto, listas e tabelas das secções correspondentes do documento (tabelas convertidas para Markdown).
-
-## Execução
-
-Um único `INSERT INTO public.procedures` com as 8 linhas, com `ON CONFLICT DO NOTHING` por título para evitar duplicados se já existirem.
-
-## Notas
-
-- Os procedimentos ficam imediatamente visíveis e filtráveis pela categoria "Gestão de Crise" na página Procedimentos Gestão Crise.
-- Podem depois ser editados pelos utilizadores privilegiados via a UI já existente.
-- Sem alteração da tabela, RLS, hooks ou componentes.
+Sem outras alterações de UI ou lógica.
