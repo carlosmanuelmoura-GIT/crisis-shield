@@ -138,21 +138,6 @@ const CrisisControlSection: React.FC = () => {
     setShowDialog(true);
   };
 
-  const openCreate = (cloneId?: string) => {
-    resetForm();
-    if (cloneId) {
-      const source = crises.find((c) => c.id === cloneId);
-      if (source) {
-        setFormTitle(`${source.title} (cópia)`);
-        setFormType(source.crisis_type);
-        setCloneFromId(cloneId);
-      }
-    } else {
-      setFormType(activeTab === "template" ? "template" : "real");
-    }
-    setShowDialog(true);
-  };
-
   const openEdit = (crisisId: string) => {
     const c = crises.find((x) => x.id === crisisId);
     if (!c) return;
