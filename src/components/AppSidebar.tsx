@@ -32,7 +32,6 @@ import {
 /* ── Governo GCN ── */
 const operationalItems = [
 { id: "scenarios", icon: LayoutGrid, label: { pt: "Cenários Crise", en: "Crisis Scenarios" } },
-{ id: "procedures", icon: FileText, label: { pt: "Action Cards Gestão de Crise", en: "Crisis Action Cards" } },
 { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
 { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
 { id: "pessoas-criticas", icon: Users, label: { pt: "Pessoas Críticas", en: "Critical People" } },
@@ -44,6 +43,7 @@ const operationalItems = [
 /* ── Operações GCN ── */
 const warRoomItems = [
 { id: "crisis-control", icon: Shield, label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
+{ id: "procedures", icon: FileText, label: { pt: "Action Cards Gestão de Crise", en: "Crisis Action Cards" } },
 { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards Departamentos", en: "Departmental Action Cards" } },
 { id: "meetings", icon: Video, label: { pt: "Sala de Reuniões Virtuais", en: "Virtual Meeting Rooms" } },
 { id: "log", icon: ClipboardList, label: { pt: "Log das Acções Gestão Crise", en: "Action Log" } }];
