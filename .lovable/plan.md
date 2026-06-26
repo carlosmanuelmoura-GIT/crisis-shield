@@ -1,21 +1,31 @@
-## Problema
+## Objetivo
 
-No diálogo de **Editar Crise** (`CrisisControlSection.tsx`), ao adicionar novos elementos ao Gabinete de Gestão de Crise, eles desaparecem imediatamente.
+Criar, a partir do documento anexo, um conjunto de procedimentos de Gestão de Crise na tabela existente `procedures` — visíveis na secção **Procedimentos Gestão Crise**. Sem alterações de schema, sem alterações de UI.
 
-**Causa:** o `useEffect` que carrega os membros existentes (linhas 441-445) corre sempre que `existingMembers` muda de referência. Como o React Query devolve uma nova referência em vários re-renders, o estado local `cabinetMembers` é continuamente reposto com a lista da BD, apagando o membro que o utilizador acabou de adicionar.
+## Procedimentos a inserir
 
-Adicionalmente, a secção "Constituição do Gabinete de Crise" está visualmente solta entre os outros campos do formulário, sem destaque.
+Categoria comum: **"Gestão de Crise"** (PT/EN).
+Conteúdo em Markdown no campo `content_pt`; `content_en` recebe o mesmo conteúdo (placeholder, até existir tradução). Todos sem `owner_id` (geridos centralmente).
 
-## Alterações
+| # | Título PT |
+|---|-----------|
+| 1 | Classificação do Tipo de Crise |
+| 2 | Gabinete de Gestão de Crise — Modelo de Governação |
+| 3 | Preparação Antes da Crise |
+| 4 | Ativação da Crise |
+| 5 | Gestão da Crise em Curso |
+| 6 | Registo de Decisões e Evidências |
+| 7 | Recuperação, Retorno e Encerramento |
+| 8 | Lições Aprendidas e Melhoria Contínua |
 
-**Ficheiro:** `src/components/sections/CrisisControlSection.tsx`
+O conteúdo de cada procedimento reproduz fielmente o texto, listas e tabelas das secções correspondentes do documento (tabelas convertidas para Markdown).
 
-1. **Corrigir o reset do estado em edição**
-   - Substituir o `useEffect` por uma inicialização única (usar uma `ref` ou flag `hasLoadedMembers`) que só popula `cabinetMembers` a partir de `existingMembers` na primeira vez que o diálogo abre em modo edição (por `editingCrisisId`).
-   - Quando o diálogo fecha, repor a flag para que ao reabrir noutra crise se volte a carregar.
+## Execução
 
-2. **Destacar visualmente o Gabinete de Gestão de Crise**
-   - Envolver toda a secção (label + lista de membros + inputs de adicionar) numa caixa com `border rounded-lg p-3 bg-muted/30`, com um cabeçalho a `font-semibold` em vez do label pequeno actual.
-   - Manter a mesma funcionalidade (listar, remover, adicionar membro com Nome + Função).
+Um único `INSERT INTO public.procedures` com as 8 linhas, com `ON CONFLICT DO NOTHING` por título para evitar duplicados se já existirem.
 
-Sem alterações de BD, de hooks, nem de outras secções.
+## Notas
+
+- Os procedimentos ficam imediatamente visíveis e filtráveis pela categoria "Gestão de Crise" na página Procedimentos Gestão Crise.
+- Podem depois ser editados pelos utilizadores privilegiados via a UI já existente.
+- Sem alteração da tabela, RLS, hooks ou componentes.
