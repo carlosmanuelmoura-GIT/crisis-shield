@@ -1,0 +1,1 @@
+ALTER TABLE public.bia_processes ADD COLUMN IF NOT EXISTS description TEXT;
