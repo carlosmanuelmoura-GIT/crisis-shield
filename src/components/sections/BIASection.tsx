@@ -129,6 +129,7 @@ const BIASection: React.FC = () => {
       business_process_id: p.business_process_id || null,
       dr_type_id: p.dr_type_id || null,
       department_id: (p as any).department_id || null,
+      description: p.description ?? "",
     });
     const bp = p.business_process_id ? businessProcesses.find(b => b.id === p.business_process_id) : undefined;
     resetCascade(bp);
