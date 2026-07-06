@@ -328,6 +328,7 @@ const ImportExportSection: React.FC = () => {
       qc.invalidateQueries({ queryKey: ["bia_processes"] });
       qc.invalidateQueries({ queryKey: ["bia_process_platforms"] });
       qc.invalidateQueries({ queryKey: ["bia_action_cards"] });
+      qc.invalidateQueries({ queryKey: ["business_processes"] });
       toast({ title: t(`${count} processos BIA importados`, `${count} BIA processes imported`) });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
