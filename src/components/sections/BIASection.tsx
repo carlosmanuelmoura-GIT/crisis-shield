@@ -138,11 +138,12 @@ const BIASection: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      const payload = { ...form, description: form.description.trim() || null };
       if (editing) {
-        await updateMut.mutateAsync({ id: editing.id, ...form });
+        await updateMut.mutateAsync({ id: editing.id, ...payload });
         toast.success(t("Processo atualizado", "Process updated"));
       } else {
-        await createMut.mutateAsync(form);
+        await createMut.mutateAsync(payload);
         toast.success(t("Processo criado", "Process created"));
       }
       setDialogOpen(false);
