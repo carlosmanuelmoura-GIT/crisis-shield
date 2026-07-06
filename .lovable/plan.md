@@ -1,54 +1,31 @@
-## Melhorias na Importação de BIA
+## Objetivo
+Adicionar um segundo Pie Chart na secção BIA, por **Tipo de DR**, colocado lado a lado com o atual "BIAs por Tipo". Comportamento idêntico: clicar numa fatia filtra a lista abaixo; clicar de novo (ou "Limpar seleção") remove o filtro.
 
-### 1. Descrição automática
-No `importBIA` de `src/components/sections/ImportExportSection.tsx`, ao inserir cada linha em `bia_processes`, preencher também o campo `description` com:
+## Alterações (apenas `src/components/sections/BIASection.tsx`)
 
-```
-<Nome_PT> · <Processo>
-```
+1. Novo estado: `selectedDRType: string | null`.
 
-- `Nome_PT` = valor da coluna `Nome_PT` do ficheiro.
-- `Processo` = nome do processo de negócio resolvido (ver ponto 2). Se não houver processo ligado, `description` fica apenas com `Nome_PT`.
+2. Novo dataset para o pie:
+   - `drPieData` = para cada `dr_types`, contar `filteredByBP.filter(p => p.dr_type_id === dr.id).length`.
+   - Adicionar bucket "Sem DR" (`id: null`) quando existirem BIAs sem `dr_type_id`.
+   - Filtrar `value > 0`. Cores geradas a partir de tokens HSL (paleta baseada em `--primary`, `--accent`, etc., variando `hue`) — sem cores hardcoded.
 
-Coerente com o default já usado no cartão Kanban e no placeholder do CRUD.
+3. Aplicar filtro à lista:
+   - `filtered` passa a considerar também `selectedDRType`:
+     `if (selectedDRType !== null_marker) filtrar por p.dr_type_id === selectedDRType` (usando sentinel `"__none"` para "Sem DR").
+   - O `pieData` do Tipo BIA continua baseado em `filteredByBP` (para não desaparecerem fatias ao clicar no DR). Simetricamente, `drPieData` mantém-se baseado em `filteredByBP` — a seleção só afeta a lista, exatamente como o pie de Tipo BIA hoje.
 
-### 2. Resolução do processo a partir de `Business_Process_Nome`
+4. Layout: envolver os dois cards num grid:
+   ```tsx
+   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+     {/* Card BIAs por Tipo (existente) */}
+     {/* Card BIAs por Tipo de DR (novo) */}
+   </div>
+   ```
+   Card novo replica a estrutura do existente: header com título "BIAs por Tipo de DR" + botão "Limpar seleção" (se `selectedDRType`), `ResponsiveContainer` height 260, `Pie` com `onClick` a alternar `selectedDRType`, `Cell` com stroke/opacity conforme selecionado, tooltip e legend com os mesmos estilos.
 
-A coluna `Business_Process_Nome` (equivalente ao "Business Process Name" mencionado) traz uma string no formato:
+5. Limpar seleção de DR também quando o utilizador clica em "Limpar filtros" na barra de filtros.
 
-```
-<qualquer coisa> - <Nome do Processo>
-```
-
-Novo algoritmo (aplicado apenas quando `Business_Process_ID` não vier preenchido):
-
-1. Fazer `split` no **primeiro** `-`; usar a parte à direita, trim, como **Nome do Processo** procurado.  
-   (Se não existir `-`, usar a string inteira, tal como hoje.)
-2. Procurar em `business_processes` (case-insensitive, trim) por `processo === <nome extraído>`.
-3. **Se encontrar**: usar esse `id` como `business_process_id` da BIA. Não altera o registo do processo.
-4. **Se não encontrar**: criar um novo registo em `business_processes` com:
-   - `processo` = nome extraído
-   - `tipo_funcao`, `funcao`, `macro_processo` = `""` (ficam por preencher, o utilizador completa depois no Back Office)
-   - `owner_id` = utilizador atual  
-   Usar o `id` devolvido como `business_process_id`.
-
-> Nota: os campos `tipo_funcao`, `funcao`, `macro_processo` vivem em `business_processes`, não em `bia_processes`. O "preenchimento automático" acontece via **ligação** ao processo correto — ao selecionar esse processo na BIA, os quatro campos (Tipo Função, Função, Macro Processo, Processo) aparecem automaticamente em toda a UI que os lê a partir de `business_processes` (cartões Kanban, filtros, etc.).
-
-### 3. Cache de lookups em memória
-Manter o `bpNameMap` já existente, mas atualizá-lo em tempo real após criar novos processos, para que várias linhas do mesmo ficheiro que referenciem o mesmo processo reutilizem o `id` recém-criado (sem duplicados).
-
-### 4. Sem alterações a
-- Esquema da base de dados
-- Hooks (`useBIAProcesses`, `useBusinessProcesses`)
-- Template de importação (as colunas mantêm-se; muda só a interpretação de `Business_Process_Nome`)
-- CRUD da BIA e cartão Kanban (já usam o novo default de descrição)
-
-### Ficheiros a alterar
-- `src/components/sections/ImportExportSection.tsx` — função `importBIA`
-
-### Questão em aberto
-Se `Business_Process_Nome` não tiver `-`, devo:
-- (a) usar a string inteira como nome do processo (comportamento assumido acima), ou
-- (b) ignorar o valor e deixar a BIA sem processo ligado?
-
-Assumi **(a)**. Diz se preferes (b).
+## Notas
+- Sem alterações de dados, hooks, ou schema.
+- Sem cores hardcoded — usar HSL derivado dos tokens do design system.
