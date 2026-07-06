@@ -617,18 +617,16 @@ const BIASection: React.FC = () => {
               <Input
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder={
-                  editing
-                    ? `BIA-${editing.id.slice(0, 8).toUpperCase()} · ${
-                        (form.business_process_id
-                          ? businessProcesses.find(b => b.id === form.business_process_id)?.processo
-                          : "") || form.name_pt || t("processo", "process")
-                      }`
-                    : t("Deixar vazio para usar o valor por defeito", "Leave empty to use default")
-                }
+                placeholder={(() => {
+                  const nome = t(form.name_pt, form.name_en) || t("nome", "name");
+                  const proc = form.business_process_id
+                    ? businessProcesses.find(b => b.id === form.business_process_id)?.processo
+                    : "";
+                  return proc ? `${nome} · ${proc}` : nome;
+                })()}
               />
               <p className="text-[10px] text-muted-foreground mt-1">
-                {t("Se vazio, mostra: BIA-<id> · <processo>", "If empty, shows: BIA-<id> · <process>")}
+                {t("Se vazio, mostra: <nome da BIA> · <processo>", "If empty, shows: <BIA name> · <process>")}
               </p>
             </div>
 
