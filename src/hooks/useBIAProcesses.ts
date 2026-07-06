@@ -53,6 +53,7 @@ export function useCreateBIAProcess() {
       criticality: string;
       business_process_id?: string | null; dr_type_id?: string | null;
       department_id?: string | null;
+      description?: string | null;
     }) => {
       const { error } = await supabase.from("bia_processes").insert({ ...data, owner_id: user?.id } as any);
       if (error) throw error;
