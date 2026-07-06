@@ -396,54 +396,107 @@ const BIASection: React.FC = () => {
       </Card>
 
 
-      {/* Pie chart — Tipo de BIA, clickable slices */}
-      {pieData.length > 0 && (
-        <Card>
-          <CardHeader className="p-3 pb-1">
-            <CardTitle className="text-sm flex items-center justify-between">
-              <span>{t("BIAs por Tipo", "BIAs by Type")}</span>
-              {selectedTipoBIA && (
-                <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedTipoBIA(null)}>
-                  <X className="h-3 w-3 mr-0.5" />{t("Limpar seleção", "Clear selection")}
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-2">
-            <ResponsiveContainer width="100%" height={260}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  label={(d: any) => `${d.name}: ${d.value}`}
-                  onClick={(d: any) => {
-                    const k = d?.key ?? d?.payload?.key;
-                    if (!k) return;
-                    setSelectedTipoBIA(prev => prev === k ? null : k);
-                  }}
-                  className="cursor-pointer outline-none"
-                  isAnimationActive={false}
-                >
-                  {pieData.map(entry => (
-                    <Cell
-                      key={entry.key}
-                      fill={entry.color}
-                      stroke={selectedTipoBIA === entry.key ? "hsl(var(--foreground))" : "hsl(var(--background))"}
-                      strokeWidth={selectedTipoBIA === entry.key ? 3 : 1}
-                      opacity={selectedTipoBIA && selectedTipoBIA !== entry.key ? 0.35 : 1}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", color: "hsl(var(--card-foreground))" }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Pie charts — Tipo de BIA e Tipo de DR */}
+      {(pieData.length > 0 || drPieData.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pieData.length > 0 && (
+            <Card>
+              <CardHeader className="p-3 pb-1">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>{t("BIAs por Tipo", "BIAs by Type")}</span>
+                  {selectedTipoBIA && (
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedTipoBIA(null)}>
+                      <X className="h-3 w-3 mr-0.5" />{t("Limpar seleção", "Clear selection")}
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      label={(d: any) => `${d.name}: ${d.value}`}
+                      onClick={(d: any) => {
+                        const k = d?.key ?? d?.payload?.key;
+                        if (!k) return;
+                        setSelectedTipoBIA(prev => prev === k ? null : k);
+                      }}
+                      className="cursor-pointer outline-none"
+                      isAnimationActive={false}
+                    >
+                      {pieData.map(entry => (
+                        <Cell
+                          key={entry.key}
+                          fill={entry.color}
+                          stroke={selectedTipoBIA === entry.key ? "hsl(var(--foreground))" : "hsl(var(--background))"}
+                          strokeWidth={selectedTipoBIA === entry.key ? 3 : 1}
+                          opacity={selectedTipoBIA && selectedTipoBIA !== entry.key ? 0.35 : 1}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", color: "hsl(var(--card-foreground))" }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {drPieData.length > 0 && (
+            <Card>
+              <CardHeader className="p-3 pb-1">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>{t("BIAs por Tipo de DR", "BIAs by DR Type")}</span>
+                  {selectedDRType && (
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedDRType(null)}>
+                      <X className="h-3 w-3 mr-0.5" />{t("Limpar seleção", "Clear selection")}
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-2">
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={drPieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      label={(d: any) => `${d.name}: ${d.value}`}
+                      onClick={(d: any) => {
+                        const k = d?.key ?? d?.payload?.key;
+                        if (!k) return;
+                        setSelectedDRType(prev => prev === k ? null : k);
+                      }}
+                      className="cursor-pointer outline-none"
+                      isAnimationActive={false}
+                    >
+                      {drPieData.map(entry => (
+                        <Cell
+                          key={entry.key}
+                          fill={entry.color}
+                          stroke={selectedDRType === entry.key ? "hsl(var(--foreground))" : "hsl(var(--background))"}
+                          strokeWidth={selectedDRType === entry.key ? 3 : 1}
+                          opacity={selectedDRType && selectedDRType !== entry.key ? 0.35 : 1}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", color: "hsl(var(--card-foreground))" }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* BIAs grouped by Department (accordion) → Kanban by DR Type */}
