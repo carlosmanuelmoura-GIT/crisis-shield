@@ -217,10 +217,39 @@ const ImportExportSection: React.FC = () => {
       for (const row of rows) {
         if (!row.Nome_PT?.trim()) continue;
 
-        // Resolve business_process_id: prefer explicit ID, else lookup by name
+        // Resolve business_process_id: prefer explicit ID, else derive process name
+        // from Business_Process_Nome (string after the first "-"), lookup by name,
+        // and create a new business_processes row when not found.
         let bpId: string | null = row.Business_Process_ID?.trim() || null;
+        let bpProcessoName = "";
         if (!bpId && row.Business_Process_Nome?.trim()) {
-          bpId = bpNameMap.get(row.Business_Process_Nome.toLowerCase().trim()) || null;
+          const raw = row.Business_Process_Nome.trim();
+          const dashIdx = raw.indexOf("-");
+          bpProcessoName = (dashIdx >= 0 ? raw.slice(dashIdx + 1) : raw).trim();
+          if (bpProcessoName) {
+            const key = bpProcessoName.toLowerCase();
+            bpId = bpNameMap.get(key) || null;
+            if (!bpId) {
+              const { data: newBp, error: bpErr } = await supabase
+                .from("business_processes")
+                .insert({
+                  tipo_funcao: "",
+                  funcao: "",
+                  macro_processo: "",
+                  processo: bpProcessoName,
+                  owner_id: user?.id,
+                } as any)
+                .select("id")
+                .single();
+              if (bpErr) throw bpErr;
+              bpId = newBp!.id;
+              bpNameMap.set(key, bpId);
+            }
+          }
+        } else if (bpId) {
+          // If explicit ID provided, resolve processo name for description
+          const found = processes.find(p => p.id === bpId);
+          bpProcessoName = found?.processo || "";
         }
 
         // Resolve dr_type_id: prefer explicit ID, else lookup by name/code
@@ -235,11 +264,15 @@ const ImportExportSection: React.FC = () => {
           deptId = deptNameMap.get(row.Departamento_Nome.toLowerCase().trim()) || null;
         }
 
+        // Auto-fill description: "<Nome_PT> · <Processo>" (or just Nome_PT)
+        const namePt = row.Nome_PT.trim();
+        const description = bpProcessoName ? `${namePt} · ${bpProcessoName}` : namePt;
+
         // Insert BIA process and get the new id
         const { data: inserted, error: insertErr } = await supabase
           .from("bia_processes")
           .insert({
-            name_pt: row.Nome_PT.trim(),
+            name_pt: namePt,
             name_en: row.Nome_EN?.trim() || "",
             rto: Number(row.RTO) || 0,
             rpo: Number(row.RPO) || 0,
@@ -253,10 +286,12 @@ const ImportExportSection: React.FC = () => {
             dr_type_id: drId,
             business_process_id: bpId,
             department_id: deptId,
+            description,
             owner_id: user?.id,
           } as any)
           .select("id")
           .single();
+
 
         if (insertErr) throw insertErr;
 
@@ -293,6 +328,7 @@ const ImportExportSection: React.FC = () => {
       qc.invalidateQueries({ queryKey: ["bia_processes"] });
       qc.invalidateQueries({ queryKey: ["bia_process_platforms"] });
       qc.invalidateQueries({ queryKey: ["bia_action_cards"] });
+      qc.invalidateQueries({ queryKey: ["business_processes"] });
       toast({ title: t(`${count} processos BIA importados`, `${count} BIA processes imported`) });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
