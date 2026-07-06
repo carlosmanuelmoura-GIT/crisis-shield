@@ -478,7 +478,7 @@ const BIASection: React.FC = () => {
                                   <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                                     <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
                                     <span className="text-xs font-semibold leading-tight">
-                                      {p.description?.trim() || `BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
+                                      {p.description?.trim() || `${t(p.name_pt, p.name_en)}${bp?.processo ? ` · ${bp.processo}` : ""}`}
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-0.5 shrink-0">
