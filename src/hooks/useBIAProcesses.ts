@@ -14,8 +14,20 @@ export interface DBBIAProcess {
   dr_type_id: string | null;
   department_id: string | null;
   owner_id: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export function useUpdateBIADescription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, description }: { id: string; description: string | null }) => {
+      const { error } = await supabase.from("bia_processes").update({ description } as any).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bia_processes"] }),
+  });
 }
 
 export function useBIAProcesses() {
