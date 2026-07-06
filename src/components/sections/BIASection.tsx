@@ -474,7 +474,9 @@ const BIASection: React.FC = () => {
                                 <div className="flex items-start justify-between gap-1">
                                   <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                                     <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
-                                    <span className="text-xs font-semibold leading-tight">{t(p.name_pt, p.name_en)}</span>
+                                    <span className="text-xs font-semibold leading-tight">
+                                      {p.description?.trim() || `BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-0.5 shrink-0">
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(p)}>
@@ -488,12 +490,6 @@ const BIASection: React.FC = () => {
                                 {bp && (
                                   <div className="text-[10px] text-muted-foreground truncate">{bp.processo}</div>
                                 )}
-                                <BIADescription
-                                  bia={p}
-                                  defaultText={`BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
-                                  onSave={(desc) => updateDescMut.mutate({ id: p.id, description: desc })}
-                                  t={t}
-                                />
                                 <div className="text-[10px] text-muted-foreground">RTO: {p.rto}h · RPO: {p.rpo}h</div>
                                 <div className="flex flex-wrap gap-1 items-center">
                                   <Server className="h-3 w-3 text-muted-foreground" />
