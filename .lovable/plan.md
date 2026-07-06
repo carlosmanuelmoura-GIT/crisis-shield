@@ -1,26 +1,16 @@
 
-## Ajustes
+## Ajuste
 
-### 1. Remover edição inline no cartão
-- Remover o componente `BIADescription` e o uso do `useUpdateBIADescription` em `BIASection.tsx`.
-- Remover ícones auxiliares (`RotateCcw`, `Check`) que deixam de ser necessários.
+### Valor por defeito da Descrição
+Alterar o default de `BIA-<id> · <processo>` para **`<nome da BIA> · <processo>`**:
+- Nome da BIA = `t(p.name_pt, p.name_en)` (idioma ativo).
+- Processo = `businessProcesses.find(...).processo` do processo de negócio ligado à BIA; se não houver processo ligado, mostra apenas o nome.
 
-### 2. Título do cartão = Descrição
-No cartão Kanban, substituir o atual título (`t(p.name_pt, p.name_en)`) por:
-- `p.description` se estiver preenchido
-- caso contrário, o default calculado `BIA-{id.slice(0,8).toUpperCase()} · {bp?.processo || nome}`
+Aplicado em dois sítios:
+1. **Título do cartão Kanban** (`BIASection.tsx`): quando `p.description` está vazia, mostra `nome · processo`.
+2. **Placeholder do campo Descrição no diálogo CRUD** (novo ou editar): mostra o mesmo `nome · processo` calculado dinamicamente a partir dos valores atuais do form (`form.name_pt` / `form.name_en` e `form.business_process_id`).
 
-A linha secundária com `bp.processo` e a linha `RTO/RPO` mantêm-se.
+### Edição
+Sem alterações estruturais — o campo Descrição já existe no diálogo CRUD (Nova/Editar BIA). Continua editável, guardado em `bia_processes.description`; se vazio, é usado o default calculado.
 
-### 3. Editar Descrição no CRUD (Dialog Nova/Editar BIA)
-No `Dialog`:
-- Adicionar campo **Descrição** (`Input` de linha única, ou `Textarea` se preferires — proponho `Input`) por baixo dos nomes PT/EN.
-- Placeholder mostra o default calculado (`BIA-{id} · {processo}`) para o utilizador saber o que fica se deixar vazio.
-- Estado `form.description` inicializado com `p.description ?? ""` no `openEdit`, e `""` no `openNew`.
-- Ao guardar, enviar `description: form.description.trim() || null` para `useCreateBIAProcess` / `useUpdateBIAProcess`.
-
-### 4. Hooks
-- Estender `useCreateBIAProcess` e `useUpdateBIAProcess` para aceitar `description?: string | null`.
-- Manter (ou remover) `useUpdateBIADescription` — proponho **remover** por já não ser usado.
-
-Sem alterações a base de dados (a coluna `description` já existe).
+Sem alterações a base de dados nem a hooks.
