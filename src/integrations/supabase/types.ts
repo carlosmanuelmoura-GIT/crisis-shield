@@ -163,6 +163,7 @@ export type Database = {
           criticality: string
           department_id: string | null
           dependencies: string[]
+          description: string | null
           dr_type_id: string | null
           id: string
           name_en: string
@@ -178,6 +179,7 @@ export type Database = {
           criticality?: string
           department_id?: string | null
           dependencies?: string[]
+          description?: string | null
           dr_type_id?: string | null
           id?: string
           name_en?: string
@@ -193,6 +195,7 @@ export type Database = {
           criticality?: string
           department_id?: string | null
           dependencies?: string[]
+          description?: string | null
           dr_type_id?: string | null
           id?: string
           name_en?: string

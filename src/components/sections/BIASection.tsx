@@ -13,8 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers, ChevronDown, Filter, Building2 } from "lucide-react";
-import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
+import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers, ChevronDown, Filter, Building2, RotateCcw, Check } from "lucide-react";
+import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, useUpdateBIADescription, DBBIAProcess } from "@/hooks/useBIAProcesses";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
 import { useActionCards } from "@/hooks/useActionCards";
@@ -29,12 +29,82 @@ const critColor: Record<string, string> = {
   analitica: "hsl(220, 5%, 55%)",
 };
 
+const BIADescription: React.FC<{
+  bia: DBBIAProcess;
+  defaultText: string;
+  onSave: (desc: string | null) => void;
+  t: (pt: string, en: string) => string;
+}> = ({ bia, defaultText, onSave, t }) => {
+  const current = bia.description ?? "";
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(current);
+
+  React.useEffect(() => { setValue(current); }, [current]);
+
+  const commit = () => {
+    const trimmed = value.trim();
+    if (trimmed !== current) onSave(trimmed === "" ? null : trimmed);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1">
+        <Input
+          autoFocus
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onBlur={commit}
+          onKeyDown={e => {
+            if (e.key === "Enter") { e.preventDefault(); commit(); }
+            if (e.key === "Escape") { setValue(current); setEditing(false); }
+          }}
+          className="h-6 text-[10px] px-1.5"
+          placeholder={defaultText}
+        />
+        <Button size="icon" variant="ghost" className="h-5 w-5 shrink-0" onMouseDown={e => e.preventDefault()} onClick={commit}>
+          <Check className="h-3 w-3" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-1 group">
+      <div className="text-[10px] italic text-muted-foreground/90 flex-1 break-words">
+        {current || defaultText}
+      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-5 w-5 shrink-0 opacity-60 hover:opacity-100"
+        onClick={() => setEditing(true)}
+        title={t("Editar descrição", "Edit description")}
+      >
+        <Pencil className="h-2.5 w-2.5" />
+      </Button>
+      {current && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-5 w-5 shrink-0 opacity-60 hover:opacity-100"
+          onClick={() => onSave(null)}
+          title={t("Repor por defeito", "Reset to default")}
+        >
+          <RotateCcw className="h-2.5 w-2.5" />
+        </Button>
+      )}
+    </div>
+  );
+};
+
 const BIASection: React.FC = () => {
   const { lang } = useApp();
   const { data: biaProcesses = [], isLoading } = useBIAProcesses();
   const createMut = useCreateBIAProcess();
   const updateMut = useUpdateBIAProcess();
   const deleteMut = useDeleteBIAProcess();
+  const updateDescMut = useUpdateBIADescription();
   const { data: platforms = [] } = useCMDBPlatforms();
   const { data: drTypes = [] } = useDRTypes();
   const { data: businessProcesses = [] } = useBusinessProcesses();
@@ -486,6 +556,12 @@ const BIASection: React.FC = () => {
                                 {bp && (
                                   <div className="text-[10px] text-muted-foreground truncate">{bp.processo}</div>
                                 )}
+                                <BIADescription
+                                  bia={p}
+                                  defaultText={`BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
+                                  onSave={(desc) => updateDescMut.mutate({ id: p.id, description: desc })}
+                                  t={t}
+                                />
                                 <div className="text-[10px] text-muted-foreground">RTO: {p.rto}h · RPO: {p.rpo}h</div>
                                 <div className="flex flex-wrap gap-1 items-center">
                                   <Server className="h-3 w-3 text-muted-foreground" />
