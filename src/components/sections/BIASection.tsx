@@ -167,14 +167,14 @@ const BIASection: React.FC = () => {
 
 
   // List-level cascading filter options
-  const listTipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao))].sort();
+  const listTipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao).filter(Boolean))].sort();
   const listFuncoes = [...new Set(businessProcesses
     .filter(bp => listTipoFuncao === "__all__" || bp.tipo_funcao === listTipoFuncao)
-    .map(bp => bp.funcao))].sort();
+    .map(bp => bp.funcao).filter(Boolean))].sort();
   const listMacros = [...new Set(businessProcesses
     .filter(bp => (listTipoFuncao === "__all__" || bp.tipo_funcao === listTipoFuncao) &&
                   (listFuncao === "__all__" || bp.funcao === listFuncao))
-    .map(bp => bp.macro_processo))].sort();
+    .map(bp => bp.macro_processo).filter(Boolean))].sort();
   const listProcessos = businessProcesses.filter(bp =>
     (listTipoFuncao === "__all__" || bp.tipo_funcao === listTipoFuncao) &&
     (listFuncao === "__all__" || bp.funcao === listFuncao) &&
