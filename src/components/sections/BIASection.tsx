@@ -608,6 +608,29 @@ const BIASection: React.FC = () => {
               <div><Label className="text-xs">Name (EN)</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
             </div>
 
+            {/* Descrição (título do cartão) */}
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {t("Descrição (título do cartão)", "Description (card title)")}
+              </Label>
+              <Input
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder={
+                  editing
+                    ? `BIA-${editing.id.slice(0, 8).toUpperCase()} · ${
+                        (form.business_process_id
+                          ? businessProcesses.find(b => b.id === form.business_process_id)?.processo
+                          : "") || form.name_pt || t("processo", "process")
+                      }`
+                    : t("Deixar vazio para usar o valor por defeito", "Leave empty to use default")
+                }
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {t("Se vazio, mostra: BIA-<id> · <processo>", "If empty, shows: BIA-<id> · <process>")}
+              </p>
+            </div>
+
             {/* DR Type */}
             <div>
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
