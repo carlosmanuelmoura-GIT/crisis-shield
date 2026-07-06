@@ -207,10 +207,14 @@ const BIASection: React.FC = () => {
     ? filteredByListCascade
     : filteredByListCascade.filter(p => p.business_process_id === filterBPId);
 
-  // Filter by selected pie slice (Tipo de BIA)
-  const filtered = selectedTipoBIA
-    ? filteredByBP.filter(p => p.criticality === selectedTipoBIA)
-    : filteredByBP;
+  // Filter by selected pie slice (Tipo de BIA) and DR type
+  let filtered = filteredByBP;
+  if (selectedTipoBIA) filtered = filtered.filter(p => p.criticality === selectedTipoBIA);
+  if (selectedDRType) {
+    filtered = selectedDRType === "__none"
+      ? filtered.filter(p => !p.dr_type_id)
+      : filtered.filter(p => p.dr_type_id === selectedDRType);
+  }
 
   // Pie chart data — count by Tipo de BIA (uses filteredByBP so slice highlighting reflects current filters)
   const tipoLabel: Record<string, string> = { vital: "VITAL", decisao: "DECISÃO", analitica: "ANALÍTICA" };
@@ -220,6 +224,22 @@ const BIASection: React.FC = () => {
     value: filteredByBP.filter(p => p.criticality === k).length,
     color: critColor[k],
   })).filter(d => d.value > 0);
+
+  // Pie chart data — count by DR Type
+  const drPieData = [
+    ...drTypes.map((dr, i) => ({
+      key: dr.id,
+      name: dr.code,
+      value: filteredByBP.filter(p => p.dr_type_id === dr.id).length,
+      color: `hsl(${(i * 47) % 360}, 55%, 50%)`,
+    })),
+    {
+      key: "__none",
+      name: t("Sem DR", "No DR"),
+      value: filteredByBP.filter(p => !p.dr_type_id).length,
+      color: "hsl(var(--muted-foreground))",
+    },
+  ].filter(d => d.value > 0);
 
   // Group BIAs by department
   const groupedByDept = new Map<string | null, DBBIAProcess[]>();
