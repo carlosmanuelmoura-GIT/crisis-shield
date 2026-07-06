@@ -56,6 +56,7 @@ const BIASection: React.FC = () => {
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
     department_id: null as string | null,
+    description: "",
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
