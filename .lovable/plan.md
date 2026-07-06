@@ -1,30 +1,26 @@
 
-## Objetivo
-Adicionar um campo **Descrição** editável em cada cartão Kanban da secção BIA. Por defeito, o valor é a concatenação de `ID da BIA + Processo` (ex.: `BIA-a1b2c3d4 · Faturação`). O utilizador pode editar e o valor fica persistido.
+## Ajustes
 
-## Alterações
+### 1. Remover edição inline no cartão
+- Remover o componente `BIADescription` e o uso do `useUpdateBIADescription` em `BIASection.tsx`.
+- Remover ícones auxiliares (`RotateCcw`, `Check`) que deixam de ser necessários.
 
-### 1. Base de dados
-Migração para adicionar a coluna:
-- `bia_processes.description` (`TEXT`, nullable)
+### 2. Título do cartão = Descrição
+No cartão Kanban, substituir o atual título (`t(p.name_pt, p.name_en)`) por:
+- `p.description` se estiver preenchido
+- caso contrário, o default calculado `BIA-{id.slice(0,8).toUpperCase()} · {bp?.processo || nome}`
 
-Sem alterações a RLS/policies (a tabela já tem políticas ativas para todas as operações).
+A linha secundária com `bp.processo` e a linha `RTO/RPO` mantêm-se.
 
-### 2. Hook `useBIAProcesses`
-- Adicionar `description` à interface `DBBIAProcess`.
-- Novo mutation hook `useUpdateBIADescription(id, description)` — atualização leve, sem exigir todos os outros campos do form principal.
+### 3. Editar Descrição no CRUD (Dialog Nova/Editar BIA)
+No `Dialog`:
+- Adicionar campo **Descrição** (`Input` de linha única, ou `Textarea` se preferires — proponho `Input`) por baixo dos nomes PT/EN.
+- Placeholder mostra o default calculado (`BIA-{id} · {processo}`) para o utilizador saber o que fica se deixar vazio.
+- Estado `form.description` inicializado com `p.description ?? ""` no `openEdit`, e `""` no `openNew`.
+- Ao guardar, enviar `description: form.description.trim() || null` para `useCreateBIAProcess` / `useUpdateBIAProcess`.
 
-### 3. UI — Cartão Kanban em `BIASection.tsx`
-- Mostrar a descrição por baixo do título do cartão, em texto pequeno.
-- Se `description` for `null/""`, mostrar o valor por defeito calculado: `BIA-{id.slice(0,8)} · {processo}` (usa o `processo` do `business_process` ligado; se não houver, usa o `name_pt/name_en` da BIA).
-- Ícone lápis ao lado da descrição para entrar em modo edição inline (`Input`), com:
-  - `Enter` ou `blur` → guardar via `useUpdateBIADescription`
-  - `Escape` → cancelar
-  - Botão "repor por defeito" (ícone) que apaga o campo (volta a mostrar o default calculado).
+### 4. Hooks
+- Estender `useCreateBIAProcess` e `useUpdateBIAProcess` para aceitar `description?: string | null`.
+- Manter (ou remover) `useUpdateBIADescription` — proponho **remover** por já não ser usado.
 
-### 4. Dialogo de criar/editar BIA
-Sem alterações. A descrição é gerida apenas inline no cartão (mais rápido para o utilizador). Se preferires também no dialog, diz.
-
-## Detalhes técnicos
-- Formato do default: `BIA-{shortId} · {processo}` onde `shortId = id.slice(0,8).toUpperCase()`. Assumo isto porque as BIAs usam UUID e não há ID sequencial visível na tabela. Se preferires outro formato (ex.: nº sequencial), indica.
-- `description` guardado tal como escrito; a lógica "mostrar default se vazio" fica apenas na UI, para permitir "repor por defeito" apagando o campo.
+Sem alterações a base de dados (a coluna `description` já existe).

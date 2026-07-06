@@ -13,8 +13,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers, ChevronDown, Filter, Building2, RotateCcw, Check } from "lucide-react";
-import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, useUpdateBIADescription, DBBIAProcess } from "@/hooks/useBIAProcesses";
+import { Plus, Pencil, Trash2, X, Server, Database, Link2, AlertTriangle, Layers, ChevronDown, Filter, Building2 } from "lucide-react";
+import { useBIAProcesses, useCreateBIAProcess, useUpdateBIAProcess, useDeleteBIAProcess, DBBIAProcess } from "@/hooks/useBIAProcesses";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useCMDBPlatforms, useDRTypes, useBIAProcessPlatforms, useLinkBIAProcessPlatform, useUnlinkBIAProcessPlatform } from "@/hooks/useCMDBPlatforms";
 import { useActionCards } from "@/hooks/useActionCards";
@@ -29,74 +29,6 @@ const critColor: Record<string, string> = {
   analitica: "hsl(220, 5%, 55%)",
 };
 
-const BIADescription: React.FC<{
-  bia: DBBIAProcess;
-  defaultText: string;
-  onSave: (desc: string | null) => void;
-  t: (pt: string, en: string) => string;
-}> = ({ bia, defaultText, onSave, t }) => {
-  const current = bia.description ?? "";
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(current);
-
-  React.useEffect(() => { setValue(current); }, [current]);
-
-  const commit = () => {
-    const trimmed = value.trim();
-    if (trimmed !== current) onSave(trimmed === "" ? null : trimmed);
-    setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-1">
-        <Input
-          autoFocus
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          onBlur={commit}
-          onKeyDown={e => {
-            if (e.key === "Enter") { e.preventDefault(); commit(); }
-            if (e.key === "Escape") { setValue(current); setEditing(false); }
-          }}
-          className="h-6 text-[10px] px-1.5"
-          placeholder={defaultText}
-        />
-        <Button size="icon" variant="ghost" className="h-5 w-5 shrink-0" onMouseDown={e => e.preventDefault()} onClick={commit}>
-          <Check className="h-3 w-3" />
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-start gap-1 group">
-      <div className="text-[10px] italic text-muted-foreground/90 flex-1 break-words">
-        {current || defaultText}
-      </div>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="h-5 w-5 shrink-0 opacity-60 hover:opacity-100"
-        onClick={() => setEditing(true)}
-        title={t("Editar descrição", "Edit description")}
-      >
-        <Pencil className="h-2.5 w-2.5" />
-      </Button>
-      {current && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-5 w-5 shrink-0 opacity-60 hover:opacity-100"
-          onClick={() => onSave(null)}
-          title={t("Repor por defeito", "Reset to default")}
-        >
-          <RotateCcw className="h-2.5 w-2.5" />
-        </Button>
-      )}
-    </div>
-  );
-};
 
 const BIASection: React.FC = () => {
   const { lang } = useApp();
@@ -104,7 +36,7 @@ const BIASection: React.FC = () => {
   const createMut = useCreateBIAProcess();
   const updateMut = useUpdateBIAProcess();
   const deleteMut = useDeleteBIAProcess();
-  const updateDescMut = useUpdateBIADescription();
+  
   const { data: platforms = [] } = useCMDBPlatforms();
   const { data: drTypes = [] } = useDRTypes();
   const { data: businessProcesses = [] } = useBusinessProcesses();
@@ -124,6 +56,7 @@ const BIASection: React.FC = () => {
     business_process_id: null as string | null,
     dr_type_id: null as string | null,
     department_id: null as string | null,
+    description: "",
   });
   const [linkDialog, setLinkDialog] = useState<string | null>(null);
   const [linkPlatId, setLinkPlatId] = useState("");
@@ -183,7 +116,7 @@ const BIASection: React.FC = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "analitica", business_process_id: null, dr_type_id: null, department_id: null });
+    setForm({ name_pt: "", name_en: "", rto: 0, rpo: 0, criticality: "analitica", business_process_id: null, dr_type_id: null, department_id: null, description: "" });
     resetCascade();
     setDialogOpen(true);
   };
@@ -196,6 +129,7 @@ const BIASection: React.FC = () => {
       business_process_id: p.business_process_id || null,
       dr_type_id: p.dr_type_id || null,
       department_id: (p as any).department_id || null,
+      description: p.description ?? "",
     });
     const bp = p.business_process_id ? businessProcesses.find(b => b.id === p.business_process_id) : undefined;
     resetCascade(bp);
@@ -204,11 +138,12 @@ const BIASection: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      const payload = { ...form, description: form.description.trim() || null };
       if (editing) {
-        await updateMut.mutateAsync({ id: editing.id, ...form });
+        await updateMut.mutateAsync({ id: editing.id, ...payload });
         toast.success(t("Processo atualizado", "Process updated"));
       } else {
-        await createMut.mutateAsync(form);
+        await createMut.mutateAsync(payload);
         toast.success(t("Processo criado", "Process created"));
       }
       setDialogOpen(false);
@@ -542,7 +477,9 @@ const BIASection: React.FC = () => {
                                 <div className="flex items-start justify-between gap-1">
                                   <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                                     <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: critColor[p.criticality] }} />
-                                    <span className="text-xs font-semibold leading-tight">{t(p.name_pt, p.name_en)}</span>
+                                    <span className="text-xs font-semibold leading-tight">
+                                      {p.description?.trim() || `BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-0.5 shrink-0">
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEdit(p)}>
@@ -556,12 +493,6 @@ const BIASection: React.FC = () => {
                                 {bp && (
                                   <div className="text-[10px] text-muted-foreground truncate">{bp.processo}</div>
                                 )}
-                                <BIADescription
-                                  bia={p}
-                                  defaultText={`BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
-                                  onSave={(desc) => updateDescMut.mutate({ id: p.id, description: desc })}
-                                  t={t}
-                                />
                                 <div className="text-[10px] text-muted-foreground">RTO: {p.rto}h · RPO: {p.rpo}h</div>
                                 <div className="flex flex-wrap gap-1 items-center">
                                   <Server className="h-3 w-3 text-muted-foreground" />
@@ -676,6 +607,29 @@ const BIASection: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs">Nome (PT)</Label><Input value={form.name_pt} onChange={e => setForm(f => ({ ...f, name_pt: e.target.value }))} /></div>
               <div><Label className="text-xs">Name (EN)</Label><Input value={form.name_en} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+            </div>
+
+            {/* Descrição (título do cartão) */}
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {t("Descrição (título do cartão)", "Description (card title)")}
+              </Label>
+              <Input
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder={
+                  editing
+                    ? `BIA-${editing.id.slice(0, 8).toUpperCase()} · ${
+                        (form.business_process_id
+                          ? businessProcesses.find(b => b.id === form.business_process_id)?.processo
+                          : "") || form.name_pt || t("processo", "process")
+                      }`
+                    : t("Deixar vazio para usar o valor por defeito", "Leave empty to use default")
+                }
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {t("Se vazio, mostra: BIA-<id> · <processo>", "If empty, shows: BIA-<id> · <process>")}
+              </p>
             </div>
 
             {/* DR Type */}
