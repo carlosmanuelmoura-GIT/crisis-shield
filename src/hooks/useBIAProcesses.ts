@@ -70,6 +70,7 @@ export function useUpdateBIAProcess() {
       criticality: string;
       business_process_id?: string | null; dr_type_id?: string | null;
       department_id?: string | null;
+      description?: string | null;
     }) => {
       const { error } = await supabase.from("bia_processes").update(data as any).eq("id", id);
       if (error) throw error;
