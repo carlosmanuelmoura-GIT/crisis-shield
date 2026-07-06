@@ -35,6 +35,7 @@ const BIASection: React.FC = () => {
   const createMut = useCreateBIAProcess();
   const updateMut = useUpdateBIAProcess();
   const deleteMut = useDeleteBIAProcess();
+  const updateDescMut = useUpdateBIADescription();
   const { data: platforms = [] } = useCMDBPlatforms();
   const { data: drTypes = [] } = useDRTypes();
   const { data: businessProcesses = [] } = useBusinessProcesses();
