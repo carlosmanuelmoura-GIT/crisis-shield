@@ -487,6 +487,12 @@ const BIASection: React.FC = () => {
                                 {bp && (
                                   <div className="text-[10px] text-muted-foreground truncate">{bp.processo}</div>
                                 )}
+                                <BIADescription
+                                  bia={p}
+                                  defaultText={`BIA-${p.id.slice(0, 8).toUpperCase()} · ${bp?.processo || t(p.name_pt, p.name_en)}`}
+                                  onSave={(desc) => updateDescMut.mutate({ id: p.id, description: desc })}
+                                  t={t}
+                                />
                                 <div className="text-[10px] text-muted-foreground">RTO: {p.rto}h · RPO: {p.rpo}h</div>
                                 <div className="flex flex-wrap gap-1 items-center">
                                   <Server className="h-3 w-3 text-muted-foreground" />
