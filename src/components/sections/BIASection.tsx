@@ -93,14 +93,14 @@ const BIASection: React.FC = () => {
   };
 
   // Cascading filter options
-  const tipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao))].sort();
+  const tipoFuncoes = [...new Set(businessProcesses.map(bp => bp.tipo_funcao).filter(Boolean))].sort();
   const funcoes = [...new Set(businessProcesses
     .filter(bp => selTipoFuncao === "__all" || bp.tipo_funcao === selTipoFuncao)
-    .map(bp => bp.funcao))].sort();
+    .map(bp => bp.funcao).filter(Boolean))].sort();
   const macros = [...new Set(businessProcesses
     .filter(bp => (selTipoFuncao === "__all" || bp.tipo_funcao === selTipoFuncao) &&
                   (selFuncao === "__all" || bp.funcao === selFuncao))
-    .map(bp => bp.macro_processo))].sort();
+    .map(bp => bp.macro_processo).filter(Boolean))].sort();
   const filteredBPs = businessProcesses.filter(bp =>
     (selTipoFuncao === "__all" || bp.tipo_funcao === selTipoFuncao) &&
     (selFuncao === "__all" || bp.funcao === selFuncao) &&
