@@ -889,7 +889,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                       <div className="space-y-3">
                         {renderActions(actions, phase.id, phaseLabel)}
 
-                        {isSteering && crisis.status !== "fim" && (
+                        {crisis.status === "crise_em_curso" && isSteering ? (
                           <div className="border-t border-border pt-3 mt-2 space-y-2">
                             <div>
                               <label className="text-sm font-medium text-muted-foreground">
