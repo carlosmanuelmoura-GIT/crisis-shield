@@ -912,7 +912,14 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                               {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
                             </Button>
                           </div>
-                        )}
+                        ) : endedBy ? (
+                          <div className="border-t border-border pt-3 mt-2">
+                            <label className="text-sm font-medium text-muted-foreground">
+                              {lang === "pt" ? "Aprovado por" : "Approved by"}
+                            </label>
+                            <p className="text-sm mt-1 font-medium">{endedBy}</p>
+                          </div>
+                        ) : null}
                       </div>
                     ) : (
                       renderActions(actions, phase.id, phaseLabel)
