@@ -1,31 +1,32 @@
-## Objetivo
-Adicionar um segundo Pie Chart na secção BIA, por **Tipo de DR**, colocado lado a lado com o atual "BIAs por Tipo". Comportamento idêntico: clicar numa fatia filtra a lista abaixo; clicar de novo (ou "Limpar seleção") remove o filtro.
+## Contexto
+No detalhe de uma crise (vista Kanban) existem duas caixas informativas no topo que mostram:
+- "🚨 Declarada por: ..." (quando `crisis.declared_by` está preenchido)
+- "✅ Fim aprovado por: ..." (quando `crisis.ended_by` está preenchido)
 
-## Alterações (apenas `src/components/sections/BIASection.tsx`)
+Estas caixas aparecem tanto em crises reais/simuladas como nos templates de crise.
 
-1. Novo estado: `selectedDRType: string | null`.
+## Alteração proposta
+Remover estas duas caixas informativas de topo **apenas quando se está a visualizar um template** (`crisis.crisis_type === "template"`), mantendo-as visíveis nas crises reais/simuladas.
 
-2. Novo dataset para o pie:
-   - `drPieData` = para cada `dr_types`, contar `filteredByBP.filter(p => p.dr_type_id === dr.id).length`.
-   - Adicionar bucket "Sem DR" (`id: null`) quando existirem BIAs sem `dr_type_id`.
-   - Filtrar `value > 0`. Cores geradas a partir de tokens HSL (paleta baseada em `--primary`, `--accent`, etc., variando `hue`) — sem cores hardcoded.
+## Ficheiro a alterar
+- `src/components/sections/CrisisControlSection.tsx`
 
-3. Aplicar filtro à lista:
-   - `filtered` passa a considerar também `selectedDRType`:
-     `if (selectedDRType !== null_marker) filtrar por p.dr_type_id === selectedDRType` (usando sentinel `"__none"` para "Sem DR").
-   - O `pieData` do Tipo BIA continua baseado em `filteredByBP` (para não desaparecerem fatias ao clicar no DR). Simetricamente, `drPieData` mantém-se baseado em `filteredByBP` — a seleção só afeta a lista, exatamente como o pie de Tipo BIA hoje.
+## Detalhe técnico
+No bloco `{/* Declaration / End info */}` (c. linhas 793-803), envolver as duas `div` informativas numa condição que verifica se a crise não é um template:
 
-4. Layout: envolver os dois cards num grid:
-   ```tsx
-   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-     {/* Card BIAs por Tipo (existente) */}
-     {/* Card BIAs por Tipo de DR (novo) */}
-   </div>
-   ```
-   Card novo replica a estrutura do existente: header com título "BIAs por Tipo de DR" + botão "Limpar seleção" (se `selectedDRType`), `ResponsiveContainer` height 260, `Pie` com `onClick` a alternar `selectedDRType`, `Cell` com stroke/opacity conforme selecionado, tooltip e legend com os mesmos estilos.
+```jsx
+{crisis.crisis_type !== "template" && (
+  <>
+    {crisis.declared_by && (...)}
+    {crisis.ended_by && (...)}
+  </>
+)}
+```
 
-5. Limpar seleção de DR também quando o utilizador clica em "Limpar filtros" na barra de filtros.
+## O que NÃO muda
+- Os campos "Autorizado por" e botão "DECLARAR CRISE" na fase "Declaração de Crise".
+- Os campos "Aprovado por" e botão "FIM DE CRISE" na fase "Fim de Crise".
+- O comportamento em crises reais/simuladas.
 
-## Notas
-- Sem alterações de dados, hooks, ou schema.
-- Sem cores hardcoded — usar HSL derivado dos tokens do design system.
+## Nota
+Se pretendias remover estas caixas em **todas** as vistas de crise (reais e templates), diz-me para ajustar o plano.
