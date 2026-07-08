@@ -591,18 +591,13 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [newActionText, setNewActionText] = useState<Record<string, string>>({});
   const [declaredBy, setDeclaredBy] = useState(crisis.declared_by || "");
   const [endedBy, setEndedBy] = useState(crisis.ended_by || "");
-  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    PHASES.forEach(p => { initial[p.id] = true; });
-    return initial;
-  });
+  const [selectedPhaseId, setSelectedPhaseId] = useState<typeof PHASES[number]["id"]>(PHASES[0].id);
 
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseLabel: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ info_department: "", info_person: "", notes: "" });
 
-  const togglePhaseCollapse = (phaseId: string) => setCollapsedPhases(prev => ({ ...prev, [phaseId]: !prev[phaseId] }));
 
   const addAction = (phaseId: string) => {
     const text = (newActionText[phaseId] || "").trim();
@@ -824,126 +819,164 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
         </div>
       )}
 
-      {/* Kanban phases - vertical */}
-      <div className="space-y-3">
-        {PHASES.map((phase, idx) => {
-          const progress = getPhaseProgress(phase.id);
-          const actions = phaseActions.filter((a) => a.phase_id === phase.id);
-          const phaseLabel = phase.label[lang] || phase.label.pt;
-          const isDeclarationPhase = phase.id === "declaracao";
-          const isEndPhase = phase.id === "fim";
-          const isCollapsed = !!collapsedPhases[phase.id];
+      {/* Phase detail — two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* LEFT: phase stepper */}
+        <div className="lg:col-span-1 space-y-2">
+          {PHASES.map((phase, idx) => {
+            const progress = getPhaseProgress(phase.id);
+            const pct = progress?.pct ?? 0;
+            const isSelected = selectedPhaseId === phase.id;
+            const phaseLabel = phase.label[lang] || phase.label.pt;
+            return (
+              <React.Fragment key={phase.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPhaseId(phase.id)}
+                  className={`w-full text-left rounded-lg border-2 px-3 py-2.5 transition-all ${phase.color} ${
+                    isSelected ? "ring-2 ring-primary shadow-md" : "opacity-80 hover:opacity-100"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl shrink-0">{phase.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-bold tracking-wider text-muted-foreground">
+                        {lang === "pt" ? `FASE ${idx + 1}` : `PHASE ${idx + 1}`}
+                      </div>
+                      <div className="text-sm font-semibold truncate">{phaseLabel}</div>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] font-mono shrink-0">
+                      {pct}%
+                    </Badge>
+                  </div>
+                </button>
+                {idx < PHASES.length - 1 && (
+                  <div className="flex justify-center">
+                    <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
 
-          return (
-            <React.Fragment key={phase.id}>
+        {/* RIGHT: selected phase detail */}
+        <div className="lg:col-span-2">
+          {(() => {
+            const phaseIdx = PHASES.findIndex((p) => p.id === selectedPhaseId);
+            const phase = PHASES[phaseIdx] ?? PHASES[0];
+            const phaseLabel = phase.label[lang] || phase.label.pt;
+            const actions = phaseActions.filter((a) => a.phase_id === phase.id);
+            const progress = getPhaseProgress(phase.id);
+            const pct = progress?.pct ?? 0;
+            const isDeclarationPhase = phase.id === "declaracao";
+            const isEndPhase = phase.id === "fim";
+
+            return (
               <Card className={`border-l-4 ${phase.color}`}>
-                <CardHeader className="py-3 px-4 cursor-pointer" onClick={() => togglePhaseCollapse(phase.id)}>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <span>{phase.icon}</span>
-                      {phaseLabel}
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                      {progress && (
-                        <Badge variant="outline" className="text-xs font-mono">
-                          {progress.done}/{progress.total} ({progress.pct}%)
-                        </Badge>
-                      )}
-                      {isCollapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+                <CardHeader className="py-4 px-5 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Badge variant="outline" className="text-[10px] mb-2">
+                        {lang === "pt" ? `FASE ${phaseIdx + 1} DE ${PHASES.length}` : `PHASE ${phaseIdx + 1} OF ${PHASES.length}`}
+                      </Badge>
+                      <CardTitle className="text-lg font-bold flex items-center gap-2">
+                        <span>{phase.icon}</span>
+                        {phaseLabel}
+                      </CardTitle>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-bold tracking-wider text-muted-foreground">
+                        {lang === "pt" ? "PROGRESSO DA FASE" : "PHASE PROGRESS"}
+                      </div>
+                      <div className="text-xl font-bold text-primary">{pct}%</div>
                     </div>
                   </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </CardHeader>
-                {!isCollapsed && (
-                  <CardContent className="px-4 pb-3 space-y-2">
-                    {/* DECLARATION phase */}
-                    {isDeclarationPhase ? (
-                      <div className="space-y-3">
-                        {renderActions(actions, phase.id, phaseLabel)}
 
+                <CardContent className="px-5 pb-5 space-y-4">
+                  <div className="min-h-[160px] space-y-1">
+                    {renderActions(actions, phase.id, phaseLabel)}
+                  </div>
+
+                  {isDeclarationPhase && (
+                    <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-end gap-3">
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold tracking-wider text-muted-foreground">
+                          {lang === "pt" ? "AUTORIZADO POR" : "AUTHORIZED BY"}
+                        </label>
                         {crisis.status === "em_alerta" && isSteering ? (
-                          <div className="border-t border-border pt-3 mt-2 space-y-2">
-                            <div>
-                              <label className="text-sm font-medium text-muted-foreground">
-                                {lang === "pt" ? "Autorizado por" : "Authorized by"}
-                              </label>
-                              <Input
-                                value={declaredBy}
-                                onChange={(e) => setDeclaredBy(e.target.value)}
-                                placeholder={lang === "pt" ? "Nome de quem autoriza..." : "Name of authorizer..."}
-                                className="h-8 text-sm mt-1"
-                              />
-                            </div>
-                            <Button
-                              className="w-full bg-crisis hover:bg-crisis/90 text-crisis-foreground"
-                              onClick={handleDeclareCrisis}
-                              disabled={!declaredBy.trim() || updateCrisis.isPending}
-                            >
-                              {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                              <AlertTriangle className="h-4 w-4 mr-2" />
-                              {lang === "pt" ? "DECLARAR CRISE" : "DECLARE CRISIS"}
-                            </Button>
-                          </div>
-                        ) : declaredBy ? (
-                          <div className="border-t border-border pt-3 mt-2">
-                            <label className="text-sm font-medium text-muted-foreground">
-                              {lang === "pt" ? "Autorizado por" : "Authorized by"}
-                            </label>
-                            <p className="text-sm mt-1 font-medium">{declaredBy}</p>
-                          </div>
-                        ) : null}
+                          <Input
+                            value={declaredBy}
+                            onChange={(e) => setDeclaredBy(e.target.value)}
+                            placeholder={lang === "pt" ? "Nome de quem autoriza..." : "Name of authorizer..."}
+                            className="h-9 text-sm mt-1"
+                          />
+                        ) : (
+                          <p className="text-sm mt-1 font-medium min-h-[36px] flex items-center">
+                            {declaredBy || <span className="text-muted-foreground italic">—</span>}
+                          </p>
+                        )}
                       </div>
-                    ) : isEndPhase ? (
-                      <div className="space-y-3">
-                        {renderActions(actions, phase.id, phaseLabel)}
+                      {crisis.status === "em_alerta" && isSteering && (
+                        <Button
+                          className="bg-crisis hover:bg-crisis/90 text-crisis-foreground sm:w-auto"
+                          onClick={handleDeclareCrisis}
+                          disabled={!declaredBy.trim() || updateCrisis.isPending}
+                        >
+                          {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          {lang === "pt" ? "DECLARAR CRISE" : "DECLARE CRISIS"}
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
+                  {isEndPhase && (
+                    <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-end gap-3">
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold tracking-wider text-muted-foreground">
+                          {lang === "pt" ? "APROVADO POR" : "APPROVED BY"}
+                        </label>
                         {crisis.status === "crise_em_curso" && isSteering ? (
-                          <div className="border-t border-border pt-3 mt-2 space-y-2">
-                            <div>
-                              <label className="text-sm font-medium text-muted-foreground">
-                                {lang === "pt" ? "Aprovado por" : "Approved by"}
-                              </label>
-                              <Input
-                                value={endedBy}
-                                onChange={(e) => setEndedBy(e.target.value)}
-                                placeholder={lang === "pt" ? "Nome de quem aprova..." : "Name of approver..."}
-                                className="h-8 text-sm mt-1"
-                              />
-                            </div>
-                            <Button
-                              className="w-full bg-green-600 hover:bg-green-700 text-white"
-                              onClick={handleEndCrisis}
-                              disabled={!endedBy.trim() || updateCrisis.isPending}
-                            >
-                              {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                              <CheckCircle2 className="h-4 w-4 mr-2" />
-                              {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
-                            </Button>
-                          </div>
-                        ) : endedBy ? (
-                          <div className="border-t border-border pt-3 mt-2">
-                            <label className="text-sm font-medium text-muted-foreground">
-                              {lang === "pt" ? "Aprovado por" : "Approved by"}
-                            </label>
-                            <p className="text-sm mt-1 font-medium">{endedBy}</p>
-                          </div>
-                        ) : null}
+                          <Input
+                            value={endedBy}
+                            onChange={(e) => setEndedBy(e.target.value)}
+                            placeholder={lang === "pt" ? "Nome de quem aprova..." : "Name of approver..."}
+                            className="h-9 text-sm mt-1"
+                          />
+                        ) : (
+                          <p className="text-sm mt-1 font-medium min-h-[36px] flex items-center">
+                            {endedBy || <span className="text-muted-foreground italic">—</span>}
+                          </p>
+                        )}
                       </div>
-                    ) : (
-                      renderActions(actions, phase.id, phaseLabel)
-                    )}
-                  </CardContent>
-                )}
+                      {crisis.status === "crise_em_curso" && isSteering && (
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white sm:w-auto"
+                          onClick={handleEndCrisis}
+                          disabled={!endedBy.trim() || updateCrisis.isPending}
+                        >
+                          {updateCrisis.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                          {lang === "pt" ? "FIM DE CRISE" : "END CRISIS"}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
               </Card>
-
-              {idx < PHASES.length - 1 && (
-                <div className="flex justify-center">
-                  <ArrowDown className="h-5 w-5 text-muted-foreground" />
-                </div>
-              )}
-            </React.Fragment>
-          );
-        })}
+            );
+          })()}
+        </div>
       </div>
+
 
       {/* Confirmation dialog for checking tasks */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
