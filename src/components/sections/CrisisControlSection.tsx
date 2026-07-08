@@ -591,11 +591,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [newActionText, setNewActionText] = useState<Record<string, string>>({});
   const [declaredBy, setDeclaredBy] = useState(crisis.declared_by || "");
   const [endedBy, setEndedBy] = useState(crisis.ended_by || "");
-  const [collapsedPhases, setCollapsedPhases] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    PHASES.forEach(p => { initial[p.id] = true; });
-    return initial;
-  });
+  const [selectedPhaseId, setSelectedPhaseId] = useState<typeof PHASES[number]["id"]>(PHASES[0].id);
 
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
