@@ -598,7 +598,6 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseLabel: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ info_department: "", info_person: "", notes: "" });
 
-  const togglePhaseCollapse = (phaseId: string) => setCollapsedPhases(prev => ({ ...prev, [phaseId]: !prev[phaseId] }));
 
   const addAction = (phaseId: string) => {
     const text = (newActionText[phaseId] || "").trim();
