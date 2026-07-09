@@ -567,7 +567,9 @@ const BIASection: React.FC = () => {
                                 {bp && (
                                   <div className="text-[10px] text-muted-foreground truncate">{bp.processo}</div>
                                 )}
-                                <div className="text-[10px] text-muted-foreground">RTO: {p.rto}h · RPO: {p.rpo}h</div>
+                                <Badge variant="outline" className="text-[9px] h-4 w-fit" style={{ borderColor: critColor[p.criticality], color: critColor[p.criticality] }}>
+                                  {tipoLabel[p.criticality] || p.criticality}
+                                </Badge>
                                 <div className="flex flex-wrap gap-1 items-center">
                                   <Server className="h-3 w-3 text-muted-foreground" />
                                   {linkedPlats.map(({ link, platform }) => {
