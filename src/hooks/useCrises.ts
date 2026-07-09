@@ -147,8 +147,14 @@ export function useUpdateCrisis() {
     }) => {
       const { error } = await supabase.from("crises").update(data as any).eq("id", id);
       if (error) throw error;
+      return data.status;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["crises"] }),
+    onSuccess: (status) => {
+      qc.invalidateQueries({ queryKey: ["crises"] });
+      if (status === "fim") {
+        qc.invalidateQueries({ queryKey: ["checklist_state"] });
+      }
+    },
   });
 }
 
