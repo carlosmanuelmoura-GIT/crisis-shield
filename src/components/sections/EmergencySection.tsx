@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
@@ -98,6 +99,7 @@ const EmergencySection: React.FC = () => {
   const [addBiaForCard, setAddBiaForCard] = useState<Record<string, string>>({});
   const [linkBiaDialogCard, setLinkBiaDialogCard] = useState<string | null>(null);
   const [biaToLink, setBiaToLink] = useState<string>("");
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   // Confirmation dialog for checking items
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -564,89 +566,41 @@ const EmergencySection: React.FC = () => {
                         const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
 
                         return (
-                          <Card key={card.id} className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col`}>
-                            <CardHeader className="p-3 pb-1 cursor-pointer" onClick={() => toggle(card.id)}>
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="space-y-1 min-w-0 flex-1">
-                                  <CardTitle className="text-base leading-tight">{title}</CardTitle>
-                                  <div className="flex flex-wrap gap-1">
-                                    <Badge variant="secondary" className="text-[11px]">
-                                      {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
-                                    </Badge>
-                                    {cLabel && <Badge variant="outline" className="text-[11px] font-normal bg-accent/30">{cLabel}</Badge>}
-                                    {deptLabel && <Badge variant="outline" className="text-[11px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
-                                  </div>
-                                  <div className="flex flex-wrap gap-1 items-center" onClick={e => e.stopPropagation()}>
-                                    {linkedBias.map(l => {
-                                      const b = biaProcesses.find(x => x.id === l.bia_process_id);
-                                      if (!b) return null;
-                                      return (
-                                        <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
-                                          BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
-                                          <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                                        </Badge>
-                                      );
-                                    })}
-                                    <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
-                                      <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-0.5 shrink-0">
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); handleDuplicate(card); }} title={lang === "pt" ? "Duplicar" : "Duplicate"}><Copy className="h-3 w-3 sat-keep" /></Button>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); openEdit(card); }}><Pencil className="h-3 w-3 sat-keep" /></Button>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(card.id); }}><Trash2 className="h-3 w-3 sat-keep" /></Button>
-                                  {isOpen ? <ChevronUp className="h-3.5 w-3.5 sat-keep" /> : <ChevronDown className="h-3.5 w-3.5 sat-keep" />}
-                                </div>
+                          <Card
+                            key={card.id}
+                            onClick={() => setSelectedCardId(card.id)}
+                            className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col cursor-pointer transition-all hover:shadow-md ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
+                          >
+                            <CardHeader className="p-3 pb-2">
+                              <div className="flex items-start justify-between gap-2 mb-1">
+                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 uppercase tracking-wider">
+                                  AC · {card.id.slice(0, 6)}
+                                </span>
+                                <Badge className={`text-[10px] uppercase tracking-wide ${
+                                  card.severity === "critical" ? "bg-red-600 text-white hover:bg-red-600" :
+                                  card.severity === "high" ? "bg-amber-500 text-white hover:bg-amber-500" :
+                                  "bg-yellow-400 text-slate-900 hover:bg-yellow-400"
+                                }`}>
+                                  {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                                </Badge>
                               </div>
-                              <div className="flex items-center gap-2 mt-1.5">
+                              <CardTitle className="text-sm font-bold uppercase leading-tight">{title}</CardTitle>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {cLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cLabel}</Badge>}
+                                {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                {linkedBias.length > 0 && (
+                                  <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                                    {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1 bg-secondary rounded-full">
                                   <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
                                 </div>
                                 <span className="text-xs text-muted-foreground font-medium">{done}/{total}</span>
                               </div>
                             </CardHeader>
-                            {isOpen && (
-                              <CardContent className="p-3 pt-1 space-y-1.5 border-t border-border/50">
-                                {items.map((item, idx) => {
-                                  const checked = !!statesMap[item.id];
-                                  const text = lang === "pt" ? item.text_pt : item.text_en;
-                                  return (
-                                    <div key={item.id} className="flex items-start gap-2 py-0.5 group">
-                                      <span className="text-xs text-muted-foreground font-medium mt-0.5 w-5 shrink-0 text-right">{idx + 1}.</span>
-                                      {editingItemId === item.id ? (
-                                        <Input
-                                          autoFocus
-                                          value={editingItemText}
-                                          onChange={(e) => setEditingItemText(e.target.value)}
-                                          onBlur={() => commitEditItem(item.id, text)}
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter") { e.preventDefault(); commitEditItem(item.id, text); }
-                                            else if (e.key === "Escape") { e.preventDefault(); cancelEditItem(); }
-                                          }}
-                                          className="h-7 text-sm flex-1 bg-secondary border-border"
-                                        />
-                                      ) : (
-                                        <label className={`flex items-start gap-2 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                          <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                          <span className={`text-sm ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                                        </label>
-                                      )}
-                                      {editingItemId !== item.id && (
-                                        <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100" onClick={() => startEditItem(item.id, text)} title={lang === "pt" ? "Editar nome" : "Edit name"}><Pencil className="h-3 w-3" /></Button>
-                                      )}
-                                      <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-3 w-3" /></Button>
-                                    </div>
-                                  );
-                                })}
-                                <div className="flex gap-2 pt-1">
-                                  <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
-                                    placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-7 text-xs bg-secondary border-border"
-                                    onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
-                                  <Button size="sm" variant="secondary" className="h-7 px-2" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
-                                </div>
-                              </CardContent>
-                            )}
                           </Card>
                         );
                       })}
@@ -732,91 +686,37 @@ const EmergencySection: React.FC = () => {
                                   draggable
                                   onDragStart={() => handleDragStart(card.id)}
                                   onDragEnd={handleDragEnd}
-                                  className={`border-l-4 ${severityColors[card.severity] || ""} cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? "opacity-40" : ""}`}
+                                  onClick={() => setSelectedCardId(card.id)}
+                                  className={`border-l-4 ${severityColors[card.severity] || ""} cursor-pointer active:cursor-grabbing transition-all hover:shadow-md ${isDragging ? "opacity-40" : ""} ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
                                 >
                                   <CardContent className="p-2.5 space-y-1.5">
-                                    <div className="flex items-start gap-1.5">
-                                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5 sat-keep" />
-                                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))}>
-                                        <p className="text-sm font-medium leading-tight">{title}</p>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                          <Badge variant="secondary" className="text-[10px]">
-                                            {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
-                                          </Badge>
-                                          {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
-                                        </div>
-                                        <div className="flex flex-wrap gap-1 items-center mt-1" onClick={e => e.stopPropagation()}>
-                                          {linkedBias.map(l => {
-                                            const b = biaProcesses.find(x => x.id === l.bia_process_id);
-                                            if (!b) return null;
-                                            return (
-                                              <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
-                                                BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
-                                                <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                                              </Badge>
-                                            );
-                                          })}
-                                          <Button variant="outline" size="sm" className="h-5 text-[10px] px-1.5" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
-                                            <Plus className="h-2.5 w-2.5 mr-0.5" />BIA
-                                          </Button>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-0.5 shrink-0">
-                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEdit(card)}><Pencil className="h-2.5 w-2.5 sat-keep" /></Button>
-                                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => handleDuplicate(card)}><Copy className="h-2.5 w-2.5 sat-keep" /></Button>
-                                        <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={() => handleDelete(card.id)}><Trash2 className="h-2.5 w-2.5 sat-keep" /></Button>
-                                      </div>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 uppercase tracking-wider">
+                                        AC · {card.id.slice(0, 6)}
+                                      </span>
+                                      <Badge className={`text-[9px] uppercase tracking-wide ${
+                                        card.severity === "critical" ? "bg-red-600 text-white hover:bg-red-600" :
+                                        card.severity === "high" ? "bg-amber-500 text-white hover:bg-amber-500" :
+                                        "bg-yellow-400 text-slate-900 hover:bg-yellow-400"
+                                      }`}>
+                                        {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                                      </Badge>
+                                    </div>
+                                    <p className="text-sm font-bold uppercase leading-tight">{title}</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                      {linkedBias.length > 0 && (
+                                        <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                                          {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
+                                        </Badge>
+                                      )}
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <div className="flex-1 h-1 bg-secondary rounded-full">
                                         <div className="h-1 bg-ok rounded-full transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
                                       </div>
                                       <span className="text-[10px] text-muted-foreground">{done}/{total}</span>
-                                      <button onClick={() => setExpandedKanban(prev => ({ ...prev, [card.id]: !prev[card.id] }))} className="text-muted-foreground">
-                                        {isCardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                                      </button>
                                     </div>
-                                    {isCardExpanded && (
-                                      <div className="space-y-1 pt-1 border-t border-border/50">
-                                        {items.map((item, idx) => {
-                                          const checked = !!statesMap[item.id];
-                                          const text = lang === "pt" ? item.text_pt : item.text_en;
-                                          return (
-                                            <div key={item.id} className="flex items-start gap-1.5 group">
-                                              <span className="text-[10px] text-muted-foreground font-medium mt-0.5 w-4 shrink-0 text-right">{idx + 1}.</span>
-                                              {editingItemId === item.id ? (
-                                                <Input
-                                                  autoFocus
-                                                  value={editingItemText}
-                                                  onChange={(e) => setEditingItemText(e.target.value)}
-                                                  onBlur={() => commitEditItem(item.id, text)}
-                                                  onKeyDown={(e) => {
-                                                    if (e.key === "Enter") { e.preventDefault(); commitEditItem(item.id, text); }
-                                                    else if (e.key === "Escape") { e.preventDefault(); cancelEditItem(); }
-                                                  }}
-                                                  className="h-6 text-xs flex-1 bg-secondary border-border px-2"
-                                                />
-                                              ) : (
-                                                <label className={`flex items-start gap-1.5 flex-1 ${canCheck ? "cursor-pointer" : "cursor-default opacity-80"}`}>
-                                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5 h-3 w-3" disabled={!canCheck} />
-                                                  <span className={`text-xs leading-tight ${checked ? "line-through text-muted-foreground" : ""}`}>{text}</span>
-                                                </label>
-                                              )}
-                                              {editingItemId !== item.id && (
-                                                <Button variant="ghost" size="icon" className="h-4 w-4 opacity-0 group-hover:opacity-100" onClick={() => startEditItem(item.id, text)} title={lang === "pt" ? "Editar nome" : "Edit name"}><Pencil className="h-2.5 w-2.5" /></Button>
-                                              )}
-                                              <Button variant="ghost" size="icon" className="h-4 w-4 opacity-0 group-hover:opacity-100 text-destructive" onClick={() => handleDeleteItem(item.id)} title={lang === "pt" ? "Eliminar linha" : "Delete row"}><Trash2 className="h-2.5 w-2.5" /></Button>
-                                            </div>
-                                          );
-                                        })}
-                                        <div className="flex gap-1.5 pt-1">
-                                          <Input value={newItemText[card.id] || ""} onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
-                                            placeholder={lang === "pt" ? "Novo item..." : "New item..."} className="h-6 text-[10px] bg-secondary border-border px-2"
-                                            onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)} />
-                                          <Button size="sm" variant="secondary" className="h-6 px-1.5" onClick={() => handleAddItem(card.id)}><Plus className="h-3 w-3" /></Button>
-                                        </div>
-                                      </div>
-                                    )}
                                   </CardContent>
                                 </Card>
                               );
@@ -996,6 +896,180 @@ const EmergencySection: React.FC = () => {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Action Card detail drawer */}
+      <Sheet open={!!selectedCardId} onOpenChange={(o) => !o && setSelectedCardId(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[520px] p-0 flex flex-col gap-0 bg-slate-50 [&>button]:hidden">
+          {selectedCardId && (() => {
+            const card = cards.find(c => c.id === selectedCardId);
+            if (!card) return null;
+            const title = lang === "pt" ? card.title_pt : card.title_en;
+            const severity = severityLabels[card.severity];
+            const items = allItems.filter(i => i.action_card_id === card.id);
+            const done = items.filter(i => statesMap[i.id]).length;
+            const total = items.length;
+            const deptLabel = getDeptLabel(card);
+            const recLabel = getRecursoLabel(card);
+            const cLabel = getCenarioLabel(card);
+            const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
+            const sevChip =
+              card.severity === "critical" ? "bg-red-600 text-white" :
+              card.severity === "high" ? "bg-amber-500 text-white" :
+              "bg-yellow-400 text-slate-900";
+
+            return (
+              <>
+                {/* Header (slate-900) */}
+                <div className="bg-slate-900 text-slate-50 px-5 py-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/10 text-slate-100 uppercase tracking-wider">
+                        AC · {card.id.slice(0, 8)}
+                      </span>
+                      <Badge className={`text-[10px] uppercase tracking-wide ${sevChip} hover:${sevChip}`}>
+                        {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
+                      </Badge>
+                    </div>
+                    <button
+                      onClick={() => setSelectedCardId(null)}
+                      className="text-slate-300 hover:text-white p-1 rounded transition-colors"
+                      aria-label="Close"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
+                  <div className="flex flex-wrap gap-2 text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
+                    {deptLabel && <span>{deptLabel}</span>}
+                    {recLabel && <span>· {recLabel}</span>}
+                    {cLabel && <span>· {cLabel}</span>}
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => openEdit(card)}>
+                      <Pencil className="h-3 w-3 mr-1" />{lang === "pt" ? "Editar" : "Edit"}
+                    </Button>
+                    <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => handleDuplicate(card)}>
+                      <Copy className="h-3 w-3 mr-1" />{lang === "pt" ? "Duplicar" : "Duplicate"}
+                    </Button>
+                    <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
+                      <Plus className="h-3 w-3 mr-1" />BIA
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-7 text-xs ml-auto" onClick={() => { handleDelete(card.id); setSelectedCardId(null); }}>
+                      <Trash2 className="h-3 w-3 mr-1" />{lang === "pt" ? "Eliminar" : "Delete"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <ScrollArea className="flex-1">
+                  <div className="p-5 space-y-5">
+                    {/* Context / BIAs */}
+                    {(card.capability || linkedBias.length > 0) && (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 border-l-4 border-l-red-600">
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-2">
+                          {lang === "pt" ? "1. Contexto & BIAs" : "1. Context & BIAs"}
+                        </p>
+                        {card.capability && <p className="text-sm text-slate-700 mb-2">{card.capability}</p>}
+                        <div className="flex flex-wrap gap-1.5">
+                          {linkedBias.map(l => {
+                            const b = biaProcesses.find(x => x.id === l.bia_process_id);
+                            if (!b) return null;
+                            return (
+                              <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
+                                BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
+                                <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Checklist */}
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
+                        {lang === "pt" ? "2. Ações" : "2. Actions"} ({done}/{total})
+                      </p>
+                      <div className="space-y-2">
+                        {items.map((item, idx) => {
+                          const checked = !!statesMap[item.id];
+                          const text = lang === "pt" ? item.text_pt : item.text_en;
+                          return (
+                            <div key={item.id} className={`flex items-start gap-2 p-2.5 rounded-lg border group transition-colors ${checked ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
+                              <span className="font-mono text-[10px] text-slate-500 mt-0.5 w-8 shrink-0">T+{String((idx + 1) * 5).padStart(2, "0")}'</span>
+                              {editingItemId === item.id ? (
+                                <Input
+                                  autoFocus
+                                  value={editingItemText}
+                                  onChange={(e) => setEditingItemText(e.target.value)}
+                                  onBlur={() => commitEditItem(item.id, text)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") { e.preventDefault(); commitEditItem(item.id, text); }
+                                    else if (e.key === "Escape") { e.preventDefault(); cancelEditItem(); }
+                                  }}
+                                  className="h-7 text-sm flex-1 bg-white border-slate-300"
+                                />
+                              ) : (
+                                <label className={`flex items-start gap-2 flex-1 min-w-0 ${canCheck ? "cursor-pointer" : "cursor-default opacity-70"}`}>
+                                  <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
+                                  <span className={`text-sm ${checked ? "line-through text-slate-500" : "text-slate-800"}`}>{text}</span>
+                                </label>
+                              )}
+                              {editingItemId !== item.id && (
+                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 shrink-0">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEditItem(item.id, text)}><Pencil className="h-3 w-3" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteItem(item.id)}><Trash2 className="h-3 w-3" /></Button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {items.length === 0 && (
+                          <p className="text-xs text-slate-500 italic px-2 py-3 text-center">
+                            {lang === "pt" ? "Sem ações ainda. Adiciona a primeira abaixo." : "No actions yet. Add the first below."}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Add new action */}
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
+                        <Input
+                          value={newItemText[card.id] || ""}
+                          onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
+                          placeholder={lang === "pt" ? "Nova ação..." : "New action..."}
+                          className="h-9 text-sm bg-white border-slate-300"
+                          onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)}
+                        />
+                        <Button size="sm" onClick={() => handleAddItem(card.id)} disabled={!newItemText[card.id]?.trim()}>
+                          <Plus className="h-4 w-4 mr-1" />{lang === "pt" ? "Adicionar" : "Add"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+
+                {/* Footer */}
+                <div className="border-t border-slate-200 bg-white px-5 py-3 flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
+                      <span className="font-semibold uppercase tracking-wider">{lang === "pt" ? "Progresso" : "Progress"}</span>
+                      <span className="font-mono">{done}/{total}</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 transition-all" style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+                  {!canCheck && (
+                    <span className="text-[10px] text-amber-600 font-semibold uppercase max-w-[140px] leading-tight">
+                      {lang === "pt" ? "Checklist bloqueado" : "Checklist locked"}
+                    </span>
+                  )}
+                </div>
+              </>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
