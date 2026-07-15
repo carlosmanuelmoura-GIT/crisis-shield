@@ -212,3 +212,20 @@ export function useUpdateChecklistItem() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist_items"] }),
   });
 }
+
+export function useReorderChecklistItems() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updates: { id: string; sort_order: number }[]) => {
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("checklist_items")
+          .update({ sort_order: u.sort_order })
+          .eq("id", u.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["checklist_items"] }),
+  });
+}
