@@ -71,6 +71,7 @@ const EmergencySection: React.FC = () => {
   const createItem = useCreateChecklistItem();
   const deleteItem = useDeleteChecklistItem();
   const updateItem = useUpdateChecklistItem();
+  const reorderItems = useReorderChecklistItems();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const createLog = useCreateDecisionLog();
