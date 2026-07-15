@@ -24,7 +24,7 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 import {
   useActionCards, useChecklistItems, useChecklistStates, useToggleChecklistState,
   useCreateActionCard, useUpdateActionCard, useDeleteActionCard,
-  useCreateChecklistItem, useDeleteChecklistItem, useUpdateChecklistItem,
+  useCreateChecklistItem, useDeleteChecklistItem, useUpdateChecklistItem, useReorderChecklistItems,
 } from "@/hooks/useActionCards";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
