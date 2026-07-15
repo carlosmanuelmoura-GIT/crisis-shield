@@ -14,7 +14,7 @@ import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
-  LayoutList, Columns3, GripVertical,
+  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
