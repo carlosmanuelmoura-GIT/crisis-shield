@@ -997,7 +997,7 @@ const EmergencySection: React.FC = () => {
                           const text = lang === "pt" ? item.text_pt : item.text_en;
                           return (
                             <div key={item.id} className={`flex items-start gap-2 p-2.5 rounded-lg border group transition-colors ${checked ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
-                              <span className="font-mono text-[10px] text-slate-500 mt-0.5 w-8 shrink-0">T+{String((idx + 1) * 5).padStart(2, "0")}'</span>
+                              <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 mt-0.5 w-7 text-center shrink-0">{idx + 1}</span>
                               {editingItemId === item.id ? (
                                 <Input
                                   autoFocus
@@ -1018,6 +1018,22 @@ const EmergencySection: React.FC = () => {
                               )}
                               {editingItemId !== item.id && (
                                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 shrink-0">
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={idx === 0} onClick={() => {
+                                    const prev = items[idx - 1];
+                                    if (!prev) return;
+                                    reorderItems.mutate([
+                                      { id: item.id, sort_order: prev.sort_order },
+                                      { id: prev.id, sort_order: item.sort_order },
+                                    ]);
+                                  }}><ArrowUp className="h-3 w-3" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={idx === items.length - 1} onClick={() => {
+                                    const next = items[idx + 1];
+                                    if (!next) return;
+                                    reorderItems.mutate([
+                                      { id: item.id, sort_order: next.sort_order },
+                                      { id: next.id, sort_order: item.sort_order },
+                                    ]);
+                                  }}><ArrowDown className="h-3 w-3" /></Button>
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEditItem(item.id, text)}><Pencil className="h-3 w-3" /></Button>
                                   <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteItem(item.id)}><Trash2 className="h-3 w-3" /></Button>
                                 </div>
