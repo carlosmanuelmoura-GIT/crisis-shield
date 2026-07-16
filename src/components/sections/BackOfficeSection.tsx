@@ -592,6 +592,10 @@ const BackOfficeSection: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
+                    <TableHead className="text-xs text-right w-24">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</TableHead>
+                    <TableHead className="text-xs text-right w-28">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</TableHead>
+                    <TableHead className="text-xs text-right w-20">{lang === "pt" ? "Geradores" : "Generators"}</TableHead>
+                    <TableHead className="text-xs text-right w-16">UPS</TableHead>
                     <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -599,6 +603,10 @@ const BackOfficeSection: React.FC = () => {
                   {buildingsList.map(b => (
                     <TableRow key={b.id}>
                       <TableCell className="text-sm font-medium">{b.name}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.autonomia_horas_contingencia ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.combustivel_litros?.toLocaleString("pt-PT") ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.num_geradores ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.num_ups ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBld(b)}><Pencil className="h-3.5 w-3.5" /></Button>
