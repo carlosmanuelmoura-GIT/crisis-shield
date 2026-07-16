@@ -106,7 +106,8 @@ const BackOfficeSection: React.FC = () => {
   const deleteBld = useDeleteBuilding();
   const [bldDialog, setBldDialog] = useState(false);
   const [editingBld, setEditingBld] = useState<string | null>(null);
-  const [bldName, setBldName] = useState("");
+  const emptyBldForm = { name: "", autonomia_horas_contingencia: "", depositos: "", combustivel_litros: "", num_geradores: "", num_ups: "", observacoes: "" };
+  const [bldForm, setBldForm] = useState(emptyBldForm);
 
   // --- Departments ---
   const { data: departmentsList = [], isLoading: deptLoading } = useDepartments();
@@ -140,12 +141,34 @@ const BackOfficeSection: React.FC = () => {
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
-  const openCreateBld = () => { setEditingBld(null); setBldName(""); setBldDialog(true); };
-  const openEditBld = (b: typeof buildingsList[0]) => { setEditingBld(b.id); setBldName(b.name); setBldDialog(true); };
+  const openCreateBld = () => { setEditingBld(null); setBldForm(emptyBldForm); setBldDialog(true); };
+  const openEditBld = (b: typeof buildingsList[0]) => {
+    setEditingBld(b.id);
+    setBldForm({
+      name: b.name ?? "",
+      autonomia_horas_contingencia: b.autonomia_horas_contingencia?.toString() ?? "",
+      depositos: b.depositos ?? "",
+      combustivel_litros: b.combustivel_litros?.toString() ?? "",
+      num_geradores: b.num_geradores?.toString() ?? "",
+      num_ups: b.num_ups?.toString() ?? "",
+      observacoes: b.observacoes ?? "",
+    });
+    setBldDialog(true);
+  };
   const handleSaveBld = async () => {
     try {
-      if (editingBld) await updateBld.mutateAsync({ id: editingBld, name: bldName });
-      else await createBld.mutateAsync(bldName);
+      const numOrNull = (v: string) => v.trim() === "" ? null : Number(v.replace(",", "."));
+      const payload = {
+        name: bldForm.name.trim(),
+        autonomia_horas_contingencia: numOrNull(bldForm.autonomia_horas_contingencia),
+        depositos: bldForm.depositos.trim() || null,
+        combustivel_litros: numOrNull(bldForm.combustivel_litros),
+        num_geradores: bldForm.num_geradores.trim() === "" ? null : parseInt(bldForm.num_geradores, 10),
+        num_ups: bldForm.num_ups.trim() === "" ? null : parseInt(bldForm.num_ups, 10),
+        observacoes: bldForm.observacoes.trim() || null,
+      };
+      if (editingBld) await updateBld.mutateAsync({ id: editingBld, ...payload });
+      else await createBld.mutateAsync(payload);
       setBldDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
     } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
@@ -569,6 +592,10 @@ const BackOfficeSection: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
+                    <TableHead className="text-xs text-right w-24">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</TableHead>
+                    <TableHead className="text-xs text-right w-28">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</TableHead>
+                    <TableHead className="text-xs text-right w-20">{lang === "pt" ? "Geradores" : "Generators"}</TableHead>
+                    <TableHead className="text-xs text-right w-16">UPS</TableHead>
                     <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -576,6 +603,10 @@ const BackOfficeSection: React.FC = () => {
                   {buildingsList.map(b => (
                     <TableRow key={b.id}>
                       <TableCell className="text-sm font-medium">{b.name}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.autonomia_horas_contingencia ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.combustivel_litros?.toLocaleString("pt-PT") ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.num_geradores ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-right tabular-nums">{b.num_ups ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBld(b)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -803,12 +834,40 @@ const BackOfficeSection: React.FC = () => {
 
       {/* Building */}
       <Dialog open={bldDialog} onOpenChange={setBldDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>{editingBld ? (lang === "pt" ? "Editar Edifício" : "Edit Building") : (lang === "pt" ? "Novo Edifício" : "New Building")}</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5"><Label className="text-sm font-medium">{lang === "pt" ? "Nome" : "Name"}</Label>
-              <Input value={bldName} onChange={e => setBldName(e.target.value)} className="bg-secondary border-border" /></div>
-            <Button onClick={handleSaveBld} disabled={!bldName || createBld.isPending || updateBld.isPending} className="w-full">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Edifício / Zona" : "Building / Zone"}</Label>
+              <Input value={bldForm.name} onChange={e => setBldForm(f => ({ ...f, name: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</Label>
+                <Input type="number" step="0.5" value={bldForm.autonomia_horas_contingencia} onChange={e => setBldForm(f => ({ ...f, autonomia_horas_contingencia: e.target.value }))} className="bg-secondary border-border" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</Label>
+                <Input type="number" step="1" value={bldForm.combustivel_litros} onChange={e => setBldForm(f => ({ ...f, combustivel_litros: e.target.value }))} className="bg-secondary border-border" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">{lang === "pt" ? "Nº Geradores" : "Generators"}</Label>
+                <Input type="number" step="1" value={bldForm.num_geradores} onChange={e => setBldForm(f => ({ ...f, num_geradores: e.target.value }))} className="bg-secondary border-border" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Nº UPS</Label>
+                <Input type="number" step="1" value={bldForm.num_ups} onChange={e => setBldForm(f => ({ ...f, num_ups: e.target.value }))} className="bg-secondary border-border" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Depósitos" : "Tanks"}</Label>
+              <Textarea rows={2} value={bldForm.depositos} onChange={e => setBldForm(f => ({ ...f, depositos: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Observações" : "Notes"}</Label>
+              <Textarea rows={3} value={bldForm.observacoes} onChange={e => setBldForm(f => ({ ...f, observacoes: e.target.value }))} className="bg-secondary border-border" />
+            </div>
+            <Button onClick={handleSaveBld} disabled={!bldForm.name.trim() || createBld.isPending || updateBld.isPending} className="w-full">
               {(createBld.isPending || updateBld.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
             </Button>
           </div>

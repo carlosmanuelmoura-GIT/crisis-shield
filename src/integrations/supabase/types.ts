@@ -231,23 +231,41 @@ export type Database = {
       }
       buildings: {
         Row: {
+          autonomia_horas_contingencia: number | null
+          combustivel_litros: number | null
           created_at: string
+          depositos: string | null
           id: string
           name: string
+          num_geradores: number | null
+          num_ups: number | null
+          observacoes: string | null
           owner_id: string | null
           updated_at: string
         }
         Insert: {
+          autonomia_horas_contingencia?: number | null
+          combustivel_litros?: number | null
           created_at?: string
+          depositos?: string | null
           id?: string
           name: string
+          num_geradores?: number | null
+          num_ups?: number | null
+          observacoes?: string | null
           owner_id?: string | null
           updated_at?: string
         }
         Update: {
+          autonomia_horas_contingencia?: number | null
+          combustivel_litros?: number | null
           created_at?: string
+          depositos?: string | null
           id?: string
           name?: string
+          num_geradores?: number | null
+          num_ups?: number | null
+          observacoes?: string | null
           owner_id?: string | null
           updated_at?: string
         }

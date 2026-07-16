@@ -1,23 +1,41 @@
+
 ## Objetivo
-Nos Action Cards (drawer de detalhe), remover o rótulo "T+xx'" antes de cada ação e passar a mostrar apenas o número sequencial (1..n). Permitir reordenar as ações dentro do card.
 
-## Alterações
+Enriquecer a tabela **Edifícios** (Back Office) com os campos do ficheiro `Autonomias_Edificio.xlsx`, importar as 17 linhas, e atualizar o CRUD para permitir editar todos os campos.
 
-### `src/components/sections/EmergencySection.tsx` (drawer de detalhe do Action Card)
-- Substituir o `<span>T+05'</span>` por um badge com o número sequencial `{idx + 1}` (mono, fundo slate-100, largura fixa) — ordem baseada em `sort_order`.
-- Adicionar controlos de reordenação por item, visíveis (ou em hover) ao lado esquerdo da ação:
-  - Botão ↑ (mover para cima) — desativado no primeiro item
-  - Botão ↓ (mover para baixo) — desativado no último item
-- Implementar handler local `moveItem(itemId, direction)` que troca `sort_order` entre o item alvo e o vizinho, e persiste via Supabase (`update` em `checklist_items`). Depois invalida a query `checklist_items`.
+## 1. Schema — novos campos em `public.buildings`
 
-### `src/hooks/useActionCards.ts`
-- Adicionar mutação `useReorderChecklistItems` que recebe uma lista `[{ id, sort_order }]` e faz `update` em cada linha (ou em duas linhas para o caso de swap), invalidando `["checklist_items"]` no fim.
+Adicionar as colunas (todas nullable):
 
-## Aceitação
-- Nenhuma ação mostra "T+xx'". Cada ação mostra o seu índice 1..n conforme a ordem atual.
-- Setas ↑/↓ em cada ação reordenam-na dentro do Action Card e a numeração é recalculada imediatamente.
-- Ordem persistida em base de dados (`checklist_items.sort_order`) e mantida ao recarregar.
-- Sem alterações de esquema; apenas UPDATEs a `sort_order`.
+| Coluna | Tipo | Origem XLS |
+|---|---|---|
+| `autonomia_horas_contingencia` | numeric | AUTONOMIA_HORAS_CONTINGENCIA |
+| `depositos` | text | Depósitos |
+| `combustivel_litros` | numeric | COMBUSTIVEL_LITROS |
+| `num_geradores` | integer | Nº Geradores |
+| `num_ups` | integer | Nº UPS |
+| `observacoes` | text | Observações relevantes |
 
-## Fora de âmbito
-- Drag & drop com biblioteca externa (fica para eventual iteração, se pedires). Usamos setas ↑/↓ que são suficientes e não requerem dependências novas.
+Mantém `name` como identificador (Edifício / Zona). Sem alteração de RLS/GRANTs.
+
+## 2. Importar dados do XLS
+
+Após a migração, inserir as 17 linhas do ficheiro (INSERT com `ON CONFLICT` no `name` — vou adicionar `UNIQUE(name)` para permitir upsert e evitar duplicados nas próximas importações).
+
+Registos: EDIFÍCIO DE PORTUGAL (Torre Norte/Centro/Sul/Leste/CPD/Central Segurança), Álvaro Pais, Olivais, Sede, Castilho, Complexo Carregado, Filiais Praça Liberdade / Almada, Delegações Ponta Delgada / Funchal, Outros Edifícios, Quinta Fonte Santa.
+
+## 3. Hook `useBuildings.ts`
+
+- Estender interface `Building` com os 6 novos campos.
+- `useCreateBuilding` / `useUpdateBuilding` passam a receber objeto completo (não só `name`).
+
+## 4. CRUD UI — `BackOfficeSection.tsx` (tab "Edifícios")
+
+- Diálogo de criar/editar passa a ter os campos: Nome, Autonomia (h), Depósitos (textarea curto), Combustível (L), Nº Geradores, Nº UPS, Observações (textarea).
+- Tabela lista passa a mostrar colunas resumidas: Nome, Autonomia (h), Combustível (L), Geradores, UPS + ações. "Depósitos" e "Observações" ficam só no diálogo (tooltip/detalhe) para não sobrecarregar.
+- `TestCalendarSection` continua a usar apenas `name` — sem impacto.
+
+## Notas técnicas
+
+- Migração ordem: ALTER TABLE add columns → ADD UNIQUE(name) → nenhum GRANT novo necessário (tabela já existia).
+- Import dos dados via ferramenta de inserts após migração aprovada (usa `ON CONFLICT (name) DO UPDATE`).
