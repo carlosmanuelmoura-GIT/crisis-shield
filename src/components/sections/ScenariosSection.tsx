@@ -204,7 +204,7 @@ const ScenariosSection: React.FC = () => {
                               size="icon"
                               className="h-6 w-6 shrink-0"
                               onClick={(e) => { e.stopPropagation(); cloneRecurso(rec, s.id); }}
-                              title={lang === "pt" ? "Clonar recurso" : "Clone resource"}
+                              title={lang === "pt" ? "Clonar tipo de falha" : "Clone failure type"}
                             >
                               <Copy className="h-3 w-3" />
                             </Button>
