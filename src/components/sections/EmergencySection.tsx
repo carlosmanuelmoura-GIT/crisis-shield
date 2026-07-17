@@ -481,7 +481,7 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Recurso" : "Resource"}</Label>
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de Falha" : "Failure Type"}</Label>
               <Select value={filterRecurso} onValueChange={setFilterRecurso}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -534,7 +534,7 @@ const EmergencySection: React.FC = () => {
               }, 0);
               const groupLabel = recurso
                 ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-                : (lang === "pt" ? "Sem recurso associado" : "No resource assigned");
+                : (lang === "pt" ? "Sem tipo de falha associado" : "No failure type assigned");
 
               return (
                 <div key={groupId} className="space-y-2 ml-4">
@@ -544,7 +544,7 @@ const EmergencySection: React.FC = () => {
                   >
                     <Package className="h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold">{lang === "pt" ? "Recurso" : "Resource"}: {groupLabel}</h4>
+                      <h4 className="text-xs font-bold">{lang === "pt" ? "Tipo de Falha" : "Failure Type"}: {groupLabel}</h4>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="secondary" className="text-[10px]">{groupCards.length} cards</Badge>
@@ -661,7 +661,7 @@ const EmergencySection: React.FC = () => {
                     {recursoGroups.map(({ recurso, cards: subCards }) => {
                       const subLabel = recurso
                         ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-                        : (lang === "pt" ? "Sem recurso" : "No resource");
+                        : (lang === "pt" ? "Sem tipo de falha" : "No failure type");
                       return (
                         <div key={`${colId}:${recurso?.id || "__unassigned"}`} className="space-y-1.5">
                           <div className="flex items-center gap-1.5 px-1 py-0.5 border-b border-border/40">
@@ -775,7 +775,7 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Recurso que se perde" : "Resource lost"}</Label>
+              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de Falha que se perde" : "Failure Type lost"}</Label>
               <Select value={form.recurso_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, recurso_id: v === "none" ? "" : v }))}>
                 <SelectTrigger className="bg-secondary border-border">
                   <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
