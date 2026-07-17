@@ -44,8 +44,8 @@ const CrisisFAB: React.FC = () => {
 
     const author = profile?.display_name || "Sistema";
     const text = lang === "pt"
-      ? `🚨 CRISE ${typeLabel} DECLARADA — Recursos perdidos: ${recursoNames || "Nenhum selecionado"}`
-      : `🚨 ${typeLabel} CRISIS DECLARED — Resources lost: ${recursoNames || "None selected"}`;
+      ? `🚨 CRISE ${typeLabel} DECLARADA — Tipos de Falha perdidos: ${recursoNames || "Nenhum selecionado"}`
+      : `🚨 ${typeLabel} CRISIS DECLARED — Failure Types lost: ${recursoNames || "None selected"}`;
 
     const startTime = new Date().toISOString();
     try {
@@ -104,8 +104,8 @@ const CrisisFAB: React.FC = () => {
           <div className="space-y-2">
             <Label className="text-sm font-medium">
               {lang === "pt"
-                ? "Recurso(s) que se perderam"
-                : "Resource(s) lost"}
+                ? "Tipo de Falha(s) que se perdeu"
+                : "Failure Type(s) lost"}
             </Label>
             <div className="space-y-1 max-h-48 overflow-y-auto">
               {recursos.map(r => (
@@ -119,7 +119,7 @@ const CrisisFAB: React.FC = () => {
               ))}
               {recursos.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-2">
-                  {lang === "pt" ? "Sem recursos configurados." : "No resources configured."}
+                  {lang === "pt" ? "Sem tipos de falha configurados." : "No failure types configured."}
                 </p>
               )}
             </div>

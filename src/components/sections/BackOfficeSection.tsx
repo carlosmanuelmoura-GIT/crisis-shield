@@ -308,7 +308,7 @@ const BackOfficeSection: React.FC = () => {
         <TabsList className="bg-secondary flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="roles" className="text-xs"><UserCog className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Perfis" : "Roles"}</TabsTrigger>
           <TabsTrigger value="bp" className="text-xs"><Briefcase className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Processos" : "Processes"}</TabsTrigger>
-          <TabsTrigger value="recursos" className="text-xs"><ShieldAlert className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Recursos" : "Resources"}</TabsTrigger>
+          <TabsTrigger value="recursos" className="text-xs"><ShieldAlert className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos de Falha" : "Failure Types"}</TabsTrigger>
           <TabsTrigger value="cenarios" className="text-xs"><Link2 className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Cenários" : "Scenarios"}</TabsTrigger>
           <TabsTrigger value="platforms" className="text-xs"><Server className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Plataformas" : "Platforms"}</TabsTrigger>
           <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
@@ -388,12 +388,12 @@ const BackOfficeSection: React.FC = () => {
         </TabsContent>
 
         {/* ===== RECURSOS ===== */}
-        <TabsContent value="recursos" className="space-y-3 mt-3">
+          <TabsContent value="recursos" className="space-y-3 mt-3">
           <div className="flex justify-end">
-            <Button size="sm" onClick={openCreateRec} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo Recurso" : "New Resource"}</Button>
+            <Button size="sm" onClick={openCreateRec} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo Tipo de Falha" : "New Failure Type"}</Button>
           </div>
           {recLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : recursos.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum recurso configurado." : "No resources configured."}</p>
+            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum tipo de falha configurado." : "No failure types configured."}</p>
           ) : (
             recursos.map(r => {
               const recSubCaps = subCapacidades.filter(sc => sc.recurso_id === r.id);
@@ -468,7 +468,7 @@ const BackOfficeSection: React.FC = () => {
                     {/* Recursos associados */}
                     <div className="pl-2 border-l-2 border-border space-y-1">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                        {lang === "pt" ? "Recursos que se perdem" : "Resources lost"}
+                        {lang === "pt" ? "Tipos de Falha que se perdem" : "Failure Types lost"}
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {linkedRecursos.map(({ link, recurso }) => (
@@ -731,7 +731,7 @@ const BackOfficeSection: React.FC = () => {
       {/* Recurso */}
       <Dialog open={recDialog} onOpenChange={setRecDialog}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>{editingRec ? (lang === "pt" ? "Editar Recurso" : "Edit Resource") : (lang === "pt" ? "Novo Recurso" : "New Resource")}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingRec ? (lang === "pt" ? "Editar Tipo de Falha" : "Edit Failure Type") : (lang === "pt" ? "Novo Tipo de Falha" : "New Failure Type")}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
@@ -795,10 +795,10 @@ const BackOfficeSection: React.FC = () => {
       {/* Link Cenário <-> Recurso */}
       <Dialog open={!!linkDialog} onOpenChange={(o) => !o && setLinkDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{lang === "pt" ? "Associar Recurso ao Cenário" : "Link Resource to Scenario"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{lang === "pt" ? "Associar Tipo de Falha ao Cenário" : "Link Failure Type to Scenario"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <Select value={linkRecursoId} onValueChange={setLinkRecursoId}>
-              <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder={lang === "pt" ? "Selecionar recurso..." : "Select resource..."} /></SelectTrigger>
+              <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder={lang === "pt" ? "Selecionar tipo de falha..." : "Select failure type..."} /></SelectTrigger>
               <SelectContent>
                 {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
               </SelectContent>
