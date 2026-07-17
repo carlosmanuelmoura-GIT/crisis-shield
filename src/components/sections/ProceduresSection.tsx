@@ -117,21 +117,19 @@ const ProceduresSection: React.FC = () => {
     }
   };
 
-  const handleColumnDrop = async (phase: ProcedurePhase, e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(null);
-    const id = e.dataTransfer.getData("text/plain");
-    if (!id) return;
-    await reorderInPhase(phase, id, null);
-  };
-
   const handleCardDrop = async (phase: ProcedurePhase, targetId: string, e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragOver(null);
     const id = e.dataTransfer.getData("text/plain");
     if (!id || id === targetId) return;
     await reorderInPhase(phase, id, targetId);
+  };
+
+  const handleListDrop = async (phase: ProcedurePhase, e: React.DragEvent) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id) return;
+    await reorderInPhase(phase, id, null);
   };
 
   const renderMd = (md: string) => md.split("\n").map((line, i) => {
