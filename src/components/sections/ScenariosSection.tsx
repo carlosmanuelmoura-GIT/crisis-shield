@@ -123,8 +123,8 @@ const ScenariosSection: React.FC = () => {
         </h2>
         <p className="text-xs text-muted-foreground">
           {lang === "pt"
-            ? "Arraste recursos entre cenários · Duplo clique para editar · Botão de cópia para clonar"
-            : "Drag resources between scenarios · Double click to edit · Copy button to clone"}
+            ? "Arraste tipos de falha entre cenários · Duplo clique para editar · Botão de cópia para clonar"
+            : "Drag failure types between scenarios · Double click to edit · Copy button to clone"}
         </p>
       </div>
 
@@ -154,17 +154,17 @@ const ScenariosSection: React.FC = () => {
                     </p>
                   </div>
                   <Badge variant="outline" className="text-[10px] shrink-0">
-                    {scenarioRecursos.length} {lang === "pt" ? "rec." : "res."}
+                    {scenarioRecursos.length} {lang === "pt" ? "fal." : "fail."}
                   </Badge>
                 </div>
               </div>
 
               <CardContent className={`p-3 flex-1 bg-muted/30 min-h-[120px] ${isOver ? "bg-accent/20" : ""}`}>
-                {scenarioRecursos.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-6">
-                    {lang === "pt" ? "Largue aqui um recurso" : "Drop a resource here"}
-                  </p>
-                ) : (
+              {scenarioRecursos.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">
+                  {lang === "pt" ? "Largue aqui um tipo de falha" : "Drop a failure type here"}
+                </p>
+              ) : (
                   <div className="space-y-2">
                     {scenarioRecursos.map(rec => {
                       const Icon = iconMap[rec.icon] || Monitor;
@@ -223,7 +223,7 @@ const ScenariosSection: React.FC = () => {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{lang === "pt" ? "Editar Recurso" : "Edit Resource"}</DialogTitle>
+            <DialogTitle>{lang === "pt" ? "Editar Tipo de Falha" : "Edit Failure Type"}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-1">
