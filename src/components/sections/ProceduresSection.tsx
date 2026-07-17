@@ -28,7 +28,7 @@ const ProceduresSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBProcedure | null>(null);
   const [form, setForm] = useState<{ title_pt: string; title_en: string; category_pt: string; category_en: string; content_pt: string; content_en: string; phase: ProcedurePhase }>({ title_pt: "", title_en: "", category_pt: "", category_en: "", content_pt: "", content_en: "", phase: "gestao" });
-  const [dragOver, setDragOver] = useState<ProcedurePhase | null>(null);
+  const [selectedPhase, setSelectedPhase] = useState<ProcedurePhase>("preparacao");
 
   const t = (pt: string, en: string) => lang === "pt" ? pt : en;
 
