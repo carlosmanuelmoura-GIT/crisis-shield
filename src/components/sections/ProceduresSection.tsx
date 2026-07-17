@@ -28,7 +28,7 @@ const ProceduresSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBProcedure | null>(null);
   const [form, setForm] = useState<{ title_pt: string; title_en: string; category_pt: string; category_en: string; content_pt: string; content_en: string; phase: ProcedurePhase }>({ title_pt: "", title_en: "", category_pt: "", category_en: "", content_pt: "", content_en: "", phase: "gestao" });
-  const [dragOver, setDragOver] = useState<ProcedurePhase | null>(null);
+  const [selectedPhase, setSelectedPhase] = useState<ProcedurePhase>("preparacao");
 
   const t = (pt: string, en: string) => lang === "pt" ? pt : en;
 
@@ -117,21 +117,19 @@ const ProceduresSection: React.FC = () => {
     }
   };
 
-  const handleColumnDrop = async (phase: ProcedurePhase, e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(null);
-    const id = e.dataTransfer.getData("text/plain");
-    if (!id) return;
-    await reorderInPhase(phase, id, null);
-  };
-
   const handleCardDrop = async (phase: ProcedurePhase, targetId: string, e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragOver(null);
     const id = e.dataTransfer.getData("text/plain");
     if (!id || id === targetId) return;
     await reorderInPhase(phase, id, targetId);
+  };
+
+  const handleListDrop = async (phase: ProcedurePhase, e: React.DragEvent) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    if (!id) return;
+    await reorderInPhase(phase, id, null);
   };
 
   const renderMd = (md: string) => md.split("\n").map((line, i) => {
@@ -160,73 +158,100 @@ const ProceduresSection: React.FC = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {PHASES.map(ph => {
-          const items = filtered.filter(p => (p.phase ?? "gestao") === ph.key);
-          return (
-            <div
-              key={ph.key}
-              onDragOver={e => { e.preventDefault(); setDragOver(ph.key); }}
-              onDragLeave={() => setDragOver(cur => cur === ph.key ? null : cur)}
-              onDrop={e => handleColumnDrop(ph.key, e)}
-              className={`rounded-lg border-2 ${ph.color} p-2 min-h-[200px] transition-all ${dragOver === ph.key ? "ring-2 ring-primary" : ""}`}
-            >
-              <div className="flex items-center justify-between px-1 py-2">
-                <h3 className="text-xs font-bold tracking-wider">{t(ph.label_pt, ph.label_en)} <span className="text-muted-foreground">({items.length})</span></h3>
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openNew(ph.key)}>
-                  <Plus className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {items.map(proc => (
-                  <Card
-                    key={proc.id}
-                    draggable
-                    onDragStart={e => { e.dataTransfer.setData("text/plain", proc.id); e.dataTransfer.effectAllowed = "move"; }}
-                    onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-                    onDrop={e => handleCardDrop(ph.key, proc.id, e)}
-                    className="cursor-move"
-                  >
-                    <CardHeader className="p-2.5">
-                      <div className="flex items-start gap-1.5">
-                        <GripVertical className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                        <div className="flex-1 cursor-pointer" onClick={() => toggle(proc.id)}>
-                          <CardTitle className="text-xs leading-tight">{t(proc.title_pt, proc.title_en)}</CardTitle>
-                          {proc.category_pt && <p className="text-[10px] text-muted-foreground mt-0.5">{t(proc.category_pt, proc.category_en)}</p>}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Phase stepper */}
+        <div className="lg:col-span-1 space-y-2">
+          {PHASES.map(ph => {
+            const count = filtered.filter(p => (p.phase ?? "gestao") === ph.key).length;
+            const active = selectedPhase === ph.key;
+            return (
+              <button
+                key={ph.key}
+                onClick={() => setSelectedPhase(ph.key)}
+                className={`w-full text-left rounded-lg border-2 p-3 transition-all ${ph.color} ${active ? "ring-2 ring-primary shadow-sm" : "opacity-70 hover:opacity-100"}`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold tracking-wider">{t(ph.label_pt, ph.label_en)}</span>
+                  <span className="text-[10px] font-semibold bg-background/80 rounded-full px-2 py-0.5">{count}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right: Phase detail */}
+        <div className="lg:col-span-2">
+          {(() => {
+            const ph = PHASES.find(p => p.key === selectedPhase)!;
+            const items = filtered.filter(p => (p.phase ?? "gestao") === ph.key);
+            return (
+              <div
+                className={`rounded-lg border-2 ${ph.color} p-3 min-h-[300px]`}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleListDrop(ph.key, e)}
+              >
+                <div className="flex items-center justify-between px-1 pb-3 mb-2 border-b border-border/60">
+                  <h3 className="text-sm font-bold tracking-wider">
+                    {t(ph.label_pt, ph.label_en)}{" "}
+                    <span className="text-muted-foreground font-normal">({items.length})</span>
+                  </h3>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => openNew(ph.key)}>
+                    <Plus className="h-3.5 w-3.5 mr-1" />
+                    {lang === "pt" ? "Novo" : "New"}
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {items.map(proc => (
+                    <Card
+                      key={proc.id}
+                      draggable
+                      onDragStart={e => { e.dataTransfer.setData("text/plain", proc.id); e.dataTransfer.effectAllowed = "move"; }}
+                      onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={e => handleCardDrop(ph.key, proc.id, e)}
+                      className="cursor-move"
+                    >
+                      <CardHeader className="p-2.5">
+                        <div className="flex items-start gap-1.5">
+                          <GripVertical className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="flex-1 cursor-pointer" onClick={() => toggle(proc.id)}>
+                            <CardTitle className="text-xs leading-tight">{t(proc.title_pt, proc.title_en)}</CardTitle>
+                            {proc.category_pt && <p className="text-[10px] text-muted-foreground mt-0.5">{t(proc.category_pt, proc.category_en)}</p>}
+                          </div>
+                          <div className="flex items-center gap-0.5">
+                            <Button size="icon" variant="ghost" className="h-6 w-6" title={lang === "pt" ? "Clonar" : "Clone"} onClick={e => { e.stopPropagation(); handleClone(proc); }}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); openEdit(proc); }}>
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={e => { e.stopPropagation(); handleDelete(proc.id); }}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => toggle(proc.id)}>
+                              {expanded[proc.id] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-0.5">
-                          <Button size="icon" variant="ghost" className="h-6 w-6" title={lang === "pt" ? "Clonar" : "Clone"} onClick={e => { e.stopPropagation(); handleClone(proc); }}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); openEdit(proc); }}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={e => { e.stopPropagation(); handleDelete(proc.id); }}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => toggle(proc.id)}>
-                            {expanded[proc.id] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    {expanded[proc.id] && (
-                      <CardContent className="p-2.5 pt-0 border-t border-border">
-                        {renderMd(t(proc.content_pt, proc.content_en))}
-                      </CardContent>
-                    )}
-                  </Card>
-                ))}
-                {items.length === 0 && (
-                  <div className="text-center text-xs text-muted-foreground py-6 italic">
-                    {lang === "pt" ? "Arraste para aqui" : "Drop here"}
-                  </div>
-                )}
+                      </CardHeader>
+                      {expanded[proc.id] && (
+                        <CardContent className="p-2.5 pt-0 border-t border-border">
+                          {renderMd(t(proc.content_pt, proc.content_en))}
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                  {items.length === 0 && (
+                    <div className="text-center text-xs text-muted-foreground py-10 italic">
+                      {lang === "pt" ? "Sem action cards nesta fase" : "No action cards in this phase"}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })()}
+        </div>
       </div>
+
 
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
