@@ -61,7 +61,7 @@ const ScenariosSection: React.FC = () => {
     if (!editing) return;
     try {
       await updateRecurso.mutateAsync({ id: editing.id, ...form });
-      toast.success(lang === "pt" ? "Recurso atualizado" : "Resource updated");
+      toast.success(lang === "pt" ? "Tipo de Falha atualizado" : "Failure Type updated");
       setEditing(null);
     } catch (e: any) {
       toast.error(e.message);
@@ -84,7 +84,7 @@ const ScenariosSection: React.FC = () => {
         .single();
       if (error) throw error;
       await linkMut.mutateAsync({ cenario_id: cenarioId, recurso_id: (data as any).id });
-      toast.success(lang === "pt" ? "Recurso clonado" : "Resource cloned");
+      toast.success(lang === "pt" ? "Tipo de Falha clonado" : "Failure Type cloned");
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -109,7 +109,7 @@ const ScenariosSection: React.FC = () => {
       if (sourceLink) {
         await unlinkMut.mutateAsync(sourceLink.id);
       }
-      toast.success(lang === "pt" ? "Recurso movido" : "Resource moved");
+      toast.success(lang === "pt" ? "Tipo de Falha movido" : "Failure Type moved");
     } catch (err: any) {
       toast.error(err.message);
     }
