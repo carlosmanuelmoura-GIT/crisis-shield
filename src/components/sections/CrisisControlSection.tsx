@@ -8,6 +8,7 @@ import {
   useUpdateCabinetMembers, useLogDecisionFromCrisis,
   type DBCrisis,
 } from "@/hooks/useCrises";
+import { useCrisisPhases, useUpdateCrisisPhase, seedPhasesForCrisis, DEFAULT_PHASES, type DBCrisisPhase } from "@/hooks/useCrisisPhases";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -582,16 +583,48 @@ interface KanbanProps {
 const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onBack, onUpdateStatus, onEditCrisis }) => {
   const { data: phaseActions = [] } = useCrisisPhaseActions(crisis.id);
   const { data: cabinetMembers = [] } = useCrisisCabinetMembers(crisis.id);
+  const { data: dbPhases = [] } = useCrisisPhases(crisis.id);
+  const updatePhase = useUpdateCrisisPhase();
   const createAction = useCreatePhaseAction();
   const toggleAction = useTogglePhaseAction();
   const deleteAction = useDeletePhaseAction();
   const updateCrisis = useUpdateCrisis();
   const logDecision = useLogDecisionFromCrisis();
 
+  // Fallback to DEFAULT_PHASES until DB seeds load
+  const PHASES = React.useMemo(() => {
+    if (dbPhases.length > 0) {
+      return dbPhases.slice().sort((a, b) => a.sort_order - b.sort_order).map((p) => ({
+        id: p.phase_key,
+        dbId: p.id,
+        label: { pt: p.label_pt, en: p.label_en },
+        color: p.color,
+        icon: p.icon,
+      }));
+    }
+    return DEFAULT_PHASES.map((p) => ({
+      id: p.phase_key,
+      dbId: null as string | null,
+      label: { pt: p.label_pt, en: p.label_en },
+      color: p.color,
+      icon: p.icon,
+    }));
+  }, [dbPhases]);
+
+  // Auto-seed if missing
+  React.useEffect(() => {
+    if (dbPhases.length === 0 && crisis.id) {
+      seedPhasesForCrisis(crisis.id).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbPhases.length, crisis.id]);
+
   const [newActionText, setNewActionText] = useState<Record<string, string>>({});
   const [declaredBy, setDeclaredBy] = useState(crisis.declared_by || "");
   const [endedBy, setEndedBy] = useState(crisis.ended_by || "");
-  const [selectedPhaseId, setSelectedPhaseId] = useState<typeof PHASES[number]["id"]>(PHASES[0].id);
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string>(PHASES[0]?.id || "alerta");
+  const [phaseEditOpen, setPhaseEditOpen] = useState(false);
+  const [phaseEditForm, setPhaseEditForm] = useState({ id: "", label_pt: "", label_en: "", icon: "", color: "" });
 
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
