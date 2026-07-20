@@ -1,48 +1,38 @@
-## Objetivo
+## Alterações — Gestão de Crise Real, Action Cards e Log
 
-Aplicar o padrão visual de duas colunas (fases à esquerda, detalhe à direita) — o mesmo já usado no detalhe de uma crise em `CrisisControlSection` (componente `CrisisKanbanView`) — à página **Action Cards Gestão de Crise** (`ProceduresSection.tsx`).
+### 1. Controlo da Gestão de Crise — permitir estado "FIM" e aprovação na fase 6
 
-## Estado atual
+Actualmente na `CrisisControlSection`, o botão "FIM DE CRISE" da fase 6 só é visível quando o estado é `crise_em_curso`. Como uma crise real passa naturalmente por `retorno` antes do fim, o botão desaparece e o utilizador não consegue fechar a crise.
 
-`ProceduresSection.tsx` mostra 3 colunas lado a lado (PREPARAÇÃO / GESTÃO DA CRISE / FIM DA CRISE), cada uma com os seus action cards empilhados. O conteúdo do card expande em accordion no próprio cartão.
+- Alterar a condição de edição do campo "Aprovado por" e do botão "FIM DE CRISE" para ficar activo quando `status ∈ { crise_em_curso, retorno }` (e o utilizador é Steering).
+- Quando o botão é clicado (fase 6 aprovada) → `updateCrisis` para `status = "fim"` + `ended_by` + entrada no Decision Log (comportamento actual mantido).
+- Nos restantes estados o campo continua apenas em modo leitura.
 
-## Novo layout
+### 2. Action Cards — remover o "risco" (strikethrough) ao marcar
 
-Grid `lg:grid-cols-3`:
+Na checklist dos Action Cards (`EmergencySection.tsx`, linha ~1016), quando um item é marcado é aplicado `line-through` sobre o texto. Vamos remover essa classe: o item marcado passa apenas a mostrar-se em fundo verde-claro (`bg-emerald-50`) e cor `text-slate-500`, sem risco por cima.
 
-```text
-┌───────────────────┬───────────────────────────────────┐
-│ Stepper de FASES  │  Detalhe da fase selecionada       │
-│ (col-span-1)      │  (col-span-2)                      │
-│                   │                                    │
-│ • PREPARAÇÃO  (n) │  Header: nome da fase + contagem   │
-│ • GESTÃO      (n) │  Lista de Action Cards da fase:    │
-│ • FIM          (n)│    - título + categoria            │
-│                   │    - botões Clonar / Editar / Del  │
-│                   │    - expandir → markdown           │
-│                   │  Botão “+ Novo nesta fase”         │
-└───────────────────┴───────────────────────────────────┘
-```
+### 3. Log das Acções — layout de acordeão, ordem cronológica
 
-### Coluna esquerda — stepper
-- Lista vertical das 3 fases (`PHASES`).
-- Cada item mostra ícone/bolinha, nome da fase e badge com nº de cards.
-- Item selecionado destacado (borda/bg primária), tal como em `CrisisKanbanView`.
-- Clicar seleciona a fase.
+Redesenhar `DecisionLogSection` para:
 
-### Coluna direita — detalhe
-- Header com o nome da fase + total de cards + botão “Novo”.
-- Corpo: lista dos action cards da fase selecionada, mantendo as ações existentes (drag & drop de reordenação **dentro** da fase, clone, editar, eliminar, expandir markdown).
-- Vazio: mensagem “Sem action cards nesta fase”.
+- Substituir o grid de 2 colunas por uma lista vertical de 1 coluna.
+- Cada crise passa a ser uma linha colapsável (`Accordion` do shadcn) que mostra apenas o título, data e badges no cabeçalho. Ao clicar, expande e revela todas as acções.
+- Ordenar as crises da **mais recente para a mais antiga** (por `crisis_date` decrescente).
+- Dentro de cada crise, ordenar as entradas por `created_at` **ascendente** (mais antiga em cima, mais recente no fim) — cronologia crescente.
 
-## Preservação de funcionalidade
+### 4. CRUD das Fases da Crise
 
-- Mantém drag & drop **dentro** da fase visível para reordenar.
-- Remove-se o drag entre colunas (já não há colunas); a mudança de fase passa a fazer-se via campo “Fase” do diálogo de edição (já existe).
-- Diálogo CRUD, hooks (`useProcedures`, mutations), pesquisa e render de markdown ficam inalterados.
+Actualmente as 6 fases são um array `PHASES` hard-coded em `CrisisControlSection.tsx`, sem CRUD. Vamos:
 
-## Ficheiros a alterar
+- Criar uma nova tabela `crisis_phases` (`crisis_id`, `phase_key`, `label_pt`, `label_en`, `icon`, `color`, `sort_order`, timestamps) com RLS e GRANTs. Ao criar uma crise, o hook `useCreateCrisis` gera automaticamente as 6 fases-padrão para essa crise.
+- Novo hook `useCrisisPhases` com `useCrisisPhases`, `useUpdateCrisisPhase` (edita label PT/EN, ícone, cor) e opcionalmente `useReorderPhases`.
+- No painel direito da fase seleccionada, adicionar um botão ✏️ (Steering) que abre um diálogo para editar o nome PT/EN, o ícone (emoji) e a cor de fundo dessa fase.
+- Substituir o array `PHASES` pela lista dinâmica vinda da base de dados. As fases especiais (`declaracao` e `fim`) continuam identificadas por `phase_key` para manter os botões de declarar/terminar crise.
 
-- `src/components/sections/ProceduresSection.tsx` — refactor do JSX da vista (adiciona `selectedPhase` state, novo grid 2-col, remove handlers de drop entre colunas).
+### Detalhes técnicos
 
-Sem alterações de schema, hooks ou dados.
+- Migração SQL cria `public.crisis_phases` com `GRANT SELECT/INSERT/UPDATE/DELETE ... TO authenticated`, `GRANT ALL ... TO service_role`, `ENABLE RLS` e políticas que permitem operações a utilizadores autenticados (mesmo padrão de `crisis_phase_actions`). Índice único em `(crisis_id, phase_key)`.
+- `useCreateCrisis` passa a fazer `insert` das 6 fases-padrão logo após criar a crise (e a clonar as fases se `clone_from_id` estiver presente).
+- Ficheiros afectados: `src/hooks/useCrises.ts` (ou novo `useCrisisPhases.ts`), `src/components/sections/CrisisControlSection.tsx`, `src/components/sections/EmergencySection.tsx`, `src/components/sections/DecisionLogSection.tsx`.
+- Sem alterações à lógica de checklist_state nem ao trigger `clear_checklist_state_on_crisis_end`.
