@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { seedPhasesForCrisis } from "@/hooks/useCrisisPhases";
 
 export interface DBCrisis {
   id: string;
@@ -112,6 +113,9 @@ export function useCreateCrisis() {
           if (cloneErr) throw cloneErr;
         }
       }
+
+      // Seed default 6 phases for the new crisis
+      await seedPhasesForCrisis((crisis as any).id).catch(() => {});
 
       // Log to decision_log
       await supabase.from("decision_log").insert({
