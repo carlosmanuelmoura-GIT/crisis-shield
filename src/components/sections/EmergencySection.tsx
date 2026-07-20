@@ -1013,7 +1013,7 @@ const EmergencySection: React.FC = () => {
                               ) : (
                                 <label className={`flex items-start gap-2 flex-1 min-w-0 ${canCheck ? "cursor-pointer" : "cursor-default opacity-70"}`}>
                                   <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                  <span className={`text-sm ${checked ? "line-through text-slate-500" : "text-slate-800"}`}>{text}</span>
+                                  <span className={`text-sm ${checked ? "text-slate-500" : "text-slate-800"}`}>{text}</span>
                                 </label>
                               )}
                               {editingItemId !== item.id && (

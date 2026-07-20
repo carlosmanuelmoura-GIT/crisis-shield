@@ -8,6 +8,7 @@ import {
   useUpdateCabinetMembers, useLogDecisionFromCrisis,
   type DBCrisis,
 } from "@/hooks/useCrises";
+import { useCrisisPhases, useUpdateCrisisPhase, seedPhasesForCrisis, DEFAULT_PHASES, type DBCrisisPhase } from "@/hooks/useCrisisPhases";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,14 +24,6 @@ import {
   CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter, ChevronDown, ChevronUp,
 } from "lucide-react";
 
-const PHASES = [
-  { id: "alerta", label: { pt: "ALERTA & CONTENÇÃO", en: "ALERT & CONTAINMENT" }, color: "border-alert bg-alert/10", icon: "🔔" },
-  { id: "declaracao", label: { pt: "DECLARAÇÃO DE CRISE", en: "CRISIS DECLARATION" }, color: "border-crisis bg-crisis/10", icon: "🚨" },
-  { id: "ativacao", label: { pt: "ATIVAÇÃO & RECUPERAÇÃO", en: "ACTIVATION & RECOVERY" }, color: "border-primary bg-primary/10", icon: "⚡" },
-  { id: "retorno-inicio", label: { pt: "INÍCIO DE RETORNO", en: "RETURN START" }, color: "border-accent bg-accent/10", icon: "🔄" },
-  { id: "retorno-fim", label: { pt: "RETORNO E FIM DE CRISE", en: "RETURN & END OF CRISIS" }, color: "border-secondary bg-secondary/10", icon: "📋" },
-  { id: "fim", label: { pt: "FIM DE CRISE", en: "END OF CRISIS" }, color: "border-green-500 bg-green-500/10", icon: "✅" },
-] as const;
 
 const STATUS_MAP: Record<DBCrisis["status"], { pt: string; en: string; variant: string }> = {
   registada: { pt: "REGISTADA", en: "REGISTERED", variant: "bg-muted text-muted-foreground" },
@@ -582,16 +575,48 @@ interface KanbanProps {
 const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onBack, onUpdateStatus, onEditCrisis }) => {
   const { data: phaseActions = [] } = useCrisisPhaseActions(crisis.id);
   const { data: cabinetMembers = [] } = useCrisisCabinetMembers(crisis.id);
+  const { data: dbPhases = [] } = useCrisisPhases(crisis.id);
+  const updatePhase = useUpdateCrisisPhase();
   const createAction = useCreatePhaseAction();
   const toggleAction = useTogglePhaseAction();
   const deleteAction = useDeletePhaseAction();
   const updateCrisis = useUpdateCrisis();
   const logDecision = useLogDecisionFromCrisis();
 
+  // Fallback to DEFAULT_PHASES until DB seeds load
+  const PHASES = React.useMemo(() => {
+    if (dbPhases.length > 0) {
+      return dbPhases.slice().sort((a, b) => a.sort_order - b.sort_order).map((p) => ({
+        id: p.phase_key,
+        dbId: p.id,
+        label: { pt: p.label_pt, en: p.label_en },
+        color: p.color,
+        icon: p.icon,
+      }));
+    }
+    return DEFAULT_PHASES.map((p) => ({
+      id: p.phase_key,
+      dbId: null as string | null,
+      label: { pt: p.label_pt, en: p.label_en },
+      color: p.color,
+      icon: p.icon,
+    }));
+  }, [dbPhases]);
+
+  // Auto-seed if missing
+  React.useEffect(() => {
+    if (dbPhases.length === 0 && crisis.id) {
+      seedPhasesForCrisis(crisis.id).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbPhases.length, crisis.id]);
+
   const [newActionText, setNewActionText] = useState<Record<string, string>>({});
   const [declaredBy, setDeclaredBy] = useState(crisis.declared_by || "");
   const [endedBy, setEndedBy] = useState(crisis.ended_by || "");
-  const [selectedPhaseId, setSelectedPhaseId] = useState<typeof PHASES[number]["id"]>(PHASES[0].id);
+  const [selectedPhaseId, setSelectedPhaseId] = useState<string>(PHASES[0]?.id || "alerta");
+  const [phaseEditOpen, setPhaseEditOpen] = useState(false);
+  const [phaseEditForm, setPhaseEditForm] = useState({ id: "", label_pt: "", label_en: "", icon: "", color: "" });
 
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -883,6 +908,25 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <span>{phase.icon}</span>
                         {phaseLabel}
+                        {isSteering && phase.dbId && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              setPhaseEditForm({
+                                id: phase.dbId!,
+                                label_pt: phase.label.pt,
+                                label_en: phase.label.en,
+                                icon: phase.icon,
+                                color: phase.color,
+                              });
+                              setPhaseEditOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </CardTitle>
                     </div>
                     <div className="text-right">
@@ -944,7 +988,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                         <label className="text-[10px] font-bold tracking-wider text-muted-foreground">
                           {lang === "pt" ? "APROVADO POR" : "APPROVED BY"}
                         </label>
-                        {crisis.status === "crise_em_curso" && isSteering ? (
+                        {(crisis.status === "crise_em_curso" || crisis.status === "retorno") && isSteering ? (
                           <Input
                             value={endedBy}
                             onChange={(e) => setEndedBy(e.target.value)}
@@ -957,7 +1001,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                           </p>
                         )}
                       </div>
-                      {crisis.status === "crise_em_curso" && isSteering && (
+                      {(crisis.status === "crise_em_curso" || crisis.status === "retorno") && isSteering && (
                         <Button
                           className="bg-green-600 hover:bg-green-700 text-white sm:w-auto"
                           onClick={handleEndCrisis}
@@ -976,6 +1020,58 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
           })()}
         </div>
       </div>
+
+      {/* Phase edit dialog */}
+      <Dialog open={phaseEditOpen} onOpenChange={setPhaseEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Editar Fase" : "Edit Phase"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
+              <Input value={phaseEditForm.label_pt} onChange={(e) => setPhaseEditForm(f => ({ ...f, label_pt: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
+              <Input value={phaseEditForm.label_en} onChange={(e) => setPhaseEditForm(f => ({ ...f, label_en: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">{lang === "pt" ? "Ícone (emoji)" : "Icon (emoji)"}</Label>
+                <Input value={phaseEditForm.icon} onChange={(e) => setPhaseEditForm(f => ({ ...f, icon: e.target.value }))} maxLength={4} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">{lang === "pt" ? "Cor (Tailwind)" : "Color (Tailwind)"}</Label>
+                <Input value={phaseEditForm.color} onChange={(e) => setPhaseEditForm(f => ({ ...f, color: e.target.value }))} placeholder="border-primary bg-primary/10" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPhaseEditOpen(false)}>
+              {lang === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button
+              onClick={async () => {
+                await updatePhase.mutateAsync({
+                  id: phaseEditForm.id,
+                  crisis_id: crisis.id,
+                  label_pt: phaseEditForm.label_pt,
+                  label_en: phaseEditForm.label_en,
+                  icon: phaseEditForm.icon,
+                  color: phaseEditForm.color,
+                });
+                setPhaseEditOpen(false);
+              }}
+              disabled={updatePhase.isPending}
+            >
+              {updatePhase.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
 
       {/* Confirmation dialog for checking tasks */}
