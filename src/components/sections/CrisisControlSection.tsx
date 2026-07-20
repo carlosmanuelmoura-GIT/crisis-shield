@@ -24,14 +24,6 @@ import {
   CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter, ChevronDown, ChevronUp,
 } from "lucide-react";
 
-const PHASES = [
-  { id: "alerta", label: { pt: "ALERTA & CONTENÇÃO", en: "ALERT & CONTAINMENT" }, color: "border-alert bg-alert/10", icon: "🔔" },
-  { id: "declaracao", label: { pt: "DECLARAÇÃO DE CRISE", en: "CRISIS DECLARATION" }, color: "border-crisis bg-crisis/10", icon: "🚨" },
-  { id: "ativacao", label: { pt: "ATIVAÇÃO & RECUPERAÇÃO", en: "ACTIVATION & RECOVERY" }, color: "border-primary bg-primary/10", icon: "⚡" },
-  { id: "retorno-inicio", label: { pt: "INÍCIO DE RETORNO", en: "RETURN START" }, color: "border-accent bg-accent/10", icon: "🔄" },
-  { id: "retorno-fim", label: { pt: "RETORNO E FIM DE CRISE", en: "RETURN & END OF CRISIS" }, color: "border-secondary bg-secondary/10", icon: "📋" },
-  { id: "fim", label: { pt: "FIM DE CRISE", en: "END OF CRISIS" }, color: "border-green-500 bg-green-500/10", icon: "✅" },
-] as const;
 
 const STATUS_MAP: Record<DBCrisis["status"], { pt: string; en: string; variant: string }> = {
   registada: { pt: "REGISTADA", en: "REGISTERED", variant: "bg-muted text-muted-foreground" },
