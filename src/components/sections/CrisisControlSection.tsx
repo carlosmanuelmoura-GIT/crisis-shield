@@ -908,6 +908,25 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <span>{phase.icon}</span>
                         {phaseLabel}
+                        {isSteering && phase.dbId && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              setPhaseEditForm({
+                                id: phase.dbId!,
+                                label_pt: phase.label.pt,
+                                label_en: phase.label.en,
+                                icon: phase.icon,
+                                color: phase.color,
+                              });
+                              setPhaseEditOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </CardTitle>
                     </div>
                     <div className="text-right">
@@ -969,7 +988,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                         <label className="text-[10px] font-bold tracking-wider text-muted-foreground">
                           {lang === "pt" ? "APROVADO POR" : "APPROVED BY"}
                         </label>
-                        {crisis.status === "crise_em_curso" && isSteering ? (
+                        {(crisis.status === "crise_em_curso" || crisis.status === "retorno") && isSteering ? (
                           <Input
                             value={endedBy}
                             onChange={(e) => setEndedBy(e.target.value)}
@@ -982,7 +1001,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                           </p>
                         )}
                       </div>
-                      {crisis.status === "crise_em_curso" && isSteering && (
+                      {(crisis.status === "crise_em_curso" || crisis.status === "retorno") && isSteering && (
                         <Button
                           className="bg-green-600 hover:bg-green-700 text-white sm:w-auto"
                           onClick={handleEndCrisis}
@@ -1001,6 +1020,58 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
           })()}
         </div>
       </div>
+
+      {/* Phase edit dialog */}
+      <Dialog open={phaseEditOpen} onOpenChange={setPhaseEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Editar Fase" : "Edit Phase"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">{lang === "pt" ? "Nome (PT)" : "Name (PT)"}</Label>
+              <Input value={phaseEditForm.label_pt} onChange={(e) => setPhaseEditForm(f => ({ ...f, label_pt: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">{lang === "pt" ? "Nome (EN)" : "Name (EN)"}</Label>
+              <Input value={phaseEditForm.label_en} onChange={(e) => setPhaseEditForm(f => ({ ...f, label_en: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">{lang === "pt" ? "Ícone (emoji)" : "Icon (emoji)"}</Label>
+                <Input value={phaseEditForm.icon} onChange={(e) => setPhaseEditForm(f => ({ ...f, icon: e.target.value }))} maxLength={4} />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">{lang === "pt" ? "Cor (Tailwind)" : "Color (Tailwind)"}</Label>
+                <Input value={phaseEditForm.color} onChange={(e) => setPhaseEditForm(f => ({ ...f, color: e.target.value }))} placeholder="border-primary bg-primary/10" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPhaseEditOpen(false)}>
+              {lang === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button
+              onClick={async () => {
+                await updatePhase.mutateAsync({
+                  id: phaseEditForm.id,
+                  crisis_id: crisis.id,
+                  label_pt: phaseEditForm.label_pt,
+                  label_en: phaseEditForm.label_en,
+                  icon: phaseEditForm.icon,
+                  color: phaseEditForm.color,
+                });
+                setPhaseEditOpen(false);
+              }}
+              disabled={updatePhase.isPending}
+            >
+              {updatePhase.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              {lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
 
       {/* Confirmation dialog for checking tasks */}
