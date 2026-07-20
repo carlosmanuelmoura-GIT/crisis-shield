@@ -661,6 +661,53 @@ export type Database = {
           },
         ]
       }
+      crisis_phases: {
+        Row: {
+          color: string
+          created_at: string
+          crisis_id: string
+          icon: string
+          id: string
+          label_en: string
+          label_pt: string
+          phase_key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          crisis_id: string
+          icon?: string
+          id?: string
+          label_en: string
+          label_pt: string
+          phase_key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          crisis_id?: string
+          icon?: string
+          id?: string
+          label_en?: string
+          label_pt?: string
+          phase_key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crisis_phases_crisis_id_fkey"
+            columns: ["crisis_id"]
+            isOneToOne: false
+            referencedRelation: "crises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       decision_log: {
         Row: {
           author: string
