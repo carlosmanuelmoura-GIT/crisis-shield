@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Loader2, Shield, FlaskConical, FileText, AlertCircle, X } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   useDecisionLog, useCreateDecisionLog, useUpdateDecisionLog, useDeleteDecisionLog,
   type DBDecisionLog,
@@ -64,7 +65,7 @@ const DecisionLogSection: React.FC = () => {
     const sortedKeys = Array.from(byCrisis.keys()).sort((a, b) => {
       const ca = crisesMap.get(a);
       const cb = crisesMap.get(b);
-      return new Date(ca?.crisis_date || 0).getTime() - new Date(cb?.crisis_date || 0).getTime();
+      return new Date(cb?.crisis_date || 0).getTime() - new Date(ca?.crisis_date || 0).getTime();
     });
 
     return sortedKeys.map(key => ({
@@ -178,8 +179,8 @@ const DecisionLogSection: React.FC = () => {
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {lang === "pt"
-              ? "Vista Kanban — uma coluna por crise"
-              : "Kanban view — one column per crisis"}
+              ? "Lista de crises — mais recente primeiro"
+              : "List of crises — most recent first"}
           </p>
         </div>
         {activeCrisis && (
@@ -251,9 +252,9 @@ const DecisionLogSection: React.FC = () => {
         </Card>
       )}
 
-      {/* Kanban board */}
+      {/* Accordion list — crises DESC, entries ASC */}
       {filteredGroups.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-3">
+        <Accordion type="multiple" defaultValue={activeCrisis ? [activeCrisis.id] : []} className="space-y-2">
           {filteredGroups.map(group => {
             const crisis = group.crisis;
             const isActive = activeCrisis?.id === group.key;
@@ -262,24 +263,13 @@ const DecisionLogSection: React.FC = () => {
             const decisionEntries = group.entries.filter(e => !systemEntries.includes(e));
 
             return (
-              <Card key={group.key} className={`w-full flex flex-col ${isActive ? "border-crisis/40 shadow-sm" : ""}`}>
-                <CardHeader className="p-3 border-b">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+              <AccordionItem key={group.key} value={group.key} className={`border rounded-lg bg-card ${isActive ? "border-crisis/40 shadow-sm" : ""}`}>
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center gap-2 flex-wrap flex-1 text-left">
                     {isSimulated ? <FlaskConical className="h-4 w-4 text-alert shrink-0" /> : <Shield className="h-4 w-4 text-crisis shrink-0" />}
-                    <span className="text-sm font-semibold truncate flex-1 min-w-0">
-                      {crisis?.title || (lang === "pt" ? "Crise" : "Crisis")}
-                    </span>
-                    {isActive && (
-                      <Badge variant="destructive" className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
-                        {lang === "pt" ? "Ativa" : "Active"}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                    <span className="text-sm font-semibold">{crisis?.title || (lang === "pt" ? "Crise" : "Crisis")}</span>
                     {crisis && (
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatCrisisDate(crisis.crisis_date)}
-                      </span>
+                      <span className="text-[10px] text-muted-foreground">{formatCrisisDate(crisis.crisis_date)}</span>
                     )}
                     <Badge variant={isSimulated ? "secondary" : "destructive"} className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
                       {isSimulated ? (lang === "pt" ? "Simulada" : "Simulated") : (lang === "pt" ? "Real" : "Real")}
@@ -289,83 +279,87 @@ const DecisionLogSection: React.FC = () => {
                         {STATUS_LABELS[crisis.status]?.[lang] || crisis.status}
                       </Badge>
                     )}
-                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto">
+                    {isActive && (
+                      <Badge variant="destructive" className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
+                        {lang === "pt" ? "Ativa" : "Active"}
+                      </Badge>
+                    )}
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto mr-2">
                       {decisionEntries.length} {lang === "pt" ? "acções" : "actions"}
                     </Badge>
                   </div>
-                </CardHeader>
-
-                <CardContent className="p-2 space-y-2 max-h-[70vh] overflow-y-auto flex-1">
-                  {systemEntries.map(entry => (
-                    <div key={entry.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/60 text-xs">
-                      <div className="flex flex-col items-center justify-center px-2 py-1 rounded bg-muted/80 min-w-[60px]">
-                        <span className="text-[10px] font-bold text-foreground leading-none">
-                          {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit" })}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-                          {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                      <span className="flex-1 font-medium truncate">{entry.text}</span>
-                    </div>
-                  ))}
-
-                  {decisionEntries.length === 0 && systemEntries.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-6">
-                      {lang === "pt" ? "Sem acções registadas." : "No actions logged."}
-                    </p>
-                  )}
-
-                  {decisionEntries.map(entry => (
-                    <Card key={entry.id} className="bg-secondary/30 border-border/50">
-                      <CardContent className="p-2.5">
-                        <div className="flex items-start gap-2.5">
-                          {/* Dia / Hora */}
-                          <div className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md bg-muted/70 min-w-[64px] shrink-0">
-                            <span className="text-sm font-bold text-foreground leading-tight">
-                              {new Date(entry.created_at).getDate().toString().padStart(2, "0")}
-                            </span>
-                            <span className="text-[10px] uppercase font-medium text-muted-foreground leading-tight">
-                              {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { month: "short" })}
-                            </span>
-                            <span className="text-[10px] font-semibold text-primary leading-tight">
-                              {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          </div>
-
-                          <div className="min-w-0 flex-1 space-y-1">
-                            {entry.title && (
-                              <div className="flex items-center gap-1.5">
-                                <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                                <span className="text-xs font-semibold truncate">{entry.title}</span>
-                              </div>
-                            )}
-                            <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                              {entry.text}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <span className="font-medium">{entry.author}</span>
-                            </p>
-                          </div>
-
-                          <div className="flex flex-col gap-0.5 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(entry)}>
-                              <Pencil className="h-3 w-3" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(entry.id)}>
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="space-y-2">
+                    {systemEntries.map(entry => (
+                      <div key={entry.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/60 text-xs">
+                        <div className="flex flex-col items-center justify-center px-2 py-1 rounded bg-muted/80 min-w-[60px]">
+                          <span className="text-[10px] font-bold text-foreground leading-none">
+                            {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit" })}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
+                            {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </CardContent>
-              </Card>
+                        <span className="flex-1 font-medium truncate">{entry.text}</span>
+                      </div>
+                    ))}
+
+                    {decisionEntries.length === 0 && systemEntries.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        {lang === "pt" ? "Sem acções registadas." : "No actions logged."}
+                      </p>
+                    )}
+
+                    {decisionEntries.map(entry => (
+                      <Card key={entry.id} className="bg-secondary/30 border-border/50">
+                        <CardContent className="p-2.5">
+                          <div className="flex items-start gap-2.5">
+                            <div className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md bg-muted/70 min-w-[64px] shrink-0">
+                              <span className="text-sm font-bold text-foreground leading-tight">
+                                {new Date(entry.created_at).getDate().toString().padStart(2, "0")}
+                              </span>
+                              <span className="text-[10px] uppercase font-medium text-muted-foreground leading-tight">
+                                {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { month: "short" })}
+                              </span>
+                              <span className="text-[10px] font-semibold text-primary leading-tight">
+                                {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              {entry.title && (
+                                <div className="flex items-center gap-1.5">
+                                  <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                                  <span className="text-xs font-semibold truncate">{entry.title}</span>
+                                </div>
+                              )}
+                              <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                                {entry.text}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <span className="font-medium">{entry.author}</span>
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-0.5 shrink-0">
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(entry)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(entry.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
             );
           })}
-        </div>
+        </Accordion>
       )}
+
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
