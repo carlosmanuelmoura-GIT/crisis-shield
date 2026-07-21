@@ -622,7 +622,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseLabel: string } | null>(null);
+  const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseId: string; phaseLabel: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ info_department: "", info_person: "", notes: "" });
 
 
