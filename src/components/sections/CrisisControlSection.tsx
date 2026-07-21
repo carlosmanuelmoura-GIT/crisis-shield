@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -589,6 +589,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
       return dbPhases.slice().sort((a, b) => a.sort_order - b.sort_order).map((p) => ({
         id: p.phase_key,
         dbId: p.id,
+        sortOrder: p.sort_order,
         label: { pt: p.label_pt, en: p.label_en },
         color: p.color,
         icon: p.icon,
@@ -597,6 +598,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     return DEFAULT_PHASES.map((p) => ({
       id: p.phase_key,
       dbId: null as string | null,
+      sortOrder: p.sort_order,
       label: { pt: p.label_pt, en: p.label_en },
       color: p.color,
       icon: p.icon,
@@ -616,7 +618,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [endedBy, setEndedBy] = useState(crisis.ended_by || "");
   const [selectedPhaseId, setSelectedPhaseId] = useState<string>(PHASES[0]?.id || "alerta");
   const [phaseEditOpen, setPhaseEditOpen] = useState(false);
-  const [phaseEditForm, setPhaseEditForm] = useState({ id: "", label_pt: "", label_en: "", icon: "", color: "" });
+  const [phaseEditForm, setPhaseEditForm] = useState({ id: "", phase_key: "", label_pt: "", label_en: "", icon: "", color: "", sort_order: 0 });
 
   // Confirmation dialog state
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -637,10 +639,10 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     setNewActionText((prev) => ({ ...prev, [phaseId]: "" }));
   };
 
-  const handleToggle = (actionId: string, checked: boolean, actionText: string, phaseLabel: string) => {
+  const handleToggle = (actionId: string, checked: boolean, actionText: string, phaseId: string, phaseLabel: string) => {
     if (checked) {
       // Opening confirmation dialog
-      setPendingToggle({ actionId, checked, actionText, phaseLabel });
+      setPendingToggle({ actionId, checked, actionText, phaseId, phaseLabel });
       setConfirmForm({ info_department: "", info_person: "", notes: "" });
       setConfirmDialogOpen(true);
     } else {
@@ -654,10 +656,10 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     }
   };
 
-  const handleConfirmToggle = () => {
+  const handleConfirmToggle = async () => {
     if (!pendingToggle) return;
-    const { actionId, actionText, phaseLabel } = pendingToggle;
-    toggleAction.mutate({
+    const { actionId, actionText, phaseId, phaseLabel } = pendingToggle;
+    await toggleAction.mutateAsync({
       id: actionId,
       checked: true,
       crisis_id: crisis.id,
@@ -675,6 +677,21 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
       text: `✅ ${phaseLabel} — ${actionText}${details ? ` (${details})` : ""}`,
       crisis_id: crisis.id,
     });
+    if (phaseId === "fim" && crisis.status !== "fim") {
+      const approver = confirmForm.info_person.trim() || endedBy.trim();
+      await updateCrisis.mutateAsync({
+        id: crisis.id,
+        status: "fim",
+        ended_by: approver,
+      });
+      setEndedBy(approver);
+      logDecision.mutate({
+        title: "✅ Fim de crise",
+        text: `✅ Fim de crise aprovado${approver ? ` por ${approver}` : ""}: ${crisis.title}`,
+        author: approver || "Sistema",
+        crisis_id: crisis.id,
+      });
+    }
     setConfirmDialogOpen(false);
     setPendingToggle(null);
   };
@@ -725,11 +742,11 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
         <div key={action.id} className="flex items-start gap-3 py-1.5 group">
           <Checkbox
             checked={action.checked}
-            onCheckedChange={(checked) => handleToggle(action.id, !!checked, action.text, phaseLabel)}
+            onCheckedChange={(checked) => handleToggle(action.id, !!checked, action.text, phaseId, phaseLabel)}
             className="mt-0.5"
           />
           <div className="flex-1 min-w-0">
-            <span className={`text-sm ${action.checked ? "line-through text-muted-foreground" : ""}`}>
+            <span className={`text-sm ${action.checked ? "text-muted-foreground" : ""}`}>
               {action.text}
             </span>
             {action.checked && ((action as any).info_department || (action as any).info_person || (action as any).notes) && (
@@ -908,18 +925,20 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <span>{phase.icon}</span>
                         {phaseLabel}
-                        {isSteering && phase.dbId && (
+                        {isSteering && (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6"
                             onClick={() => {
                               setPhaseEditForm({
-                                id: phase.dbId!,
+                                id: phase.dbId || "",
+                                phase_key: phase.id,
                                 label_pt: phase.label.pt,
                                 label_en: phase.label.en,
                                 icon: phase.icon,
                                 color: phase.color,
+                                sort_order: phase.sortOrder,
                               });
                               setPhaseEditOpen(true);
                             }}
@@ -1026,6 +1045,9 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{lang === "pt" ? "Editar Fase" : "Edit Phase"}</DialogTitle>
+            <DialogDescription>
+              {lang === "pt" ? "Editar o nome, ícone e cor visual desta fase." : "Edit this phase name, icon and visual color."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -1056,10 +1078,12 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                 await updatePhase.mutateAsync({
                   id: phaseEditForm.id,
                   crisis_id: crisis.id,
+                  phase_key: phaseEditForm.phase_key,
                   label_pt: phaseEditForm.label_pt,
                   label_en: phaseEditForm.label_en,
                   icon: phaseEditForm.icon,
                   color: phaseEditForm.color,
+                  sort_order: phaseEditForm.sort_order,
                 });
                 setPhaseEditOpen(false);
               }}
