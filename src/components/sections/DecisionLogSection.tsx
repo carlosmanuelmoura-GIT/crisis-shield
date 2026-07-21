@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Loader2, Shield, FlaskConical, FileText, AlertCircle, X } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   useDecisionLog, useCreateDecisionLog, useUpdateDecisionLog, useDeleteDecisionLog,
   type DBDecisionLog,
@@ -64,7 +65,7 @@ const DecisionLogSection: React.FC = () => {
     const sortedKeys = Array.from(byCrisis.keys()).sort((a, b) => {
       const ca = crisesMap.get(a);
       const cb = crisesMap.get(b);
-      return new Date(ca?.crisis_date || 0).getTime() - new Date(cb?.crisis_date || 0).getTime();
+      return new Date(cb?.crisis_date || 0).getTime() - new Date(ca?.crisis_date || 0).getTime();
     });
 
     return sortedKeys.map(key => ({
@@ -178,8 +179,8 @@ const DecisionLogSection: React.FC = () => {
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {lang === "pt"
-              ? "Vista Kanban — uma coluna por crise"
-              : "Kanban view — one column per crisis"}
+              ? "Lista de crises — mais recente primeiro"
+              : "List of crises — most recent first"}
           </p>
         </div>
         {activeCrisis && (
