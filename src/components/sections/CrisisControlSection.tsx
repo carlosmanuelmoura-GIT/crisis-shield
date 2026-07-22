@@ -575,7 +575,7 @@ interface KanbanProps {
 const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onBack, onUpdateStatus, onEditCrisis }) => {
   const { data: phaseActions = [] } = useCrisisPhaseActions(crisis.id);
   const { data: cabinetMembers = [] } = useCrisisCabinetMembers(crisis.id);
-  const { data: dbPhases = [] } = useCrisisPhases(crisis.id);
+  const { data: dbPhases = [], isFetched: phasesFetched, refetch: refetchPhases } = useCrisisPhases(crisis.id);
   const updatePhase = useUpdateCrisisPhase();
   const createAction = useCreatePhaseAction();
   const toggleAction = useTogglePhaseAction();
@@ -605,13 +605,15 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     }));
   }, [dbPhases]);
 
-  // Auto-seed if missing
+  // Auto-seed old crises/templates that do not yet have the full set of 6 editable phases
   React.useEffect(() => {
-    if (dbPhases.length === 0 && crisis.id) {
-      seedPhasesForCrisis(crisis.id).catch(() => {});
+    if (phasesFetched && dbPhases.length < DEFAULT_PHASES.length && crisis.id) {
+      seedPhasesForCrisis(crisis.id)
+        .then(() => refetchPhases())
+        .catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbPhases.length, crisis.id]);
+  }, [phasesFetched, dbPhases.length, crisis.id]);
 
   const [newActionText, setNewActionText] = useState<Record<string, string>>({});
   const [declaredBy, setDeclaredBy] = useState(crisis.declared_by || "");
@@ -624,6 +626,27 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseId: string; phaseLabel: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ info_department: "", info_person: "", notes: "" });
+
+  useEffect(() => {
+    setDeclaredBy(crisis.declared_by || "");
+  }, [crisis.declared_by]);
+
+  useEffect(() => {
+    setEndedBy(crisis.ended_by || "");
+  }, [crisis.ended_by]);
+
+  const openPhaseEdit = (phase: typeof PHASES[number]) => {
+    setPhaseEditForm({
+      id: phase.dbId || "",
+      phase_key: phase.id,
+      label_pt: phase.label.pt,
+      label_en: phase.label.en,
+      icon: phase.icon,
+      color: phase.color,
+      sort_order: phase.sortOrder,
+    });
+    setPhaseEditOpen(true);
+  };
 
 
   const addAction = (phaseId: string) => {
@@ -925,34 +948,19 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                       <CardTitle className="text-lg font-bold flex items-center gap-2">
                         <span>{phase.icon}</span>
                         {phaseLabel}
-                        {isSteering && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => {
-                              setPhaseEditForm({
-                                id: phase.dbId || "",
-                                phase_key: phase.id,
-                                label_pt: phase.label.pt,
-                                label_en: phase.label.en,
-                                icon: phase.icon,
-                                color: phase.color,
-                                sort_order: phase.sortOrder,
-                              });
-                              setPhaseEditOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
                       </CardTitle>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right space-y-2">
                       <div className="text-[10px] font-bold tracking-wider text-muted-foreground">
                         {lang === "pt" ? "PROGRESSO DA FASE" : "PHASE PROGRESS"}
                       </div>
                       <div className="text-xl font-bold text-primary">{pct}%</div>
+                      {isSteering && (
+                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openPhaseEdit(phase)}>
+                          <Pencil className="h-3.5 w-3.5 mr-1" />
+                          {lang === "pt" ? "Editar fase" : "Edit phase"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -1076,7 +1084,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
             <Button
               onClick={async () => {
                 await updatePhase.mutateAsync({
-                  id: phaseEditForm.id,
+                  id: phaseEditForm.id || undefined,
                   crisis_id: crisis.id,
                   phase_key: phaseEditForm.phase_key,
                   label_pt: phaseEditForm.label_pt,
