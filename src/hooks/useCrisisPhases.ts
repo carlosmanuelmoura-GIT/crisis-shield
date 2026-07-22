@@ -42,7 +42,7 @@ export function useCrisisPhases(crisisId?: string) {
 export function useUpdateCrisisPhase() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, crisis_id, phase_key, ...data }: { id?: string; crisis_id: string; phase_key: string; label_pt: string; label_en: string; icon: string; color: string; sort_order: number }) => {
+    mutationFn: async ({ id: _id, crisis_id, phase_key, ...data }: { id?: string; crisis_id: string; phase_key: string; label_pt: string; label_en: string; icon: string; color: string; sort_order: number }) => {
       const payload = { crisis_id, phase_key, ...data };
       const { error } = await supabase
         .from("crisis_phases" as any)
