@@ -44,9 +44,9 @@ export function useUpdateCrisisPhase() {
   return useMutation({
     mutationFn: async ({ id, crisis_id, phase_key, ...data }: { id?: string; crisis_id: string; phase_key: string; label_pt: string; label_en: string; icon: string; color: string; sort_order: number }) => {
       const payload = { crisis_id, phase_key, ...data };
-      const { error } = id
-        ? await supabase.from("crisis_phases" as any).update(data as any).eq("id", id)
-        : await supabase.from("crisis_phases" as any).upsert(payload as any, { onConflict: "crisis_id,phase_key" });
+      const { error } = await supabase
+        .from("crisis_phases" as any)
+        .upsert(payload as any, { onConflict: "crisis_id,phase_key" });
       if (error) throw error;
       return crisis_id;
     },
@@ -56,6 +56,8 @@ export function useUpdateCrisisPhase() {
 
 export async function seedPhasesForCrisis(crisisId: string) {
   const rows = DEFAULT_PHASES.map((p) => ({ crisis_id: crisisId, ...p }));
-  const { error } = await supabase.from("crisis_phases" as any).insert(rows as any);
-  if (error && !String(error.message).includes("duplicate")) throw error;
+  const { error } = await supabase
+    .from("crisis_phases" as any)
+    .upsert(rows as any, { onConflict: "crisis_id,phase_key", ignoreDuplicates: true });
+  if (error) throw error;
 }

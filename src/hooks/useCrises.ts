@@ -151,11 +151,14 @@ export function useUpdateCrisis() {
     }) => {
       const { error } = await supabase.from("crises").update(data as any).eq("id", id);
       if (error) throw error;
-      return data.status;
+      return { id, data };
     },
-    onSuccess: (status) => {
+    onSuccess: ({ id, data }) => {
+      qc.setQueryData<DBCrisis[]>(["crises"], (old) =>
+        old?.map((crisis) => crisis.id === id ? { ...crisis, ...data } : crisis)
+      );
       qc.invalidateQueries({ queryKey: ["crises"] });
-      if (status === "fim") {
+      if (data.status === "fim") {
         qc.invalidateQueries({ queryKey: ["checklist_state"] });
       }
     },
