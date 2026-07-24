@@ -75,7 +75,7 @@ const ProceduresSection: React.FC = () => {
   const [form, setForm] = useState<{ title_pt: string; title_en: string; category_pt: string; category_en: string; content_pt: string; content_en: string; phase: ProcedurePhase }>({ title_pt: "", title_en: "", category_pt: "", category_en: "", content_pt: "", content_en: "", phase: "gestao" });
   const [selectedPhase, setSelectedPhase] = useState<ProcedurePhase>("gestao");
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [localChecks, setLocalChecks] = useState<Record<string, boolean>>({});
+  
 
   const t = (pt: string, en: string) => (lang === "pt" ? pt : en);
 
