@@ -12,7 +12,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus, Pencil, Trash2, Copy, GripVertical, X,
-  Wrench, AlertTriangle, CheckCircle2, ShieldCheck, User, Settings, ArrowRight,
+  Wrench, AlertTriangle, CheckCircle2, User, Settings, ArrowRight,
 } from "lucide-react";
 import { useProcedures, useCreateProcedure, useUpdateProcedure, useDeleteProcedure, DBProcedure, ProcedurePhase } from "@/hooks/useProcedures";
 import { toast } from "sonner";
