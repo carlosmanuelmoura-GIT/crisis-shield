@@ -736,20 +736,29 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     });
   };
 
+  const qc = useQueryClient();
+
   const handleEndCrisis = async () => {
     if (!endedBy.trim()) return;
-    await updateCrisis.mutateAsync({
-      id: crisis.id,
-      status: "fim",
-      ended_by: endedBy.trim(),
-    });
-    logDecision.mutate({
-      title: "✅ Fim de crise",
-      text: `✅ Fim de crise aprovado por ${endedBy.trim()}: ${crisis.title}`,
-      author: endedBy.trim(),
-      crisis_id: crisis.id,
-    });
+    try {
+      await updateCrisis.mutateAsync({
+        id: crisis.id,
+        status: "fim",
+        ended_by: endedBy.trim(),
+      });
+      await qc.refetchQueries({ queryKey: ["crises"] });
+      logDecision.mutate({
+        title: "✅ Fim de crise",
+        text: `✅ Fim de crise aprovado por ${endedBy.trim()}: ${crisis.title}`,
+        author: endedBy.trim(),
+        crisis_id: crisis.id,
+      });
+      toast.success("Crise finalizada");
+    } catch (e: any) {
+      toast.error(`Erro a finalizar crise: ${e?.message ?? e}`);
+    }
   };
+
 
   const getPhaseProgress = (phaseId: string) => {
     const list = phaseActions.filter((a) => a.phase_id === phaseId);
