@@ -1,77 +1,28 @@
-## Objetivo
+## Alterações
 
-Aplicar aos **Action Cards da Gestão de Crise** (`ProceduresSection.tsx`) o mesmo padrão visual dos Action Cards Departamentais (`EmergencySection.tsx`), inspirado nas imagens:
-- **Figura 1**: 3 tabs de fase no topo (Preparação / Gestão da Crise / Fim da Crise) + grid de 2 colunas com cartões resumo.
-- **Figura 2**: Painel lateral (Sheet) que abre ao clicar num cartão, com secções bem estruturadas (Autoridade, Descrição & Objetivo, Ações sequenciais com checkboxes numeradas, Regra de ouro).
+### 1. `src/components/sections/ProceduresSection.tsx` — Sheet lateral dos Action Cards da Gestão de Crise
+- **Remover o bloco "Autoridade / Nível Requerido"** (linhas ~349–361) por completo.
+- **Substituir os checkboxes** nas "Ações Sequenciais" (linhas ~387–406) por um badge numerado (`1.`, `2.`, …). Cada ação passa a ser um cartão estático com o número à esquerda em círculo/badge mono (mesmo estilo do número usado no EmergencySection) e o texto à direita — sem `Checkbox`, sem estado `localChecks`, sem toggling. Remover também o estado `localChecks` e o import de `Checkbox` (se deixar de ser usado no ficheiro).
 
-Reutiliza tokens e cores do design system já existente (nada de cores hardcoded).
+### 2. `src/components/sections/EmergencySection.tsx` — Detalhe do Action Card Departamental
+- **Remover o bloco "1. Contexto & BIAs"** (linhas ~967–987) do Sheet lateral. A restante checklist mantém-se; renumerar o cabeçalho de "2. Ações" para "Ações" (retirar o "2." já que deixa de existir "1.").
 
----
+### 3. Estado FIM não atualiza numa crise REAL — investigação + fix
+O código de transição existe em dois pontos:
+- `handleEndCrisis` (linha 737) — botão "FIM DE CRISE" na Fase 6.
+- Auto-transição ao concluir uma acção na fase `fim` (linha 703).
 
-## Alterações — só em `src/components/sections/ProceduresSection.tsx`
+Ambos chamam `updateCrisis.mutateAsync({ status: "fim", ended_by })`, e o hook `useUpdateCrisis` já faz `setQueryData` + `invalidateQueries(["crises"])`. Como o utilizador reporta que numa **crise real** o estado não muda após aprovação, o diagnóstico ainda não está confirmado. Passos:
 
-### 1. Layout principal — tabs no topo + grid
+1. Reproduzir com Playwright numa crise real: navegar até à Fase 6, preencher "Aprovado por", clicar em "FIM DE CRISE", capturar `console`/`network` e verificar a resposta do `PATCH crises` e o valor de `crisis.status` após o refetch.
+2. Verificar via `supabase--read_query` se a linha em `crises` é efetivamente atualizada (para descartar bloqueio de RLS específico ao tipo `real` — as políticas podem estar a filtrar por `owner_id`/role e a rejeitar o update sem erro visível).
+3. Consoante o resultado:
+   - Se o `UPDATE` falha por RLS/policy → ajustar a policy de UPDATE em `crises` para permitir ao Steering GCN fechar qualquer crise real.
+   - Se o `UPDATE` passa mas a UI não reflete → forçar `await qc.invalidateQueries` + refetch da query específica `["crises"]` em `handleEndCrisis` e garantir que o `crisis` prop passado ao painel vem do cache atualizado (o componente pai pode estar a segurar uma referência stale).
+   - Se o botão simplesmente não aparece na Fase 6 numa real → rever a condição `(crisis.status === "crise_em_curso" || crisis.status === "retorno") && isSteering` (linha 1031) — pode faltar cobrir outro estado intermédio das crises reais.
 
-Substituir o layout atual (stepper à esquerda + lista à direita) por:
-
-- **Topo**: 3 cartões-tab horizontais em `grid grid-cols-3 gap-3`, cada um mostrando:
-  - Rótulo `FASE 0X` + ícone (Wrench/AlertTriangle/CheckCircle2 dos `lucide-react`)
-  - Nome da fase (PT/EN)
-  - Badge com contagem (`X Cards`)
-  - Fase ativa: `ring-2 ring-primary` + fundo mais saturado; inativas: `opacity-70 hover:opacity-100`
-  - Usa as cores já definidas em `PHASES` (`border-blue-400 bg-blue-50/40`, etc.)
-- **Abaixo**: cabeçalho "FASE X ATIVA · Nome" + hint "Clique num cartão para abrir a vista operacional completa"
-- **Grid de cartões** em `grid grid-cols-1 lg:grid-cols-2 gap-3` (drag & drop mantém-se)
-
-### 2. Cartão resumo (na grid)
-
-Cada cartão passa a mostrar (sem markdown expandido):
-- Badge com **código curto** no topo esquerdo (ex. `AC_GCC_01`) — gerado a partir do índice na fase (`AC_GCC_${(i+1).toString().padStart(2,'0')}`)
-- Badge à direita: `⚙ N Passos` (contagem de linhas numeradas / bullets do markdown PT)
-- **Título** em uppercase
-- **Descrição curta** (primeiras ~2 linhas de texto do markdown, sem headings) truncada
-- Rodapé: ícone user + `category_pt/en` à esquerda, "Ver Card →" à direita
-- Ícones de ação (clone/edit/delete/grip) visíveis só no hover, canto superior direito
-- Click no corpo → abre Sheet lateral
-
-### 3. Sheet lateral de detalhe (novo)
-
-Adicionar `Sheet` (side="right", `w-full sm:max-w-xl`) que abre ao clicar num cartão. Estrutura:
-
-- **Header**: badges (`AC_GCC_XX`, nome da fase) + botão X
-- **Título** grande em uppercase
-- **Bloco "AUTORIDADE / NÍVEL REQUERIDO"**: card com `border-primary/40 bg-primary/5`, mostra `category_pt/en` + ícone escudo (`ShieldCheck`)
-- **Bloco "DESCRIÇÃO & OBJETIVO"**: primeiro parágrafo do markdown (texto antes das listas)
-- **Bloco "AÇÕES SEQUENCIAIS (HEURÍSTICAS)"**: parse do markdown — cada item de lista (`- ` ou `N.`) vira um cartão com checkbox e numeração `1.`, `2.`, etc. Estado dos checkboxes é **apenas visual local** (não persiste, já que estes procedures não têm tabela de checklist_state associada — usar `useState<Record<string,boolean>>`)
-- **Bloco "REGRA DE OURO ANTIFRÁGIL"** (opcional): se houver uma secção `## Regra de ouro` ou `### Regra` no markdown, destacar em card `border-alert bg-alert/10`
-- **Footer**: botões `Copiar` (copia markdown), `Editar` (abre o Dialog CRUD existente), `Concluído` (fecha o sheet)
-
-### 4. Parser de markdown estruturado
-
-Nova função helper local `parseProcedure(md: string)` que devolve:
-```ts
-{ description: string; actions: string[]; goldenRule?: string }
-```
-- `description`: junta parágrafos até encontrar a primeira lista ou heading de "ações"
-- `actions`: extrai bullets/numerados na secção principal
-- `goldenRule`: texto sob heading "Regra de ouro" (case-insensitive)
-
-Manter `renderMd` só como fallback caso não haja estrutura.
-
-### 5. Preservar comportamento existente
-
-- Drag & drop para reordenar continua a funcionar (grip no canto)
-- Dialog CRUD PT/EN atual mantém-se inalterado
-- Filtro por `searchQuery` continua
-- Botão "Novo" no cabeçalho da grid
-
----
+Sem tocar em mais nada fora destes 3 pontos.
 
 ## Notas técnicas
-
-- Sem migração DB, sem novos hooks — puramente refactor visual sobre `useProcedures`.
-- Estado dos checkboxes do Sheet é local por sessão; não persiste (estes cards são "guias operacionais", não checklists com auditoria).
-- Cores via tokens (`bg-primary/5`, `border-primary/40`, `bg-alert/10`, `border-alert`) — nunca `bg-blue-*` hardcoded fora dos tokens já existentes em `PHASES`.
-- Ícone da fase mapeia `preparacao → Wrench`, `gestao → AlertTriangle`, `fim → CheckCircle2`.
-
-Nenhum outro ficheiro é editado.
+- Nada de migrações novas exceto se o passo 3 concluir que é necessário ajustar policy RLS.
+- Sem alterações a hooks nem a outras secções.
