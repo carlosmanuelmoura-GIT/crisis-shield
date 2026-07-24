@@ -345,21 +345,6 @@ const ProceduresSection: React.FC = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                  {/* Authority */}
-                  {(detail.category_pt || detail.category_en) && (
-                    <div className="rounded-lg border-2 border-primary/40 bg-primary/5 p-3 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">
-                          {lang === "pt" ? "Autoridade / Nível Requerido" : "Authority / Required Level"}
-                        </div>
-                        <div className="text-sm font-bold text-primary truncate">
-                          {t(detail.category_pt, detail.category_en)}
-                        </div>
-                      </div>
-                      <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
-                    </div>
-                  )}
-
                   {/* Description */}
                   {parsed.description && (
                     <div>
@@ -384,29 +369,21 @@ const ProceduresSection: React.FC = () => {
                         </span>
                       </div>
                       <div className="space-y-2">
-                        {parsed.actions.map((action, i) => {
-                          const key = `${detail.id}:${i}`;
-                          const checked = !!localChecks[key];
-                          return (
-                            <label
-                              key={i}
-                              className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${checked ? "border-primary/40 bg-primary/5" : "border-border bg-card hover:bg-muted/40"}`}
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => setLocalChecks(s => ({ ...s, [key]: !!v }))}
-                                className="mt-0.5"
-                              />
-                              <span className="text-sm leading-relaxed">
-                                <span className="font-semibold mr-1">{i + 1}.</span>
-                                {action}
-                              </span>
-                            </label>
-                          );
-                        })}
+                        {parsed.actions.map((action, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
+                          >
+                            <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 mt-0.5 w-7 text-center shrink-0">
+                              {i + 1}
+                            </span>
+                            <span className="text-sm leading-relaxed flex-1">{action}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
+
 
                   {/* Golden rule */}
                   {parsed.goldenRule && (
