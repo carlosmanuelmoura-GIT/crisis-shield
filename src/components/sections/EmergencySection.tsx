@@ -964,33 +964,12 @@ const EmergencySection: React.FC = () => {
                 {/* Body */}
                 <ScrollArea className="flex-1">
                   <div className="p-5 space-y-5">
-                    {/* Context / BIAs */}
-                    {(card.capability || linkedBias.length > 0) && (
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 border-l-4 border-l-red-600">
-                        <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-2">
-                          {lang === "pt" ? "1. Contexto & BIAs" : "1. Context & BIAs"}
-                        </p>
-                        {card.capability && <p className="text-sm text-slate-700 mb-2">{card.capability}</p>}
-                        <div className="flex flex-wrap gap-1.5">
-                          {linkedBias.map(l => {
-                            const b = biaProcesses.find(x => x.id === l.bia_process_id);
-                            if (!b) return null;
-                            return (
-                              <Badge key={l.id} variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300 gap-1">
-                                BIA: {lang === "pt" ? b.name_pt : b.name_en || b.name_pt}
-                                <button onClick={() => unlinkBIA.mutate(l.id)} className="hover:text-destructive"><X className="h-2.5 w-2.5" /></button>
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Checklist */}
                     <div>
                       <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
-                        {lang === "pt" ? "2. Ações" : "2. Actions"} ({done}/{total})
+                        {lang === "pt" ? "Ações" : "Actions"} ({done}/{total})
                       </p>
+
                       <div className="space-y-2">
                         {items.map((item, idx) => {
                           const checked = !!statesMap[item.id];
