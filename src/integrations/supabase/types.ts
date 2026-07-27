@@ -988,6 +988,47 @@ export type Database = {
         }
         Relationships: []
       }
+      procedure_steps: {
+        Row: {
+          checked: boolean
+          created_at: string
+          id: string
+          procedure_id: string
+          sort_order: number
+          text_en: string
+          text_pt: string
+          updated_at: string
+        }
+        Insert: {
+          checked?: boolean
+          created_at?: string
+          id?: string
+          procedure_id: string
+          sort_order?: number
+          text_en?: string
+          text_pt?: string
+          updated_at?: string
+        }
+        Update: {
+          checked?: boolean
+          created_at?: string
+          id?: string
+          procedure_id?: string
+          sort_order?: number
+          text_en?: string
+          text_pt?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "procedure_steps_procedure_id_fkey"
+            columns: ["procedure_id"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       procedures: {
         Row: {
           category_en: string
