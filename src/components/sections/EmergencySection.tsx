@@ -616,7 +616,7 @@ const EmergencySection: React.FC = () => {
 
       {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-4 px-1 scroll-px-1" style={{ minHeight: 400 }}>
+        <div className="flex gap-3 overflow-x-auto pb-4 px-3 scroll-px-3" style={{ minHeight: 400 }}>
           {groupedByCenario.map(({ cenario, recursoGroups, total: colCount }) => {
             const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
@@ -656,8 +656,8 @@ const EmergencySection: React.FC = () => {
                   <Badge variant="secondary" className="text-[9px]">{colCount}</Badge>
                 </div>
 
-                <ScrollArea className="flex-1 p-2">
-                  <div className="space-y-3">
+                <div className="flex-1 min-w-0 overflow-y-auto">
+                  <div className="box-border w-full space-y-3 p-2 pr-4">
                     {recursoGroups.map(({ recurso, cards: subCards }) => {
                       const subLabel = recurso
                         ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
@@ -688,7 +688,7 @@ const EmergencySection: React.FC = () => {
                                   onDragStart={() => handleDragStart(card.id)}
                                   onDragEnd={handleDragEnd}
                                   onClick={() => setSelectedCardId(card.id)}
-                                  className={`border-l-4 ${severityColors[card.severity] || ""} cursor-pointer active:cursor-grabbing transition-all hover:shadow-md ${isDragging ? "opacity-40" : ""} ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
+                                  className={`w-full min-w-0 border-l-4 ${severityColors[card.severity] || ""} cursor-pointer active:cursor-grabbing transition-all hover:shadow-md ${isDragging ? "opacity-40" : ""} ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
                                 >
                                   <CardContent className="p-2.5 space-y-1.5">
                                     <div className="flex items-start justify-between gap-2">
@@ -727,7 +727,7 @@ const EmergencySection: React.FC = () => {
                       );
                     })}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             );
           })}
