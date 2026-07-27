@@ -656,7 +656,7 @@ const EmergencySection: React.FC = () => {
                   <Badge variant="secondary" className="text-[9px]">{colCount}</Badge>
                 </div>
 
-                <ScrollArea className="flex-1">
+                <div className="flex-1 min-w-0 overflow-y-auto">
                   <div className="box-border w-full space-y-3 p-2 pr-4">
                     {recursoGroups.map(({ recurso, cards: subCards }) => {
                       const subLabel = recurso
@@ -727,7 +727,7 @@ const EmergencySection: React.FC = () => {
                       );
                     })}
                   </div>
-                </ScrollArea>
+                </div>
               </div>
             );
           })}
