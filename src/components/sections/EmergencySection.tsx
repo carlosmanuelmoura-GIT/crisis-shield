@@ -657,7 +657,7 @@ const EmergencySection: React.FC = () => {
                 </div>
 
                 <ScrollArea className="flex-1">
-                  <div className="space-y-3 p-2 pr-4">
+                  <div className="box-border w-full space-y-3 p-2 pr-4">
                     {recursoGroups.map(({ recurso, cards: subCards }) => {
                       const subLabel = recurso
                         ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
@@ -688,7 +688,7 @@ const EmergencySection: React.FC = () => {
                                   onDragStart={() => handleDragStart(card.id)}
                                   onDragEnd={handleDragEnd}
                                   onClick={() => setSelectedCardId(card.id)}
-                                  className={`border-l-4 ${severityColors[card.severity] || ""} cursor-pointer active:cursor-grabbing transition-all hover:shadow-md ${isDragging ? "opacity-40" : ""} ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
+                                  className={`w-full min-w-0 border-l-4 ${severityColors[card.severity] || ""} cursor-pointer active:cursor-grabbing transition-all hover:shadow-md ${isDragging ? "opacity-40" : ""} ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
                                 >
                                   <CardContent className="p-2.5 space-y-1.5">
                                     <div className="flex items-start justify-between gap-2">
