@@ -616,7 +616,7 @@ const EmergencySection: React.FC = () => {
 
       {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 400 }}>
+        <div className="flex gap-3 overflow-x-auto pb-4 px-1 scroll-px-1" style={{ minHeight: 400 }}>
           {groupedByCenario.map(({ cenario, recursoGroups, total: colCount }) => {
             const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
