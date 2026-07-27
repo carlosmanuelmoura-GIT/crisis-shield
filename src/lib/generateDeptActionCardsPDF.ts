@@ -253,6 +253,11 @@ export function generateDeptActionCardsPDF(opts: {
     drawFooter(p, total);
   }
 
-  const url = doc.output("bloburl");
-  window.open(url, "_blank", "noopener,noreferrer");
+  const safeDept = (opts.departmentName || "departamento")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  doc.save(`ActionCards_${safeDept}_${dateStr}.pdf`);
 }
