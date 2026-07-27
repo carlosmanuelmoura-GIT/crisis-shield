@@ -3,6 +3,7 @@ import { useApp } from "@/contexts/AppContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -393,7 +394,7 @@ const ProceduresSection: React.FC = () => {
                             }}
                             className="mt-1"
                           />
-                          <Input
+                          <Textarea
                             defaultValue={t(s.text_pt, s.text_en)}
                             onBlur={(e) => {
                               const val = e.target.value;
@@ -401,10 +402,11 @@ const ProceduresSection: React.FC = () => {
                                 updateStep.mutate({ id: s.id, procedure_id: detail.id, text_pt: val, text_en: val });
                               }
                             }}
-                            className="flex-1 h-8 text-sm"
+                            rows={3}
+                            className="flex-1 min-h-[72px] text-sm resize-y"
                           />
                           <Button
-                            size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0"
+                            size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0 mt-1"
                             onClick={() => deleteStep.mutate({ id: s.id, procedure_id: detail.id })}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -417,15 +419,15 @@ const ProceduresSection: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-3">
-                      <Input
+                    <div className="flex items-start gap-2 mt-3">
+                      <Textarea
                         placeholder={lang === "pt" ? "Novo passo…" : "New step…"}
                         value={newStepText}
                         onChange={(e) => setNewStepText(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") addStep(); }}
-                        className="h-8 text-sm"
+                        rows={3}
+                        className="flex-1 min-h-[72px] text-sm resize-y"
                       />
-                      <Button size="sm" onClick={addStep} disabled={!newStepText.trim()}>
+                      <Button size="sm" onClick={addStep} disabled={!newStepText.trim()} className="mt-1">
                         <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Adicionar" : "Add"}
                       </Button>
                     </div>
