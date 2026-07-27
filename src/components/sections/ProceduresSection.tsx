@@ -76,28 +76,35 @@ const ProceduresSection: React.FC = () => {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBProcedure | null>(null);
-  const [form, setForm] = useState<{ title_pt: string; title_en: string; category_pt: string; category_en: string; content_pt: string; content_en: string; phase: ProcedurePhase }>({ title_pt: "", title_en: "", category_pt: "", category_en: "", content_pt: "", content_en: "", phase: "gestao" });
+  const [form, setForm] = useState<{ title_pt: string; title_en: string; category_pt: string; category_en: string; phase: ProcedurePhase }>({ title_pt: "", title_en: "", category_pt: "", category_en: "", phase: "gestao" });
   const [selectedPhase, setSelectedPhase] = useState<ProcedurePhase>("gestao");
   const [detailId, setDetailId] = useState<string | null>(null);
-  
+  const [newStepText, setNewStepText] = useState("");
+
+  const { data: stepCounts = {} } = useAllProcedureStepCounts();
+  const { data: detailSteps = [] } = useProcedureSteps(detailId ?? undefined);
+  const createStep = useCreateProcedureStep();
+  const updateStep = useUpdateProcedureStep();
+  const deleteStep = useDeleteProcedureStep();
+  const toggleStep = useToggleProcedureStep();
 
   const t = (pt: string, en: string) => (lang === "pt" ? pt : en);
 
   const filtered = procedures.filter(p => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return t(p.title_pt, p.title_en).toLowerCase().includes(q) || t(p.content_pt, p.content_en).toLowerCase().includes(q);
+    return t(p.title_pt, p.title_en).toLowerCase().includes(q);
   });
 
   const openNew = (phase: ProcedurePhase = "gestao") => {
     setEditing(null);
-    setForm({ title_pt: "", title_en: "", category_pt: "", category_en: "", content_pt: "", content_en: "", phase });
+    setForm({ title_pt: "", title_en: "", category_pt: "", category_en: "", phase });
     setDialogOpen(true);
   };
 
   const openEdit = (p: DBProcedure) => {
     setEditing(p);
-    setForm({ title_pt: p.title_pt, title_en: p.title_en, category_pt: p.category_pt, category_en: p.category_en, content_pt: p.content_pt, content_en: p.content_en, phase: p.phase ?? "gestao" });
+    setForm({ title_pt: p.title_pt, title_en: p.title_en, category_pt: p.category_pt, category_en: p.category_en, phase: p.phase ?? "gestao" });
     setDialogOpen(true);
   };
 
