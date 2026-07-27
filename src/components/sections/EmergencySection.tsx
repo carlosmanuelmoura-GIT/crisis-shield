@@ -14,8 +14,9 @@ import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
-  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown,
+  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown,
 } from "lucide-react";
+import { generateDeptActionCardsPDF } from "@/lib/generateDeptActionCardsPDF";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
@@ -428,6 +429,27 @@ const EmergencySection: React.FC = () => {
             <Button variant={viewMode === "kanban" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("kanban")}><Columns3 className="h-3.5 w-3.5" /></Button>
             <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" className="h-8 rounded-none px-2" onClick={() => setViewMode("list")}><LayoutList className="h-3.5 w-3.5" /></Button>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs"
+            disabled={filterDepartment === "all"}
+            title={filterDepartment === "all" ? (lang === "pt" ? "Selecione um departamento para gerar o report" : "Select a department to generate the report") : ""}
+            onClick={() => {
+              const dept = departments.find(d => d.id === filterDepartment);
+              if (!dept) return;
+              const deptCards = cards.filter(c => (c as any).department_id === filterDepartment);
+              generateDeptActionCardsPDF({
+                departmentName: dept.name,
+                cards: deptCards as any,
+                items: allItems as any,
+                cenarios: cenarios as any,
+                recursos: recursos as any,
+              });
+            }}
+          >
+            <FileDown className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Report" : "Report"}
+          </Button>
           <Button size="sm" onClick={() => openCreate()} className="h-8 text-xs">
             <Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}
           </Button>
