@@ -266,8 +266,8 @@ const ProceduresSection: React.FC = () => {
         onDrop={e => handleListDrop(selectedPhase, e)}
       >
         {currentPhaseItems.map((proc, idx) => {
-          const parsedCard = parseProcedure(t(proc.content_pt, proc.content_en));
           const code = codeFor(selectedPhase, idx);
+          const stepCount = stepCounts[proc.id] || 0;
           return (
             <Card
               key={proc.id}
@@ -286,7 +286,7 @@ const ProceduresSection: React.FC = () => {
                   <div className="flex items-center gap-1">
                     <Badge variant="secondary" className="text-[10px] gap-1">
                       <Settings className="h-3 w-3" />
-                      {parsedCard.actions.length} {lang === "pt" ? "Passos" : "Steps"}
+                      {stepCount} {lang === "pt" ? "Passos" : "Steps"}
                     </Badge>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
                       <Button size="icon" variant="ghost" className="h-6 w-6" title={lang === "pt" ? "Clonar" : "Clone"} onClick={e => { e.stopPropagation(); handleClone(proc); }}>
@@ -307,9 +307,6 @@ const ProceduresSection: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4 pt-2">
-                {parsedCard.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{parsedCard.description}</p>
-                )}
                 <div className="flex items-center justify-between pt-2 border-t border-border/60">
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground min-w-0">
                     <User className="h-3 w-3 shrink-0" />
