@@ -203,7 +203,6 @@ const ProceduresSection: React.FC = () => {
   const detail = detailId ? procedures.find(p => p.id === detailId) : null;
   const detailPhase = detail ? (detail.phase ?? "gestao") : "gestao";
   const detailIdx = detail ? itemsByPhase[detailPhase].findIndex(p => p.id === detail.id) : -1;
-  const parsed = detail ? parseProcedure(t(detail.content_pt, detail.content_en)) : null;
 
   if (isLoading) return <div className="text-sm text-muted-foreground">{lang === "pt" ? "A carregar..." : "Loading..."}</div>;
 
