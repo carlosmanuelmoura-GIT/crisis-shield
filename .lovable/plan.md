@@ -1,28 +1,28 @@
-## Objetivo
+## Diagnóstico
 
-Atribuir, aos 6 Action Cards do DSP (Supervisão Prudencial), o **cenário de desastre mais provável** (`cenario_id`) e o **tipo de falha mais apropriado** (`recurso_id`) — dois campos que já existem em `public.action_cards` mas estão vazios nestes cartões.
+Na vista Kanban dos Action Cards de departamento (`EmergencySection.tsx`, linhas ~618‑619), o container das colunas é:
 
-## Mapeamento proposto
+```tsx
+<div className="flex gap-3 overflow-x-auto pb-4" ...>
+```
 
-Racional: o trabalho do DSP é analítico/regulatório e depende fortemente de (a) sistemas de informação para aceder a dossiers e bases de registos, (b) canais de comunicação com BCE/SSM/entidades supervisionadas, e (c) presença física em inspeções on-site. Daí a predominância do Cenário I, com Cenário II para o cartão que integra on-site e Cenário III para o Secretariado Técnico (dependente de pessoas-chave).
+Cada coluna é `flex-shrink-0 w-80` (320 px). O container herda a largura total da área de conteúdo mas **não tem padding horizontal**, pelo que a primeira coluna encosta ao limite esquerdo. Como o wrapper de secção acima aplica sombra/borda arredondada e o layout desktop tem overflow do `<main>` com scroll, a borda esquerda da primeira coluna fica visualmente "colada"/cortada — mais evidente no cenário DSP (Indisponibilidade de Sistemas) porque é a coluna com mais cartões e maior sombra acumulada, o que torna o corte percetível.
 
-| Cartão | Cenário mais provável | Tipo de Falha |
-|---|---|---|
-| DSP_REG — Regulação | **I** — Indisponibilidade de sistemas | Falha de Sistemas de Negócio Core |
-| DSP_AUT — Autorizações | **I** — Indisponibilidade de sistemas | Falha de Base Dados com Corrupção de Dados |
-| DSP_SSM — Supervisão SSM | **I** — Indisponibilidade de sistemas | Falha de Sistemas de Comunicação |
-| DSP_NSSM — Supervisão Non SSM (Off/On-Site/Horizontal) | **II** — Indisponibilidade de edifícios | Interdição de Acesso ao Edifício |
-| DSP_RI_INST — Relações Institucionais (Secretariado Técnico) | **III** — Indisponibilidade de RH | Indisponibilidade de Líderes Chave |
-| DSP_RI_INT — Relações Internacionais (Aconselhamento) | **I** — Indisponibilidade de sistemas | Falha de Sistemas de Comunicação |
+Faltam também dois detalhes que agravam o efeito:
+- Sem `scroll-padding-left`, ao fazer scroll horizontal a primeira coluna aparece rente à margem.
+- Sem `min-w-0` no ancestral flex, alguns browsers arredondam a largura para baixo (~1 px) em viewports com DPR ≠ 1 (o cliente atual usa dpr 0.9), causando clipping subpixel.
 
-## Execução
+## Correção
 
-Um único `UPDATE` em `public.action_cards` (via ferramenta de insert/update), filtrando pelos 6 cartões DSP e preenchendo `cenario_id` e `recurso_id` conforme a tabela acima. Sem alterações de schema, código ou UI.
+Ajuste puramente visual em `src/components/sections/EmergencySection.tsx` no wrapper da vista Kanban (linha ~619):
 
-## Ponto a confirmar
+- Adicionar `px-1` (padding horizontal leve) para dar respiração à primeira e última colunas.
+- Adicionar `scroll-px-1` para preservar esse respiro durante o scroll horizontal.
+- Adicionar `snap-x snap-mandatory` opcional e `snap-start` nas colunas para melhor navegação (nice‑to‑have; posso omitir se preferir manter scroll livre).
 
-Concorda com este mapeamento? Se preferir, posso alternativamente:
-- **(A)** atribuir o mesmo cenário (I — Sistemas) a todos os 6 cartões, por ser o denominador comum, ou
-- **(B)** ajustar cartões específicos que queira mudar (indique quais).
+Resultado: sem alterar larguras, cores ou lógica — apenas garante que nenhuma coluna fica cortada pelo limite do container.
 
-Sem indicação, avanço com o mapeamento da tabela.
+## Fora de âmbito
+
+- Não altero larguras (`w-80`), tokens de cor, sombra, ou a lógica de agrupamento por cenário.
+- Não toco na vista lista/kanban de outras secções.
