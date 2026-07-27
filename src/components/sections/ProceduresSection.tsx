@@ -114,7 +114,7 @@ const ProceduresSection: React.FC = () => {
         await updateMut.mutateAsync({ id: editing.id, ...form });
         toast.success(lang === "pt" ? "Procedimento atualizado" : "Procedure updated");
       } else {
-        await createMut.mutateAsync(form);
+        await createMut.mutateAsync({ ...form, content_pt: "", content_en: "" });
         toast.success(lang === "pt" ? "Procedimento criado" : "Procedure created");
       }
       setDialogOpen(false);
