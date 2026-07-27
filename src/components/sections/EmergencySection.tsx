@@ -978,21 +978,22 @@ const EmergencySection: React.FC = () => {
                             <div key={item.id} className={`flex items-start gap-2 p-2.5 rounded-lg border group transition-colors ${checked ? "bg-emerald-50 border-emerald-200" : "bg-white border-slate-200"}`}>
                               <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 mt-0.5 w-7 text-center shrink-0">{idx + 1}</span>
                               {editingItemId === item.id ? (
-                                <Input
+                                <Textarea
                                   autoFocus
                                   value={editingItemText}
                                   onChange={(e) => setEditingItemText(e.target.value)}
                                   onBlur={() => commitEditItem(item.id, text)}
                                   onKeyDown={(e) => {
-                                    if (e.key === "Enter") { e.preventDefault(); commitEditItem(item.id, text); }
+                                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); commitEditItem(item.id, text); }
                                     else if (e.key === "Escape") { e.preventDefault(); cancelEditItem(); }
                                   }}
-                                  className="h-7 text-sm flex-1 bg-white border-slate-300"
+                                  rows={3}
+                                  className="min-h-[72px] text-sm flex-1 bg-white border-slate-300 resize-y"
                                 />
                               ) : (
                                 <label className={`flex items-start gap-2 flex-1 min-w-0 ${canCheck ? "cursor-pointer" : "cursor-default opacity-70"}`}>
                                   <Checkbox checked={checked} onCheckedChange={() => handleToggleCheck(item.id, !checked, text, card.id)} className="mt-0.5" disabled={!canCheck} />
-                                  <span className={`text-sm ${checked ? "text-slate-500" : "text-slate-800"}`}>{text}</span>
+                                  <span className={`text-sm whitespace-pre-wrap ${checked ? "text-slate-500" : "text-slate-800"}`}>{text}</span>
                                 </label>
                               )}
                               {editingItemId !== item.id && (
@@ -1028,15 +1029,15 @@ const EmergencySection: React.FC = () => {
                       </div>
 
                       {/* Add new action */}
-                      <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200">
-                        <Input
+                      <div className="flex items-start gap-2 mt-3 pt-3 border-t border-slate-200">
+                        <Textarea
                           value={newItemText[card.id] || ""}
                           onChange={(e) => setNewItemText(prev => ({ ...prev, [card.id]: e.target.value }))}
                           placeholder={lang === "pt" ? "Nova ação..." : "New action..."}
-                          className="h-9 text-sm bg-white border-slate-300"
-                          onKeyDown={(e) => e.key === "Enter" && handleAddItem(card.id)}
+                          rows={3}
+                          className="min-h-[72px] text-sm bg-white border-slate-300 resize-y flex-1"
                         />
-                        <Button size="sm" onClick={() => handleAddItem(card.id)} disabled={!newItemText[card.id]?.trim()}>
+                        <Button size="sm" onClick={() => handleAddItem(card.id)} disabled={!newItemText[card.id]?.trim()} className="mt-1">
                           <Plus className="h-4 w-4 mr-1" />{lang === "pt" ? "Adicionar" : "Add"}
                         </Button>
                       </div>
