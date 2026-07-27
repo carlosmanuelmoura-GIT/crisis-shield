@@ -473,8 +473,6 @@ const ProceduresSection: React.FC = () => {
               <div><Label>Categoria (PT)</Label><Input value={form.category_pt} onChange={e => setForm(f => ({ ...f, category_pt: e.target.value }))} /></div>
               <div><Label>Category (EN)</Label><Input value={form.category_en} onChange={e => setForm(f => ({ ...f, category_en: e.target.value }))} /></div>
             </div>
-            <div><Label>Conteúdo (PT) — Markdown</Label><Textarea rows={14} className="min-h-[200px]" value={form.content_pt} onChange={e => setForm(f => ({ ...f, content_pt: e.target.value }))} /></div>
-            <div><Label>Content (EN) — Markdown</Label><Textarea rows={14} className="min-h-[200px]" value={form.content_en} onChange={e => setForm(f => ({ ...f, content_en: e.target.value }))} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{lang === "pt" ? "Cancelar" : "Cancel"}</Button>
