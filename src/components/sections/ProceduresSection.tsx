@@ -3,9 +3,9 @@ import { useApp } from "@/contexts/AppContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -15,6 +15,10 @@ import {
   Wrench, AlertTriangle, CheckCircle2, User, Settings, ArrowRight,
 } from "lucide-react";
 import { useProcedures, useCreateProcedure, useUpdateProcedure, useDeleteProcedure, DBProcedure, ProcedurePhase } from "@/hooks/useProcedures";
+import {
+  useProcedureSteps, useAllProcedureStepCounts, useCreateProcedureStep,
+  useUpdateProcedureStep, useDeleteProcedureStep, useToggleProcedureStep,
+} from "@/hooks/useProcedureSteps";
 import { toast } from "sonner";
 
 const PHASES: { key: ProcedurePhase; label_pt: string; label_en: string; tint: string; ring: string; icon: React.FC<{ className?: string }> }[] = [
