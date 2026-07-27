@@ -259,8 +259,8 @@ const DecisionLogSection: React.FC = () => {
             const crisis = group.crisis;
             const isActive = activeCrisis?.id === group.key;
             const isSimulated = crisis?.crisis_type === "simulated";
-            const systemEntries = group.entries.filter(e => e.title === "" && (e.text.startsWith("🚨") || e.text.startsWith("✅") || e.text.startsWith("📋")));
-            const decisionEntries = group.entries.filter(e => !systemEntries.includes(e));
+            const isSystemEntry = (e: DBDecisionLog) =>
+              e.title === "" && (e.text.startsWith("🚨") || e.text.startsWith("✅") || e.text.startsWith("📋"));
 
             return (
               <AccordionItem key={group.key} value={group.key} className={`border rounded-lg bg-card ${isActive ? "border-crisis/40 shadow-sm" : ""}`}>
@@ -285,78 +285,83 @@ const DecisionLogSection: React.FC = () => {
                       </Badge>
                     )}
                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto mr-2">
-                      {decisionEntries.length} {lang === "pt" ? "acções" : "actions"}
+                      {group.entries.length} {lang === "pt" ? "acções" : "actions"}
                     </Badge>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <div className="space-y-2">
-                    {systemEntries.map(entry => (
-                      <div key={entry.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/60 text-xs">
-                        <div className="flex flex-col items-center justify-center px-2 py-1 rounded bg-muted/80 min-w-[60px]">
-                          <span className="text-[10px] font-bold text-foreground leading-none">
-                            {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit" })}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
-                            {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        </div>
-                        <span className="flex-1 font-medium truncate">{entry.text}</span>
-                      </div>
-                    ))}
-
-                    {decisionEntries.length === 0 && systemEntries.length === 0 && (
+                    {group.entries.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-6">
                         {lang === "pt" ? "Sem acções registadas." : "No actions logged."}
                       </p>
                     )}
 
-                    {decisionEntries.map(entry => (
-                      <Card key={entry.id} className="bg-secondary/30 border-border/50">
-                        <CardContent className="p-2.5">
-                          <div className="flex items-start gap-2.5">
-                            <div className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md bg-muted/70 min-w-[64px] shrink-0">
-                              <span className="text-sm font-bold text-foreground leading-tight">
-                                {new Date(entry.created_at).getDate().toString().padStart(2, "0")}
+                    {group.entries.map(entry => {
+                      if (isSystemEntry(entry)) {
+                        return (
+                          <div key={entry.id} className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-muted/60 text-xs">
+                            <div className="flex flex-col items-center justify-center px-2 py-1 rounded bg-muted/80 min-w-[60px]">
+                              <span className="text-[10px] font-bold text-foreground leading-none">
+                                {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { day: "2-digit", month: "2-digit" })}
                               </span>
-                              <span className="text-[10px] uppercase font-medium text-muted-foreground leading-tight">
-                                {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { month: "short" })}
-                              </span>
-                              <span className="text-[10px] font-semibold text-primary leading-tight">
+                              <span className="text-[10px] text-muted-foreground leading-none mt-0.5">
                                 {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
                               </span>
                             </div>
-                            <div className="min-w-0 flex-1 space-y-1">
-                              {entry.title && (
-                                <div className="flex items-center gap-1.5">
-                                  <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                                  <span className="text-xs font-semibold truncate">{entry.title}</span>
-                                </div>
-                              )}
-                              <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
-                                {entry.text}
-                              </p>
-                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                <span className="font-medium">{entry.author}</span>
-                              </p>
-                            </div>
-                            <div className="flex flex-col gap-0.5 shrink-0">
-                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(entry)}>
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(entry.id)}>
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <span className="flex-1 font-medium truncate">{entry.text}</span>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        );
+                      }
+
+                      return (
+                        <Card key={entry.id} className="bg-secondary/30 border-border/50">
+                          <CardContent className="p-2.5">
+                            <div className="flex items-start gap-2.5">
+                              <div className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded-md bg-muted/70 min-w-[64px] shrink-0">
+                                <span className="text-sm font-bold text-foreground leading-tight">
+                                  {new Date(entry.created_at).getDate().toString().padStart(2, "0")}
+                                </span>
+                                <span className="text-[10px] uppercase font-medium text-muted-foreground leading-tight">
+                                  {new Date(entry.created_at).toLocaleDateString(lang === "pt" ? "pt-PT" : "en-GB", { month: "short" })}
+                                </span>
+                                <span className="text-[10px] font-semibold text-primary leading-tight">
+                                  {new Date(entry.created_at).toLocaleTimeString(lang === "pt" ? "pt-PT" : "en-GB", { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
+                              <div className="min-w-0 flex-1 space-y-1">
+                                {entry.title && (
+                                  <div className="flex items-center gap-1.5">
+                                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                                    <span className="text-xs font-semibold truncate">{entry.title}</span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">
+                                  {entry.text}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <span className="font-medium">{entry.author}</span>
+                                </p>
+                              </div>
+                              <div className="flex flex-col gap-0.5 shrink-0">
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(entry)}>
+                                  <Pencil className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(entry.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </AccordionContent>
               </AccordionItem>
             );
           })}
+
         </Accordion>
       )}
 
