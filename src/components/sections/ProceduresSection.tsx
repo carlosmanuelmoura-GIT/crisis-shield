@@ -330,9 +330,21 @@ const ProceduresSection: React.FC = () => {
       {/* Detail Sheet */}
       <Sheet open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
         <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
-          {detail && parsed && (() => {
+          {detail && (() => {
             const ph = PHASES[phaseIndex(detailPhase)];
             const code = codeFor(detailPhase, detailIdx);
+            const detailTitle = t(detail.title_pt, detail.title_en);
+            const addStep = async () => {
+              const text = newStepText.trim();
+              if (!text) return;
+              const nextOrder = ((detailSteps[detailSteps.length - 1]?.sort_order ?? 0) + 10);
+              try {
+                await createStep.mutateAsync({ procedure_id: detail.id, text_pt: text, text_en: text, sort_order: nextOrder });
+                setNewStepText("");
+              } catch {
+                toast.error(lang === "pt" ? "Erro ao adicionar" : "Error adding");
+              }
+            };
             return (
               <div className="flex flex-col h-full">
                 {/* Header */}
@@ -347,88 +359,89 @@ const ProceduresSection: React.FC = () => {
                     </Button>
                   </div>
                   <h3 className="text-xl font-bold uppercase tracking-wide leading-tight">
-                    {t(detail.title_pt, detail.title_en)}
+                    {detailTitle}
                   </h3>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                  {/* Description */}
-                  {parsed.description && (
-                    <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                        {lang === "pt" ? "Descrição & Objetivo" : "Description & Objective"}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {lang === "pt" ? "Ações Sequenciais" : "Sequential Actions"}
                       </div>
-                      <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm leading-relaxed">
-                        {parsed.description}
-                      </div>
+                      <span className="text-[10px] font-mono text-primary">
+                        {detailSteps.length} {lang === "pt" ? "passos" : "steps"}
+                      </span>
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  {parsed.actions.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                          {lang === "pt" ? "Ações Sequenciais (Heurísticas)" : "Sequential Actions (Heuristics)"}
-                        </div>
-                        <span className="text-[10px] font-mono text-primary">
-                          {lang === "pt" ? "Modo Operacional" : "Operational Mode"}
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {parsed.actions.map((action, i) => (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
+                    <div className="space-y-2">
+                      {detailSteps.map((s, i) => (
+                        <div key={s.id} className="flex items-start gap-2 rounded-lg border border-border bg-card p-3">
+                          <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 mt-1 w-7 text-center shrink-0">
+                            {i + 1}
+                          </span>
+                          <Checkbox
+                            checked={s.checked}
+                            onCheckedChange={(v) => {
+                              toggleStep.mutate({
+                                id: s.id,
+                                checked: !!v,
+                                procedure_id: detail.id,
+                                procedure_title: detailTitle,
+                                step_index: i + 1,
+                                step_text: t(s.text_pt, s.text_en),
+                              });
+                            }}
+                            className="mt-1"
+                          />
+                          <Input
+                            defaultValue={t(s.text_pt, s.text_en)}
+                            onBlur={(e) => {
+                              const val = e.target.value;
+                              if (val !== t(s.text_pt, s.text_en)) {
+                                updateStep.mutate({ id: s.id, procedure_id: detail.id, text_pt: val, text_en: val });
+                              }
+                            }}
+                            className="flex-1 h-8 text-sm"
+                          />
+                          <Button
+                            size="icon" variant="ghost" className="h-8 w-8 text-destructive shrink-0"
+                            onClick={() => deleteStep.mutate({ id: s.id, procedure_id: detail.id })}
                           >
-                            <span className="font-mono text-[11px] font-bold text-slate-700 bg-slate-100 rounded px-1.5 py-0.5 mt-0.5 w-7 text-center shrink-0">
-                              {i + 1}
-                            </span>
-                            <span className="text-sm leading-relaxed flex-1">{action}</span>
-                          </div>
-                        ))}
-                      </div>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                      {detailSteps.length === 0 && (
+                        <div className="text-center text-xs text-muted-foreground py-6 italic border-2 border-dashed border-border rounded-lg">
+                          {lang === "pt" ? "Sem passos. Adicione o primeiro em baixo." : "No steps. Add the first one below."}
+                        </div>
+                      )}
                     </div>
-                  )}
-
-
-                  {/* Golden rule */}
-                  {parsed.goldenRule && (
-                    <div className="rounded-lg border-2 border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20 p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <AlertTriangle className="h-4 w-4 text-amber-600" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                          {lang === "pt" ? "Regra de Ouro Antifrágil" : "Antifragile Golden Rule"}
-                        </span>
-                      </div>
-                      <p className="text-sm leading-relaxed">{parsed.goldenRule}</p>
+                    <div className="flex items-center gap-2 mt-3">
+                      <Input
+                        placeholder={lang === "pt" ? "Novo passo…" : "New step…"}
+                        value={newStepText}
+                        onChange={(e) => setNewStepText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") addStep(); }}
+                        className="h-8 text-sm"
+                      />
+                      <Button size="sm" onClick={addStep} disabled={!newStepText.trim()}>
+                        <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Adicionar" : "Add"}
+                      </Button>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-border p-4 flex items-center justify-between gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(t(detail.content_pt, detail.content_en));
-                      toast.success(lang === "pt" ? "Copiado" : "Copied");
-                    }}
-                  >
-                    <Copy className="h-4 w-4 mr-1.5" />
-                    {lang === "pt" ? "Copiar" : "Copy"}
+                <div className="border-t border-border p-4 flex items-center justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => { openEdit(detail); }}>
+                    <Pencil className="h-4 w-4 mr-1.5" />
+                    {lang === "pt" ? "Editar" : "Edit"}
                   </Button>
-                  <div className="flex items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { openEdit(detail); }}>
-                      <Pencil className="h-4 w-4 mr-1.5" />
-                      {lang === "pt" ? "Editar" : "Edit"}
-                    </Button>
-                    <Button size="sm" onClick={() => setDetailId(null)}>
-                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                      {lang === "pt" ? "Concluído" : "Done"}
-                    </Button>
-                  </div>
+                  <Button size="sm" onClick={() => setDetailId(null)}>
+                    <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                    {lang === "pt" ? "Concluído" : "Done"}
+                  </Button>
                 </div>
               </div>
             );
