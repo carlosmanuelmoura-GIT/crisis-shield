@@ -1027,9 +1027,32 @@ const EmergencySection: React.FC = () => {
                               ? bia.description
                               : biaName;
                             return (
-                              <div key={link.id} className="p-3 rounded-lg border border-blue-200 bg-blue-50/60">
-                                <p className="text-sm font-bold text-slate-900 leading-tight">{biaName}</p>
-                                <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{desc}</p>
+                              <div key={link.id} className="p-3 rounded-lg border border-blue-200 bg-blue-50/60 flex items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-slate-900 leading-tight">{biaName}</p>
+                                  <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{desc}</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-destructive shrink-0"
+                                  disabled={unlinkBIA.isPending}
+                                  onClick={async () => {
+                                    const msg = lang === "pt"
+                                      ? `Eliminar associação da BIA "${biaName}" a este Action Card?`
+                                      : `Remove BIA "${biaName}" link from this Action Card?`;
+                                    if (!window.confirm(msg)) return;
+                                    try {
+                                      await unlinkBIA.mutateAsync(link.id);
+                                      toast({ title: lang === "pt" ? "Associação eliminada" : "Link removed" });
+                                    } catch (err: any) {
+                                      toast({ title: "Erro", description: err.message, variant: "destructive" });
+                                    }
+                                  }}
+                                  title={lang === "pt" ? "Eliminar associação" : "Remove link"}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
                             );
                           })}
