@@ -595,10 +595,7 @@ const EmergencySection: React.FC = () => {
                             className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col cursor-pointer transition-all hover:shadow-md ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
                           >
                             <CardHeader className="p-3 pb-2">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 uppercase tracking-wider">
-                                  AC · {card.id.slice(0, 6)}
-                                </span>
+                              <div className="flex items-start justify-end gap-2 mb-1">
                                 <Badge className={`text-[10px] uppercase tracking-wide ${
                                   card.severity === "critical" ? "bg-red-600 text-white hover:bg-red-600" :
                                   card.severity === "high" ? "bg-amber-500 text-white hover:bg-amber-500" :
