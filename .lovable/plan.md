@@ -1,17 +1,16 @@
-## Alterações em `src/components/sections/EmergencySection.tsx`
+## Objetivo
+Permitir eliminar a associação de uma BIA a um Action Card diretamente no painel lateral de detalhe do Action Card.
 
-### 1. Remover o identificador interno "AC · xxxxxx" nos cartões (modo cartão)
-- Remover o `<span>AC · {card.id.slice(0, 6)}</span>` na vista de lista/expandido (~linha 600).
-- Remover o `<span>AC · {card.id.slice(0, 6)}</span>` na vista Kanban (~linha 718).
-- Manter o identificador apenas no cabeçalho do painel lateral de detalhe (linha 982), onde continua útil como referência.
+## Alterações
 
-### 2. Mostrar descrição das BIAs no painel de detalhe do Action Card
-No `SheetContent` de detalhe (~linhas 1017–1020, antes do bloco "Checklist"), adicionar uma nova secção "BIAs associadas" que:
-- Percorre `linkedBias` (já disponível na linha 969).
-- Para cada link, procura a BIA em `biaProcesses` pelo `bia_process_id`.
-- Renderiza um cartão compacto com:
-  - **Nome da BIA** (`name_pt` / `name_en`) em destaque.
-  - **Descrição** (`bia.description`) por baixo em texto secundário; se vazia, fallback para `Nome · Processo`.
-- Se `linkedBias.length === 0`, não renderiza a secção (ou mostra mensagem discreta "Sem BIAs associadas").
+**Ficheiro:** `src/components/sections/EmergencySection.tsx` (secção "BIAs Associadas" no Sheet de detalhe, ~linhas 1015-1038)
 
-Sem alterações de schema, hooks ou lógica de mutação — apenas UI.
+- Em cada cartão de BIA associada, adicionar um botão de ação (ícone `X` / lixo) no canto superior direito.
+- Ao clicar, mostrar `AlertDialog` de confirmação ("Eliminar associação desta BIA ao Action Card?" / "Remove this BIA link?").
+- Ao confirmar, chamar `unlinkBIA.mutateAsync({ id: link.id })` (hook `useUnlinkBIAActionCard` já importado e disponível em `EmergencySection`).
+- Mostrar toast de sucesso/erro coerente com o resto do ficheiro (PT/EN).
+- Desativar o botão enquanto `unlinkBIA.isPending`.
+
+## Fora do âmbito
+- Sem alterações à tabela ou hooks (a mutação `useUnlinkBIAActionCard` já existe e é usada noutros pontos).
+- Sem alterações ao diálogo de associação nem à vista de cartão.
