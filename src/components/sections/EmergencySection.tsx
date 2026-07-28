@@ -882,25 +882,57 @@ const EmergencySection: React.FC = () => {
 
       {/* Link BIA to Action Card dialog */}
       <Dialog open={!!linkBiaDialogCard} onOpenChange={(o) => { if (!o) { setLinkBiaDialogCard(null); setBiaToLink(""); } }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{lang === "pt" ? "Associar BIA" : "Link BIA"}</DialogTitle>
           </DialogHeader>
           {linkBiaDialogCard && (() => {
+            const card = cards.find(c => c.id === linkBiaDialogCard);
+            const deptId = card?.department_id ?? null;
             const linked = biaACLinks.filter(l => l.action_card_id === linkBiaDialogCard).map(l => l.bia_process_id);
-            const available = biaProcesses.filter(b => !linked.includes(b.id));
+            const notLinked = biaProcesses.filter(b => !linked.includes(b.id));
+            const available = deptId
+              ? notLinked.filter(b => b.department_id === deptId)
+              : notLinked;
             return (
               <div className="space-y-3">
-                <Label className="text-sm">{lang === "pt" ? "Escolher BIA" : "Choose BIA"}</Label>
-                <Select value={biaToLink} onValueChange={setBiaToLink}>
-                  <SelectTrigger className="bg-secondary border-border">
-                    <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {available.length === 0 && <div className="px-2 py-1.5 text-xs text-muted-foreground">{lang === "pt" ? "Sem BIAs disponíveis" : "No BIAs available"}</div>}
-                    {available.map(b => <SelectItem key={b.id} value={b.id}>{lang === "pt" ? b.name_pt : b.name_en || b.name_pt}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Label className="text-sm">
+                  {lang === "pt" ? "BIAs do departamento" : "Department BIAs"}
+                  {!deptId && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {lang === "pt" ? "(Action Card sem departamento — a mostrar todas)" : "(Card has no department — showing all)"}
+                    </span>
+                  )}
+                </Label>
+                <div className="max-h-[400px] overflow-auto space-y-2 rounded-md border border-border p-2 bg-secondary/30">
+                  {available.length === 0 && (
+                    <div className="px-2 py-6 text-center text-xs text-muted-foreground">
+                      {lang === "pt" ? "Sem BIAs para este departamento" : "No BIAs for this department"}
+                    </div>
+                  )}
+                  {available.map(b => {
+                    const name = (lang === "pt" ? b.name_pt : b.name_en) || b.name_pt;
+                    const desc = b.description || `${name}`;
+                    const selected = biaToLink === b.id;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setBiaToLink(b.id)}
+                        className={`w-full text-left rounded-md border p-3 transition-colors ${
+                          selected
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/40"
+                            : "border-border bg-background hover:bg-accent"
+                        }`}
+                      >
+                        <div className="font-medium text-sm text-foreground">{name}</div>
+                        {desc && desc !== name && (
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-2">{desc}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
                 <Button onClick={async () => {
                   if (!linkBiaDialogCard || !biaToLink) return;
                   try {
