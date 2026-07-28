@@ -595,10 +595,7 @@ const EmergencySection: React.FC = () => {
                             className={`border-l-4 ${severityColors[card.severity] || ""} flex flex-col cursor-pointer transition-all hover:shadow-md ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
                           >
                             <CardHeader className="p-3 pb-2">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 uppercase tracking-wider">
-                                  AC · {card.id.slice(0, 6)}
-                                </span>
+                              <div className="flex items-start justify-end gap-2 mb-1">
                                 <Badge className={`text-[10px] uppercase tracking-wide ${
                                   card.severity === "critical" ? "bg-red-600 text-white hover:bg-red-600" :
                                   card.severity === "high" ? "bg-amber-500 text-white hover:bg-amber-500" :
@@ -713,10 +710,7 @@ const EmergencySection: React.FC = () => {
                                   className={`w-full min-w-0 border-l-4 ${severityColors[card.severity] || ""} cursor-pointer active:cursor-grabbing transition-all hover:shadow-md ${isDragging ? "opacity-40" : ""} ${selectedCardId === card.id ? "ring-2 ring-primary" : ""}`}
                                 >
                                   <CardContent className="p-2.5 space-y-1.5">
-                                    <div className="flex items-start justify-between gap-2">
-                                      <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 uppercase tracking-wider">
-                                        AC · {card.id.slice(0, 6)}
-                                      </span>
+                                    <div className="flex items-start justify-end gap-2">
                                       <Badge className={`text-[9px] uppercase tracking-wide ${
                                         card.severity === "critical" ? "bg-red-600 text-white hover:bg-red-600" :
                                         card.severity === "high" ? "bg-amber-500 text-white hover:bg-amber-500" :
@@ -1018,6 +1012,31 @@ const EmergencySection: React.FC = () => {
                 {/* Body */}
                 <ScrollArea className="flex-1">
                   <div className="p-5 space-y-5">
+                    {/* Linked BIAs */}
+                    {linkedBias.length > 0 && (
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
+                          {lang === "pt" ? "BIAs Associadas" : "Linked BIAs"} ({linkedBias.length})
+                        </p>
+                        <div className="space-y-2">
+                          {linkedBias.map(link => {
+                            const bia = biaProcesses.find(b => b.id === link.bia_process_id);
+                            if (!bia) return null;
+                            const biaName = lang === "pt" ? bia.name_pt : (bia.name_en || bia.name_pt);
+                            const desc = bia.description && bia.description.trim().length > 0
+                              ? bia.description
+                              : biaName;
+                            return (
+                              <div key={link.id} className="p-3 rounded-lg border border-blue-200 bg-blue-50/60">
+                                <p className="text-sm font-bold text-slate-900 leading-tight">{biaName}</p>
+                                <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{desc}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Checklist */}
                     <div>
                       <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
