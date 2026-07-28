@@ -1012,6 +1012,31 @@ const EmergencySection: React.FC = () => {
                 {/* Body */}
                 <ScrollArea className="flex-1">
                   <div className="p-5 space-y-5">
+                    {/* Linked BIAs */}
+                    {linkedBias.length > 0 && (
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
+                          {lang === "pt" ? "BIAs Associadas" : "Linked BIAs"} ({linkedBias.length})
+                        </p>
+                        <div className="space-y-2">
+                          {linkedBias.map(link => {
+                            const bia = biaProcesses.find(b => b.id === link.bia_process_id);
+                            if (!bia) return null;
+                            const biaName = lang === "pt" ? bia.name_pt : (bia.name_en || bia.name_pt);
+                            const desc = bia.description && bia.description.trim().length > 0
+                              ? bia.description
+                              : biaName;
+                            return (
+                              <div key={link.id} className="p-3 rounded-lg border border-blue-200 bg-blue-50/60">
+                                <p className="text-sm font-bold text-slate-900 leading-tight">{biaName}</p>
+                                <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{desc}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Checklist */}
                     <div>
                       <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
