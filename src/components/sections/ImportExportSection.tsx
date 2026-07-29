@@ -230,12 +230,14 @@ const ImportExportSection: React.FC = () => {
             const key = bpProcessoName.toLowerCase();
             bpId = bpNameMap.get(key) || null;
             if (!bpId) {
+              // Try to find an existing process by name to copy hierarchy
+              const match = processes.find(p => (p.processo || "").toLowerCase().trim() === key);
               const { data: newBp, error: bpErr } = await supabase
                 .from("business_processes")
                 .insert({
-                  tipo_funcao: "",
-                  funcao: "",
-                  macro_processo: "",
+                  tipo_funcao: match?.tipo_funcao || "N/A",
+                  funcao: match?.funcao || "N/A",
+                  macro_processo: match?.macro_processo || "N/A",
                   processo: bpProcessoName,
                   owner_id: user?.id,
                 } as any)
