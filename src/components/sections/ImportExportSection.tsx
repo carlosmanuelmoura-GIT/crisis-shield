@@ -87,6 +87,7 @@ const ImportExportSection: React.FC = () => {
       return {
         Nome_PT: b.name_pt,
         Nome_EN: b.name_en,
+        Descricao: (b as any).description || "",
         RTO: b.rto,
         RPO: b.rpo,
         Tipo_BIA: b.criticality,
@@ -123,7 +124,7 @@ const ImportExportSection: React.FC = () => {
 
   const exportTemplateBIA = () => {
     const ws = XLSX.utils.json_to_sheet([{
-      Nome_PT: "", Nome_EN: "", RTO: 0, RPO: 0, Tipo_BIA: "analitica",
+      Nome_PT: "", Nome_EN: "", Descricao: "", RTO: 0, RPO: 0, Tipo_BIA: "analitica",
       DR_Type_ID: "", DR_Type_Nome: "",
       Business_Process_ID: "", Business_Process_Nome: "",
       Departamento_ID: "", Departamento_Nome: "",
@@ -193,7 +194,7 @@ const ImportExportSection: React.FC = () => {
       const wb = XLSX.read(ab);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<{
-        Nome_PT?: string; Nome_EN?: string; RTO?: number; RPO?: number;
+        Nome_PT?: string; Nome_EN?: string; Descricao?: string; RTO?: number; RPO?: number;
         Tipo_BIA?: string; Criticidade?: string;
         DR_Type_ID?: string; DR_Type_Nome?: string;
         Business_Process_ID?: string; Business_Process_Nome?: string;
@@ -266,9 +267,10 @@ const ImportExportSection: React.FC = () => {
           deptId = deptNameMap.get(row.Departamento_Nome.toLowerCase().trim()) || null;
         }
 
-        // Auto-fill description: "<Nome_PT> · <Processo>" (or just Nome_PT)
+        // Description: use the file value when present, else auto-fill "<Nome_PT> · <Processo>"
         const namePt = row.Nome_PT.trim();
-        const description = bpProcessoName ? `${namePt} · ${bpProcessoName}` : namePt;
+        const description = row.Descricao?.trim()
+          || (bpProcessoName ? `${namePt} · ${bpProcessoName}` : namePt);
 
         // Insert BIA process and get the new id
         const { data: inserted, error: insertErr } = await supabase
