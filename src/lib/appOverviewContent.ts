@@ -170,7 +170,7 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Resiliência e Offline", en: "Resilience and Offline" },
         desc: {
-          pt: "Dados sincronizados com a nuvem e persistência local para consulta em situação de indisponibilidade.",
+          pt: "Permite ter os dados GCN  com este portal e garantir a consulta em situação de indisponibilidade.",
           en: "Cloud-synced data with local persistence for consultation during outages.",
         },
       },
