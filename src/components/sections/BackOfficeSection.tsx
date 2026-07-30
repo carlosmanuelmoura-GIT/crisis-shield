@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText, Building2, Users, Truck, MapPin, Monitor, Home, UserCheck, Network, Zap, Info, Download } from "lucide-react";
 import { APP_OVERVIEW, APP_OVERVIEW_INTRO, APP_OVERVIEW_TITLE } from "@/lib/appOverviewContent";
 import { generateAppOverviewPDF } from "@/lib/generateAppOverviewPDF";
+import { APP_OVERVIEW_SCREENS, APP_OVERVIEW_SCREENS_TITLE, type OverviewScreen } from "@/lib/appOverviewScreens";
+
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
