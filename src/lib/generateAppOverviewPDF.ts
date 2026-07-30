@@ -127,6 +127,48 @@ export async function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
     y += 2;
   });
 
+  // ===== ANNEX: application screenshots =====
+  const images = await Promise.all(
+    APP_OVERVIEW_SCREENS.map(async (s) => ({ ...s, data: await toDataURL(s.url) }))
+  );
+  const available = images.filter((s) => s.data);
+
+  if (available.length > 0) {
+    doc.addPage();
+    drawHeader();
+    y = 26;
+
+    doc.setFillColor(...BRAND_BLUE);
+    doc.rect(margin, y, contentW, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(APP_OVERVIEW_SCREENS_TITLE[lang], margin + 3, y + 5.5);
+    doc.setTextColor(0, 0, 0);
+    y += 13;
+
+    available.forEach((shot, idx) => {
+      const imgW = contentW;
+      const imgH = (shot.height / shot.width) * imgW;
+      const blockH = imgH + 9;
+      ensureSpace(blockH);
+
+      doc.setDrawColor(210, 214, 222);
+      doc.setLineWidth(0.2);
+      doc.addImage(shot.data as string, "JPEG", margin, y, imgW, imgH, undefined, "FAST");
+      doc.rect(margin, y, imgW, imgH, "S");
+      y += imgH + 4;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...BRAND_BLUE);
+      doc.text(`Fig. ${idx + 1} — ${shot.caption[lang]}`, margin, y);
+      doc.setTextColor(0, 0, 0);
+      y += 7;
+    });
+  }
+
+
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
