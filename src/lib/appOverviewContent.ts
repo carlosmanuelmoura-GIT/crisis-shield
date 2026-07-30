@@ -24,8 +24,8 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Cenários de Crise", en: "Crisis Scenarios" },
         desc: {
-          pt: "Catálogo dos 6 cenários de desastre e respetivos Tipos de Falha associados, apresentados em acordeão expansível com associação por arrastar-e-largar.",
-          en: "Catalogue of the 6 disaster scenarios and their associated Failure Types, shown in an expandable accordion with drag-and-drop association.",
+          pt: "Catálogo dos 6 cenários de desastre e respetivos Tipos de Falha associados, apresentados em formato expansível com associação por arrastar-e-largar.",
+          en: "Catalogue of the 6 disaster scenarios and their associated Failure Types, shown in an expandable format with drag-and-drop association.",
         },
       },
       {
