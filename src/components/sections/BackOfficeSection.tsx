@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText, Building2, Users, Truck, MapPin, Monitor, Home, UserCheck, Network, Zap, Info, Download } from "lucide-react";
 import { APP_OVERVIEW, APP_OVERVIEW_INTRO, APP_OVERVIEW_TITLE } from "@/lib/appOverviewContent";
 import { generateAppOverviewPDF } from "@/lib/generateAppOverviewPDF";
+import { APP_OVERVIEW_SCREENS, APP_OVERVIEW_SCREENS_TITLE, type OverviewScreen } from "@/lib/appOverviewScreens";
+
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
@@ -41,6 +43,9 @@ const BackOfficeSection: React.FC = () => {
   const assignRole = useAssignRole();
   const removeRole = useRemoveRole();
   const [roleDialog, setRoleDialog] = useState<{ user_id: string; name: string } | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [zoomShot, setZoomShot] = useState<OverviewScreen | null>(null);
+
   const [selectedRole, setSelectedRole] = useState("");
 
   // --- Business Processes ---
@@ -329,9 +334,13 @@ const BackOfficeSection: React.FC = () => {
               </h3>
               <p className="text-sm text-muted-foreground">{APP_OVERVIEW_INTRO[lang]}</p>
             </div>
-            <Button size="sm" onClick={() => generateAppOverviewPDF(lang)}>
-              <Download className="h-4 w-4 mr-1.5" />
-              {lang === "pt" ? "Gerar PDF" : "Generate PDF"}
+            <Button size="sm" disabled={pdfLoading} onClick={async () => {
+              setPdfLoading(true);
+              try { await generateAppOverviewPDF(lang); }
+              finally { setPdfLoading(false); }
+            }}>
+              {pdfLoading ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Download className="h-4 w-4 mr-1.5" />}
+              {pdfLoading ? (lang === "pt" ? "A gerar…" : "Generating…") : (lang === "pt" ? "Gerar PDF" : "Generate PDF")}
             </Button>
           </div>
 
@@ -354,6 +363,36 @@ const BackOfficeSection: React.FC = () => {
               </Card>
             ))}
           </div>
+
+          {/* ===== SCREENSHOT GALLERY ===== */}
+          <div className="space-y-3 pt-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b pb-2">
+              {APP_OVERVIEW_SCREENS_TITLE[lang]}
+            </h4>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {APP_OVERVIEW_SCREENS.map((shot, idx) => (
+                <button key={shot.id} type="button" onClick={() => setZoomShot(shot)} className="text-left group">
+                  <div className="overflow-hidden rounded-md border bg-muted">
+                    <img src={shot.url} alt={shot.caption[lang]} loading="lazy"
+                      className="w-full h-auto transition-transform group-hover:scale-[1.02]" />
+                  </div>
+                  <p className="mt-1.5 text-xs font-medium">
+                    <span className="text-muted-foreground">Fig. {idx + 1} — </span>{shot.caption[lang]}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Dialog open={!!zoomShot} onOpenChange={(o) => !o && setZoomShot(null)}>
+            <DialogContent className="max-w-5xl">
+              <DialogHeader>
+                <DialogTitle className="text-sm">{zoomShot?.caption[lang]}</DialogTitle>
+              </DialogHeader>
+              {zoomShot && <img src={zoomShot.url} alt={zoomShot.caption[lang]} className="w-full h-auto rounded-md border" />}
+            </DialogContent>
+          </Dialog>
+
         </TabsContent>
 
         {/* ===== USER ROLES ===== */}

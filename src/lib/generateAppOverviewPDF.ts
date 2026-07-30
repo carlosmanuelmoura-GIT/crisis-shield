@@ -1,9 +1,27 @@
 import jsPDF from "jspdf";
 import { APP_OVERVIEW, APP_OVERVIEW_INTRO, APP_OVERVIEW_TITLE } from "./appOverviewContent";
+import { APP_OVERVIEW_SCREENS, APP_OVERVIEW_SCREENS_TITLE } from "./appOverviewScreens";
 
 const BRAND_BLUE: [number, number, number] = [30, 64, 148];
 
-export function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
+async function toDataURL(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
+
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -108,6 +126,49 @@ export function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
 
     y += 2;
   });
+
+  // ===== ANNEX: application screenshots =====
+  const images = await Promise.all(
+    APP_OVERVIEW_SCREENS.map(async (s) => ({ ...s, data: await toDataURL(s.url) }))
+  );
+  const available = images.filter((s) => s.data);
+
+  if (available.length > 0) {
+    doc.addPage();
+    drawHeader();
+    y = 26;
+
+    doc.setFillColor(...BRAND_BLUE);
+    doc.rect(margin, y, contentW, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(APP_OVERVIEW_SCREENS_TITLE[lang], margin + 3, y + 5.5);
+    doc.setTextColor(0, 0, 0);
+    y += 13;
+
+    available.forEach((shot, idx) => {
+      const imgW = contentW - 14;
+      const imgX = margin + 7;
+      const imgH = (shot.height / shot.width) * imgW;
+      const blockH = imgH + 9;
+      ensureSpace(blockH);
+
+      doc.setDrawColor(210, 214, 222);
+      doc.setLineWidth(0.2);
+      doc.addImage(shot.data as string, "JPEG", imgX, y, imgW, imgH, undefined, "FAST");
+      doc.rect(imgX, y, imgW, imgH, "S");
+      y += imgH + 4;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...BRAND_BLUE);
+      doc.text(`Fig. ${idx + 1} — ${shot.caption[lang]}`, imgX, y);
+      doc.setTextColor(0, 0, 0);
+      y += 7;
+    });
+  }
+
 
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
