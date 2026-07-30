@@ -304,8 +304,9 @@ const BackOfficeSection: React.FC = () => {
     <div className="space-y-4">
       <h2 className="text-lg font-bold uppercase tracking-wider">Back Office</h2>
 
-      <Tabs defaultValue="roles">
+      <Tabs defaultValue="about">
         <TabsList className="bg-secondary flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="about" className="text-xs"><Info className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Sobre a Aplicação" : "About the App"}</TabsTrigger>
           <TabsTrigger value="roles" className="text-xs"><UserCog className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Perfis" : "Roles"}</TabsTrigger>
           <TabsTrigger value="bp" className="text-xs"><Briefcase className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Processos" : "Processes"}</TabsTrigger>
           <TabsTrigger value="recursos" className="text-xs"><ShieldAlert className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos de Falha" : "Failure Types"}</TabsTrigger>
@@ -317,8 +318,45 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="doccats" className="text-xs"><FileText className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Documentação GCN" : "Documentation"}</TabsTrigger>
         </TabsList>
 
+        {/* ===== ABOUT / FUNCTIONAL MANUAL ===== */}
+        <TabsContent value="about" className="space-y-4 mt-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="max-w-3xl space-y-1">
+              <h3 className="text-base font-bold uppercase tracking-wider text-primary">
+                {APP_OVERVIEW_TITLE[lang]}
+              </h3>
+              <p className="text-sm text-muted-foreground">{APP_OVERVIEW_INTRO[lang]}</p>
+            </div>
+            <Button size="sm" onClick={() => generateAppOverviewPDF(lang)}>
+              <Download className="h-4 w-4 mr-1.5" />
+              {lang === "pt" ? "Gerar PDF" : "Generate PDF"}
+            </Button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {APP_OVERVIEW.map(section => (
+              <Card key={section.title.pt}>
+                <CardContent className="p-4 space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-primary border-b pb-2">
+                    {section.title[lang]}
+                  </h4>
+                  <ul className="space-y-2.5">
+                    {section.items.map(item => (
+                      <li key={item.name.pt}>
+                        <p className="text-sm font-semibold">{item.name[lang]}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.desc[lang]}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
         {/* ===== USER ROLES ===== */}
         <TabsContent value="roles" className="space-y-3 mt-3">
+
           {usersLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : (
             users.map(u => (
               <Card key={u.user_id}>
