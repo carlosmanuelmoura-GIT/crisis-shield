@@ -1,9 +1,27 @@
 import jsPDF from "jspdf";
 import { APP_OVERVIEW, APP_OVERVIEW_INTRO, APP_OVERVIEW_TITLE } from "./appOverviewContent";
+import { APP_OVERVIEW_SCREENS, APP_OVERVIEW_SCREENS_TITLE } from "./appOverviewScreens";
 
 const BRAND_BLUE: [number, number, number] = [30, 64, 148];
 
-export function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
+async function toDataURL(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
+
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
