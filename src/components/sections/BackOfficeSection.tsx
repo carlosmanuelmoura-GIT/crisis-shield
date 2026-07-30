@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText, Building2, Users, Truck, MapPin, Monitor, Home, UserCheck, Network, Zap } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, UserCog, Briefcase, ShieldAlert, Link2, X, Server, Settings, Building, FileText, Building2, Users, Truck, MapPin, Monitor, Home, UserCheck, Network, Zap, Info, Download } from "lucide-react";
+import { APP_OVERVIEW, APP_OVERVIEW_INTRO, APP_OVERVIEW_TITLE } from "@/lib/appOverviewContent";
+import { generateAppOverviewPDF } from "@/lib/generateAppOverviewPDF";
 import { useAllUsersWithRoles, useAssignRole, useRemoveRole } from "@/hooks/useUserRoles";
 import { useBusinessProcesses, useCreateBusinessProcess, useUpdateBusinessProcess, useDeleteBusinessProcess } from "@/hooks/useBusinessProcesses";
 import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } from "@/hooks/useRecursos";
