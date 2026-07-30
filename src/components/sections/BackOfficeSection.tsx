@@ -43,6 +43,9 @@ const BackOfficeSection: React.FC = () => {
   const assignRole = useAssignRole();
   const removeRole = useRemoveRole();
   const [roleDialog, setRoleDialog] = useState<{ user_id: string; name: string } | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [zoomShot, setZoomShot] = useState<OverviewScreen | null>(null);
+
   const [selectedRole, setSelectedRole] = useState("");
 
   // --- Business Processes ---
