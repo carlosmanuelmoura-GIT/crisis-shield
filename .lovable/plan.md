@@ -1,43 +1,45 @@
 ## Objetivo
 
-Documentar, dentro do próprio Portal GCN, o que a aplicação faz — num novo separador do Back Office — com botão para descarregar essa documentação em PDF.
+Acrescentar ao PDF "Manual Funcional" uma secção final com snapshots dos ecrãs da aplicação, um por funcionalidade principal, a seguir à apresentação das funcionalidades.
 
-## 1. Novo separador "Sobre a Aplicação"
+## 1. Capturar os screenshots
 
-Em `BackOfficeSection.tsx`, adicionar um `TabsTrigger`/`TabsContent` com id `about` (ícone Info), como primeiro separador da lista.
+Capturo os ecrãs da aplicação em execução (Playwright, viewport desktop, sessão autenticada) para cada funcionalidade principal:
 
-Conteúdo apresentado em cartões por área, bilingue (PT/EN) seguindo o padrão `lang === "pt"`:
+- Cenários de Crise
+- BIA
+- PCN Departamentais
+- Pessoas Críticas
+- Contactos
+- Calendário de Testes
+- Controlo da Gestão de Crise
+- Action Cards Gestão de Crise
+- Action Cards Departamentos
+- Log das Ações
+- Documentação GCN
+- Back Office
 
-**GOVERNO GCN**
-- Cenários de Crise — 6 cenários de desastre e respetivos Tipos de Falha, em acordeão.
-- BIA — análises de impacto por processo, Kanban com descrição editável, gráficos por Tipo de BIA e Tipo de DR, ligação a plataformas CMDB.
-- PCN Departamentais — planos por departamento, documentos multi-ficheiro.
-- Pessoas Críticas — mapa/heatmap distrital por código postal.
-- Contactos — diretório agrupado por função.
-- SMS Express — envio de alertas via MEO Empresas.
-- Calendário de Testes — testes ligados a edifícios, CMDB e macro processos.
+Cada imagem é otimizada (JPEG, largura ~1400px) e guardada em `src/assets/screenshots/`, carregada para o CDN via pointers `.asset.json` para não pesar no repositório.
 
-**OPERAÇÕES GCN**
-- Controlo da Gestão de Crise — ciclo de 6 fases, declaração (real/simulada/template), autorizações por estado, encerramento com aprovação.
-- Action Cards Gestão de Crise — passos numerados, check com registo em log.
-- Action Cards Departamentos — Kanban por cenário, painel lateral de detalhe, BIAs associadas, exportação PDF por departamento.
-- Salas de Reuniões Virtuais.
-- Log das Ações — registo cronológico consolidado por crise.
+## 2. Catálogo de snapshots
 
-**DOCUMENTAÇÃO GCN** — repositório de documentos com categorias e URLs externos.
+Novo ficheiro `src/lib/appOverviewScreens.ts`: lista ordenada de `{ id, caption: { pt, en }, asset }` ligando cada imagem à respetiva funcionalidade, com legendas bilingues alinhadas aos nomes já usados em `appOverviewContent.ts`.
 
-**BACK OFFICE** — tabelas mestras (perfis, processos, tipos de falha, cenários, plataformas, tipos de DR, edifícios, departamentos, categorias documentais) e Import/Export XLSX.
+## 3. PDF
 
-**TRANSVERSAL** — autenticação e perfis (Steering GCN / Técnico / Especialista), modo Satélite (baixa largura de banda), modo Crise, PT/EN, pesquisa global, PWA offline.
+Em `src/lib/generateAppOverviewPDF.ts`, após as secções de funcionalidades:
 
-## 2. Botão "Gerar PDF"
+- Nova página com barra de título azul: "ANEXO — ECRÃS DA APLICAÇÃO" / "ANNEX — APPLICATION SCREENS".
+- Uma imagem por bloco, escalada à largura útil mantendo o rácio, com legenda numerada por baixo ("Fig. 1 — Cenários de Crise").
+- Duas imagens por página quando cabem; caso contrário nova página automática.
+- Rodapé e numeração de páginas mantêm-se (já são desenhados no fim para todas as páginas).
 
-No cabeçalho do separador, botão que gera o documento com `jspdf`, reutilizando o estilo de `src/lib/generateDeptActionCardsPDF.ts`.
+## 4. UI do Back Office
+
+No separador "Sobre a Aplicação", adicionar uma galeria dos mesmos snapshots (grelha de miniaturas com legenda, clique para ampliar em diálogo), reutilizando o mesmo catálogo para UI e PDF.
 
 ## Detalhes técnicos
 
-- Nova função `src/lib/generateAppOverviewPDF.ts` exportando `generateAppOverviewPDF(lang)`.
-- Fonte única de conteúdo: `src/lib/appOverviewContent.ts` (array de secções `{ title, items[] }` em PT/EN) consumido tanto pela UI como pelo PDF — evita divergências.
-- PDF: faixa de marca azul (`BRAND_BLUE` 30/64/148), título "PORTAL GCN — MANUAL FUNCIONAL", secções com barra de título, bullets com `splitTextToSize`, quebra de página automática, rodapé "Portal GCN · data · Página x/y".
-- Download via `doc.save("Portal_GCN_Manual_Funcional_YYYY-MM-DD.pdf")`.
+- As imagens são embebidas no PDF via `doc.addImage` a partir de data URLs obtidos com `fetch` + `FileReader` no momento da geração; a função `generateAppOverviewPDF` passa a ser `async` e o botão mostra estado "A gerar…".
+- Formato JPEG com compressão para manter o PDF abaixo de poucos MB.
 - Sem alterações de base de dados.
