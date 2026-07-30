@@ -148,21 +148,22 @@ export async function generateAppOverviewPDF(lang: "pt" | "en" = "pt") {
     y += 13;
 
     available.forEach((shot, idx) => {
-      const imgW = contentW;
+      const imgW = contentW - 14;
+      const imgX = margin + 7;
       const imgH = (shot.height / shot.width) * imgW;
       const blockH = imgH + 9;
       ensureSpace(blockH);
 
       doc.setDrawColor(210, 214, 222);
       doc.setLineWidth(0.2);
-      doc.addImage(shot.data as string, "JPEG", margin, y, imgW, imgH, undefined, "FAST");
-      doc.rect(margin, y, imgW, imgH, "S");
+      doc.addImage(shot.data as string, "JPEG", imgX, y, imgW, imgH, undefined, "FAST");
+      doc.rect(imgX, y, imgW, imgH, "S");
       y += imgH + 4;
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.setTextColor(...BRAND_BLUE);
-      doc.text(`Fig. ${idx + 1} — ${shot.caption[lang]}`, margin, y);
+      doc.text(`Fig. ${idx + 1} — ${shot.caption[lang]}`, imgX, y);
       doc.setTextColor(0, 0, 0);
       y += 7;
     });
