@@ -560,7 +560,7 @@ const EmergencySection: React.FC = () => {
 
       {/* Reusable card renderer (list variant) */}
       {/* LIST VIEW - grouped by Cenário > Recurso */}
-      {viewMode === "list" && groupedByCenario.map(({ cenario, recursoGroups, total: cenTotal }) => {
+      {viewMode === "list" && groupedByCenario.map(({ cenario, drGroups, total: cenTotal }) => {
         const cenId = cenario?.id || "__no_cenario";
         const isCenCollapsed = collapsedGroups[`cen:${cenId}`];
         const cenLabel = cenario
@@ -583,8 +583,33 @@ const EmergencySection: React.FC = () => {
               </div>
             </div>
 
-            {!isCenCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
-              const groupId = `${cenId}:${recurso?.id || "__unassigned"}`;
+            {!isCenCollapsed && drGroups.map(({ drType, recursoGroups, total: drTotal }) => {
+            const drId = drType?.id || "__no_dr";
+            const drGroupKey = `${cenId}:dr:${drId}`;
+            const isDrCollapsed = collapsedGroups[drGroupKey];
+            const drLabel = drType
+              ? `${drType.code} — ${drType.label}`
+              : (lang === "pt" ? "Sem tipo de DR" : "No DR type");
+            return (
+            <div key={drGroupKey} className="space-y-2 ml-3">
+              <div
+                className="flex items-center gap-3 px-3 py-1.5 bg-blue-500/10 rounded-lg cursor-pointer border border-blue-500/30"
+                onClick={() => toggleGroup(drGroupKey)}
+              >
+                <Network className="h-4 w-4 text-blue-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-bold uppercase tracking-wide">{lang === "pt" ? "Tipo de DR" : "DR Type"}: {drLabel}</h4>
+                  {drType && (
+                    <span className="text-[10px] text-muted-foreground">RTO {drType.rto}h · RPO {drType.rpo}h</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant="secondary" className="text-[10px]">{drTotal} cards</Badge>
+                  {isDrCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </div>
+              </div>
+              {!isDrCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
+              const groupId = `${drGroupKey}:${recurso?.id || "__unassigned"}`;
               const isGroupCollapsed = collapsedGroups[groupId];
               const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
               const groupDone = groupCards.reduce((sum, card) => {
@@ -666,6 +691,9 @@ const EmergencySection: React.FC = () => {
                 </div>
               );
             })}
+            </div>
+            );
+            })}
           </div>
         );
       })}
@@ -673,7 +701,7 @@ const EmergencySection: React.FC = () => {
       {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4 px-3 scroll-px-3" style={{ minHeight: 400 }}>
-          {groupedByCenario.map(({ cenario, recursoGroups, total: colCount }) => {
+          {groupedByCenario.map(({ cenario, drGroups, total: colCount }) => {
             const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
             const colTitle = cenario
@@ -715,6 +743,15 @@ const EmergencySection: React.FC = () => {
 
                 <div className="flex-1 min-w-0 overflow-y-auto">
                   <div className="box-border w-full space-y-3 p-2 pr-4">
+                    {drGroups.map(({ drType, recursoGroups, total: drTotal }) => (
+                    <div key={`${colId}:dr:${drType?.id || "__no_dr"}`} className="space-y-2">
+                      <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-blue-500/10 border border-blue-500/20">
+                        <Network className="h-3 w-3 text-blue-600 shrink-0" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700 truncate">
+                          {drType ? `${drType.code} — ${drType.label}` : (lang === "pt" ? "Sem tipo de DR" : "No DR type")}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] ml-auto">{drTotal}</Badge>
+                      </div>
                     {recursoGroups.map(({ recurso, cards: subCards }) => {
                       const subLabel = recurso
                         ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
@@ -780,6 +817,8 @@ const EmergencySection: React.FC = () => {
                         </div>
                       );
                     })}
+                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
