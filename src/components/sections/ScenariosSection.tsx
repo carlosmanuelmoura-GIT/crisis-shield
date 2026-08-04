@@ -131,104 +131,123 @@ const ScenariosSection: React.FC = () => {
         </p>
       </div>
 
-      <Accordion
-        type="multiple"
-        defaultValue={(cenarios ?? []).map(s => s.id)}
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
-      >
-        {(cenarios ?? []).map(s => {
-          const scenarioRecursos = (recursos ?? []).filter(r =>
-            (links ?? []).some(l => l.cenario_id === s.id && l.recurso_id === r.id)
-          );
-          const isOver = dragOver === s.id;
-
-          return (
-            <AccordionItem key={s.id} value={s.id} className="border-none">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: scenario list */}
+        <div className="lg:col-span-1 space-y-2">
+          {(cenarios ?? []).map(s => {
+            const count = (links ?? []).filter(l => l.cenario_id === s.id).length;
+            const isSelected = activeId === s.id;
+            const isOver = dragOver === s.id;
+            return (
               <Card
-                className={`border-l-4 ${s.color} h-full flex flex-col transition-all ${isOver ? "ring-2 ring-ring shadow-lg" : ""}`}
+                key={s.id}
+                onClick={() => setSelectedId(s.id)}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(s.id); }}
                 onDragLeave={() => setDragOver(prev => prev === s.id ? null : prev)}
                 onDrop={(e) => handleDrop(s.id, e)}
+                className={`border-l-4 ${s.color} cursor-pointer transition-all ${
+                  isSelected ? "bg-accent/40 shadow-md" : "hover:bg-muted/40"
+                } ${isOver ? "ring-2 ring-ring shadow-lg" : ""}`}
               >
-                <AccordionTrigger className="p-0 border-b bg-muted/20 hover:no-underline">
-                  <div className="flex items-center justify-between gap-2 w-full p-4 text-left">
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-bold text-muted-foreground tracking-widest">
-                        {lang === "pt" ? "CENÁRIO" : "SCENARIO"} {s.roman}
-                      </p>
-                      <p className="text-sm font-semibold leading-snug">
-                        {t(s.name_pt, s.name_en)}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-[10px] shrink-0">
-                      {scenarioRecursos.length} {lang === "pt" ? "fal." : "fail."}
-                    </Badge>
+                <CardContent className="p-3 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold text-muted-foreground tracking-widest">
+                      {lang === "pt" ? "CENÁRIO" : "SCENARIO"} {s.roman}
+                    </p>
+                    <p className="text-sm font-semibold leading-snug">{t(s.name_pt, s.name_en)}</p>
                   </div>
-                </AccordionTrigger>
-
-                <AccordionContent>
-                  <CardContent className={`p-3 flex-1 bg-muted/30 min-h-[120px] ${isOver ? "bg-accent/20" : ""}`}>
-                    {scenarioRecursos.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-6">
-                        {lang === "pt" ? "Largue aqui um tipo de falha" : "Drop a failure type here"}
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {scenarioRecursos.map(rec => {
-                          const Icon = iconMap[rec.icon] || Monitor;
-                          const otherCenarios = (cenarios ?? []).filter(c =>
-                            c.id !== s.id &&
-                            (links ?? []).some(l => l.cenario_id === c.id && l.recurso_id === rec.id)
-                          );
-                          return (
-                            <Card
-                              key={rec.id}
-                              draggable
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData("recurso_id", rec.id);
-                                e.dataTransfer.setData("source_cenario_id", s.id);
-                                e.dataTransfer.effectAllowed = "move";
-                              }}
-                              onDoubleClick={() => openEdit(rec)}
-                              className="border border-border/60 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
-                              title={lang === "pt" ? "Duplo clique para editar · arraste para mover" : "Double-click to edit · drag to move"}
-                            >
-                              <CardContent className="p-2.5 flex items-center gap-2">
-                                <Icon className="h-4 w-4 text-muted-foreground shrink-0 sat-keep" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium truncate">{t(rec.name_pt, rec.name_en)}</p>
-                                  {otherCenarios.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {otherCenarios.map(c => (
-                                        <Badge key={c.id} variant="secondary" className="text-[9px] px-1 py-0">
-                                          {c.roman}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 shrink-0"
-                                  onClick={(e) => { e.stopPropagation(); cloneRecurso(rec, s.id); }}
-                                  title={lang === "pt" ? "Clonar tipo de falha" : "Clone failure type"}
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </AccordionContent>
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {count} {lang === "pt" ? "fal." : "fail."}
+                  </Badge>
+                </CardContent>
               </Card>
-            </AccordionItem>
-          );
-        })}
-      </Accordion>
+            );
+          })}
+        </div>
+
+        {/* Right: detail */}
+        <div className="lg:col-span-2">
+          {(() => {
+            const s = (cenarios ?? []).find(c => c.id === activeId);
+            if (!s) return null;
+            const scenarioRecursos = (recursos ?? []).filter(r =>
+              (links ?? []).some(l => l.cenario_id === s.id && l.recurso_id === r.id)
+            );
+            return (
+              <Card className={`border-l-4 ${s.color}`}>
+                <div className="p-4 border-b bg-muted/20">
+                  <p className="text-[11px] font-bold text-muted-foreground tracking-widest">
+                    {lang === "pt" ? "CENÁRIO" : "SCENARIO"} {s.roman}
+                  </p>
+                  <p className="text-base font-semibold leading-snug">{t(s.name_pt, s.name_en)}</p>
+                  {(s as any).description_pt && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t((s as any).description_pt, (s as any).description_en)}
+                    </p>
+                  )}
+                </div>
+                <CardContent className="p-3 bg-muted/30 min-h-[200px]">
+                  {scenarioRecursos.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-10">
+                      {lang === "pt" ? "Sem tipos de falha associados" : "No failure types linked"}
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {scenarioRecursos.map(rec => {
+                        const Icon = iconMap[rec.icon] || Monitor;
+                        const otherCenarios = (cenarios ?? []).filter(c =>
+                          c.id !== s.id &&
+                          (links ?? []).some(l => l.cenario_id === c.id && l.recurso_id === rec.id)
+                        );
+                        return (
+                          <Card
+                            key={rec.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("recurso_id", rec.id);
+                              e.dataTransfer.setData("source_cenario_id", s.id);
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
+                            onDoubleClick={() => openEdit(rec)}
+                            className="border border-border/60 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+                            title={lang === "pt" ? "Duplo clique para editar · arraste para mover" : "Double-click to edit · drag to move"}
+                          >
+                            <CardContent className="p-2.5 flex items-center gap-2">
+                              <Icon className="h-4 w-4 text-muted-foreground shrink-0 sat-keep" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium truncate">{t(rec.name_pt, rec.name_en)}</p>
+                                {otherCenarios.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {otherCenarios.map(c => (
+                                      <Badge key={c.id} variant="secondary" className="text-[9px] px-1 py-0">
+                                        {c.roman}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 shrink-0"
+                                onClick={(e) => { e.stopPropagation(); cloneRecurso(rec, s.id); }}
+                                title={lang === "pt" ? "Clonar tipo de falha" : "Clone failure type"}
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
+        </div>
+      </div>
+
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl">
