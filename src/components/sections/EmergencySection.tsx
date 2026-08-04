@@ -31,6 +31,7 @@ import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useCenarios } from "@/hooks/useCenarios";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useDRTypes } from "@/hooks/useCMDBPlatforms";
 import { useBIAProcesses } from "@/hooks/useBIAProcesses";
 import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +61,7 @@ const EmergencySection: React.FC = () => {
   const { data: recursos = [] } = useRecursos();
   const { data: cenarios = [] } = useCenarios();
   const { data: departments = [] } = useDepartments();
+  const { data: drTypes = [] } = useDRTypes();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaACLinks = [] } = useBIAActionCards();
   const linkBIA = useLinkBIAActionCard();
@@ -90,7 +92,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState<string>("");
@@ -112,8 +114,9 @@ const EmergencySection: React.FC = () => {
   const [filterCenario, setFilterCenario] = useState<string>("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
+  const [filterDR, setFilterDR] = useState<string>("all");
 
-  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all";
+  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
@@ -122,9 +125,10 @@ const EmergencySection: React.FC = () => {
       if (filterCenario !== "all" && (c as any).cenario_id !== filterCenario) return false;
       if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
       if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
+      if (filterDR !== "all" && ((c as any).dr_type_id || "__none") !== filterDR) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso]);
+  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR]);
 
   // Group cards: primary by Cenário, secondary by Recurso (used by both views)
   const groupedByCenario = useMemo(() => {
@@ -187,7 +191,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "" });
     setDialogOpen(true);
   };
 
@@ -199,6 +203,7 @@ const EmergencySection: React.FC = () => {
       recurso_id: card.recurso_id || "",
       cenario_id: card.cenario_id || "",
       department_id: card.department_id || "",
+      dr_type_id: (card as any).dr_type_id || "",
     });
     setDialogOpen(true);
   };
@@ -211,6 +216,7 @@ const EmergencySection: React.FC = () => {
         capability: form.capability || undefined,
         cenario_id: form.cenario_id || undefined,
         department_id: form.department_id || undefined,
+        dr_type_id: form.dr_type_id || undefined,
       };
       if (editingCard) {
         await updateCard.mutateAsync({ id: editingCard, ...payload });
@@ -242,6 +248,7 @@ const EmergencySection: React.FC = () => {
         recurso_id: card.recurso_id,
         cenario_id: (card as any).cenario_id,
         department_id: (card as any).department_id,
+        dr_type_id: (card as any).dr_type_id,
         owner_id: card.owner_id,
       } as any).select("id").single();
       if (error) throw error;
@@ -662,6 +669,7 @@ const EmergencySection: React.FC = () => {
                     recurso_id: card.recurso_id || undefined,
                     cenario_id: targetCenId || undefined,
                     department_id: card.department_id || undefined,
+                    dr_type_id: (card as any).dr_type_id || undefined,
                   }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
