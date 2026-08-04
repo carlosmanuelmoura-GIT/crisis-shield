@@ -40,6 +40,8 @@ const ScenariosSection: React.FC = () => {
   const updateRecurso = useUpdateRecurso();
 
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const activeId = selectedId ?? (cenarios ?? [])[0]?.id ?? null;
   const [editing, setEditing] = useState<DBRecurso | null>(null);
   const [form, setForm] = useState({ name_pt: "", name_en: "", description_pt: "", description_en: "", icon: "Monitor" });
 
