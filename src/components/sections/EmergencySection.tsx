@@ -518,7 +518,18 @@ const EmergencySection: React.FC = () => {
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={resetFilters}>{lang === "pt" ? "Limpar" : "Clear"}</Button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
+              <Select value={filterDR} onValueChange={setFilterDR}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label}</SelectItem>)}
+                  <SelectItem value="__none">{lang === "pt" ? "Sem tipo de DR" : "No DR type"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
               <Select value={filterCenario} onValueChange={setFilterCenario}>
@@ -669,6 +680,7 @@ const EmergencySection: React.FC = () => {
                               <CardTitle className="text-sm font-bold uppercase leading-tight">{title}</CardTitle>
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {cLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cLabel}</Badge>}
+                                {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
                                 {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                                 {linkedBias.length > 0 && (
                                   <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
@@ -797,6 +809,7 @@ const EmergencySection: React.FC = () => {
                                     <p className="text-sm font-bold uppercase leading-tight">{title}</p>
                                     <div className="flex flex-wrap gap-1">
                                       {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                      {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
                                       {linkedBias.length > 0 && (
                                         <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
                                           {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
@@ -864,6 +877,18 @@ const EmergencySection: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
                   {cenarios.map(c => <SelectItem key={c.id} value={c.id}>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
+              <Select value={form.dr_type_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, dr_type_id: v === "none" ? "" : v }))}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{lang === "pt" ? "— Sem DR —" : "— No DR —"}</SelectItem>
+                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label} (RTO {d.rto}h / RPO {d.rpo}h)</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1069,6 +1094,7 @@ const EmergencySection: React.FC = () => {
                     {deptLabel && <span>{deptLabel}</span>}
                     {recLabel && <span>· {recLabel}</span>}
                     {cLabel && <span>· {cLabel}</span>}
+                    {getDRLabel(card) && <span>· DR: {getDRLabel(card)}</span>}
                   </div>
                   <div className="flex items-center gap-2 pt-1">
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => openEdit(card)}>
