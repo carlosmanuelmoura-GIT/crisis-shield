@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Loader2, Shield, FlaskConical, FileText, AlertCircle, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Shield, FlaskConical, FileText, AlertCircle, X, Download } from "lucide-react";
+import { generateCrisisLogPDF } from "@/lib/generateCrisisLogPDF";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   useDecisionLog, useCreateDecisionLog, useUpdateDecisionLog, useDeleteDecisionLog,
@@ -291,6 +292,24 @@ const DecisionLogSection: React.FC = () => {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <div className="space-y-2">
+                    <div className="flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs gap-1.5"
+                        disabled={group.entries.length === 0}
+                        onClick={() =>
+                          generateCrisisLogPDF({
+                            crisis: group.crisis,
+                            entries: group.entries,
+                            lang: lang as "pt" | "en",
+                          })
+                        }
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        {lang === "pt" ? "Exportar PDF" : "Export PDF"}
+                      </Button>
+                    </div>
                     {group.entries.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-6">
                         {lang === "pt" ? "Sem acções registadas." : "No actions logged."}
