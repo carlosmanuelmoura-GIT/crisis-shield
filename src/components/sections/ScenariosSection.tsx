@@ -153,7 +153,7 @@ const ScenariosSection: React.FC = () => {
                     <p className="text-[11px] font-bold text-muted-foreground tracking-widest">
                       {lang === "pt" ? "CENÁRIO" : "SCENARIO"} {s.roman}
                     </p>
-                    <p className="text-sm font-semibold leading-snug">{t(s.name_pt, s.name_en)}</p>
+                    <p className="text-base font-semibold leading-snug">{t(s.name_pt, s.name_en)}</p>
                   </div>
                   <Badge variant="outline" className="text-[10px] shrink-0">
                     {count} {lang === "pt" ? "fal." : "fail."}
@@ -185,7 +185,12 @@ const ScenariosSection: React.FC = () => {
                     </p>
                   )}
                 </div>
-                <CardContent className="p-3 bg-muted/30 min-h-[200px]">
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-[11px] font-bold text-muted-foreground tracking-widest uppercase">
+                    {lang === "pt" ? "Tipos de Falha" : "Failure Types"}
+                  </p>
+                </div>
+                <CardContent className="p-3 pt-1 bg-muted/30 min-h-[200px]">
                   {scenarioRecursos.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-10">
                       {lang === "pt" ? "Sem tipos de falha associados" : "No failure types linked"}
@@ -208,7 +213,7 @@ const ScenariosSection: React.FC = () => {
                               e.dataTransfer.effectAllowed = "move";
                             }}
                             onDoubleClick={() => openEdit(rec)}
-                            className="border border-border/60 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+                            className="border border-border/60 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                             title={lang === "pt" ? "Duplo clique para editar · arraste para mover" : "Double-click to edit · drag to move"}
                           >
                             <CardContent className="p-2.5 flex items-center gap-2">
