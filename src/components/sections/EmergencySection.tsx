@@ -31,6 +31,7 @@ import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
 import { useCenarios } from "@/hooks/useCenarios";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useDRTypes } from "@/hooks/useCMDBPlatforms";
 import { useBIAProcesses } from "@/hooks/useBIAProcesses";
 import { useBIAActionCards, useLinkBIAActionCard, useUnlinkBIAActionCard } from "@/hooks/useBIAActionCards";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +61,7 @@ const EmergencySection: React.FC = () => {
   const { data: recursos = [] } = useRecursos();
   const { data: cenarios = [] } = useCenarios();
   const { data: departments = [] } = useDepartments();
+  const { data: drTypes = [] } = useDRTypes();
   const { data: biaProcesses = [] } = useBIAProcesses();
   const { data: biaACLinks = [] } = useBIAActionCards();
   const linkBIA = useLinkBIAActionCard();
@@ -90,7 +92,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState<string>("");
@@ -102,6 +104,7 @@ const EmergencySection: React.FC = () => {
   const [linkBiaDialogCard, setLinkBiaDialogCard] = useState<string | null>(null);
   const [biaToLink, setBiaToLink] = useState<string>("");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [biaDetailId, setBiaDetailId] = useState<string | null>(null);
 
   // Confirmation dialog for checking items
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -112,8 +115,9 @@ const EmergencySection: React.FC = () => {
   const [filterCenario, setFilterCenario] = useState<string>("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
+  const [filterDR, setFilterDR] = useState<string>("all");
 
-  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all";
+  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
@@ -122,14 +126,16 @@ const EmergencySection: React.FC = () => {
       if (filterCenario !== "all" && (c as any).cenario_id !== filterCenario) return false;
       if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
       if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
+      if (filterDR !== "all" && ((c as any).dr_type_id || "__none") !== filterDR) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso]);
+  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR]);
 
   // Group cards: primary by Cenário, secondary by Recurso (used by both views)
   const groupedByCenario = useMemo(() => {
     const cenMap = new Map(cenarios.map(c => [c.id, c]));
     const recMap = new Map(recursos.map(r => [r.id, r]));
+    const drMap = new Map(drTypes.map(d => [d.id, d]));
 
     const byCen = new Map<string, typeof filtered>();
     const cenUnassigned: typeof filtered = [];
@@ -170,16 +176,38 @@ const EmergencySection: React.FC = () => {
       return out;
     };
 
-    const groups: { cenario: typeof cenarios[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
+    const buildDrGroups = (cardList: typeof filtered) => {
+      const byDr = new Map<string, typeof filtered>();
+      const drUnassigned: typeof filtered = [];
+      cardList.forEach(c => {
+        const id = (c as any).dr_type_id;
+        if (id && drMap.has(id)) {
+          const arr = byDr.get(id) || [];
+          arr.push(c); byDr.set(id, arr);
+        } else drUnassigned.push(c);
+      });
+      const keys = [...byDr.keys()].sort((a, b) =>
+        (drMap.get(a)?.sort_order ?? 999) - (drMap.get(b)?.sort_order ?? 999)
+      );
+      const out: { drType: typeof drTypes[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
+      keys.forEach(k => {
+        const list = byDr.get(k)!;
+        out.push({ drType: drMap.get(k)!, recursoGroups: buildRecGroups(list), total: list.length });
+      });
+      if (drUnassigned.length) out.push({ drType: null, recursoGroups: buildRecGroups(drUnassigned), total: drUnassigned.length });
+      return out;
+    };
+
+    const groups: { cenario: typeof cenarios[0] | null; drGroups: ReturnType<typeof buildDrGroups>; total: number }[] = [];
     sortedCenKeys.forEach(id => {
       const list = byCen.get(id)!;
-      groups.push({ cenario: cenMap.get(id)!, recursoGroups: buildRecGroups(list), total: list.length });
+      groups.push({ cenario: cenMap.get(id)!, drGroups: buildDrGroups(list), total: list.length });
     });
     if (cenUnassigned.length) {
-      groups.push({ cenario: null, recursoGroups: buildRecGroups(cenUnassigned), total: cenUnassigned.length });
+      groups.push({ cenario: null, drGroups: buildDrGroups(cenUnassigned), total: cenUnassigned.length });
     }
     return groups;
-  }, [filtered, cenarios, recursos]);
+  }, [filtered, cenarios, recursos, drTypes]);
 
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -187,7 +215,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "" });
     setDialogOpen(true);
   };
 
@@ -199,6 +227,7 @@ const EmergencySection: React.FC = () => {
       recurso_id: card.recurso_id || "",
       cenario_id: card.cenario_id || "",
       department_id: card.department_id || "",
+      dr_type_id: (card as any).dr_type_id || "",
     });
     setDialogOpen(true);
   };
@@ -211,6 +240,7 @@ const EmergencySection: React.FC = () => {
         capability: form.capability || undefined,
         cenario_id: form.cenario_id || undefined,
         department_id: form.department_id || undefined,
+        dr_type_id: form.dr_type_id || undefined,
       };
       if (editingCard) {
         await updateCard.mutateAsync({ id: editingCard, ...payload });
@@ -242,6 +272,7 @@ const EmergencySection: React.FC = () => {
         recurso_id: card.recurso_id,
         cenario_id: (card as any).cenario_id,
         department_id: (card as any).department_id,
+        dr_type_id: (card as any).dr_type_id,
         owner_id: card.owner_id,
       } as any).select("id").single();
       if (error) throw error;
@@ -362,7 +393,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all");
+    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
@@ -387,6 +418,13 @@ const EmergencySection: React.FC = () => {
     if (!dId) return null;
     const d = departments.find(dep => dep.id === dId);
     return d ? d.name : null;
+  };
+
+  const getDRLabel = (card: typeof cards[0]) => {
+    const id = (card as any).dr_type_id;
+    if (!id) return null;
+    const d = drTypes.find(x => x.id === id);
+    return d ? `${d.code} — ${d.label}` : null;
   };
 
   const getRecursoLabel = (card: typeof cards[0]) => {
@@ -481,7 +519,18 @@ const EmergencySection: React.FC = () => {
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={resetFilters}>{lang === "pt" ? "Limpar" : "Clear"}</Button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
+              <Select value={filterDR} onValueChange={setFilterDR}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label}</SelectItem>)}
+                  <SelectItem value="__none">{lang === "pt" ? "Sem tipo de DR" : "No DR type"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
               <Select value={filterCenario} onValueChange={setFilterCenario}>
@@ -523,7 +572,7 @@ const EmergencySection: React.FC = () => {
 
       {/* Reusable card renderer (list variant) */}
       {/* LIST VIEW - grouped by Cenário > Recurso */}
-      {viewMode === "list" && groupedByCenario.map(({ cenario, recursoGroups, total: cenTotal }) => {
+      {viewMode === "list" && groupedByCenario.map(({ cenario, drGroups, total: cenTotal }) => {
         const cenId = cenario?.id || "__no_cenario";
         const isCenCollapsed = collapsedGroups[`cen:${cenId}`];
         const cenLabel = cenario
@@ -546,8 +595,33 @@ const EmergencySection: React.FC = () => {
               </div>
             </div>
 
-            {!isCenCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
-              const groupId = `${cenId}:${recurso?.id || "__unassigned"}`;
+            {!isCenCollapsed && drGroups.map(({ drType, recursoGroups, total: drTotal }) => {
+            const drId = drType?.id || "__no_dr";
+            const drGroupKey = `${cenId}:dr:${drId}`;
+            const isDrCollapsed = collapsedGroups[drGroupKey];
+            const drLabel = drType
+              ? `${drType.code} — ${drType.label}`
+              : (lang === "pt" ? "Sem tipo de DR" : "No DR type");
+            return (
+            <div key={drGroupKey} className="space-y-2 ml-3">
+              <div
+                className="flex items-center gap-3 px-3 py-1.5 bg-blue-500/10 rounded-lg cursor-pointer border border-blue-500/30"
+                onClick={() => toggleGroup(drGroupKey)}
+              >
+                <Network className="h-4 w-4 text-blue-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-bold uppercase tracking-wide">{lang === "pt" ? "Tipo de DR" : "DR Type"}: {drLabel}</h4>
+                  {drType && (
+                    <span className="text-[10px] text-muted-foreground">RTO {drType.rto}h · RPO {drType.rpo}h</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant="secondary" className="text-[10px]">{drTotal} cards</Badge>
+                  {isDrCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+                </div>
+              </div>
+              {!isDrCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
+              const groupId = `${drGroupKey}:${recurso?.id || "__unassigned"}`;
               const isGroupCollapsed = collapsedGroups[groupId];
               const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
               const groupDone = groupCards.reduce((sum, card) => {
@@ -607,6 +681,7 @@ const EmergencySection: React.FC = () => {
                               <CardTitle className="text-sm font-bold uppercase leading-tight">{title}</CardTitle>
                               <div className="flex flex-wrap gap-1 mt-1">
                                 {cLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cLabel}</Badge>}
+                                {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
                                 {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                                 {linkedBias.length > 0 && (
                                   <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
@@ -629,6 +704,9 @@ const EmergencySection: React.FC = () => {
                 </div>
               );
             })}
+            </div>
+            );
+            })}
           </div>
         );
       })}
@@ -636,7 +714,7 @@ const EmergencySection: React.FC = () => {
       {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4 px-3 scroll-px-3" style={{ minHeight: 400 }}>
-          {groupedByCenario.map(({ cenario, recursoGroups, total: colCount }) => {
+          {groupedByCenario.map(({ cenario, drGroups, total: colCount }) => {
             const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
             const colTitle = cenario
@@ -662,6 +740,7 @@ const EmergencySection: React.FC = () => {
                     recurso_id: card.recurso_id || undefined,
                     cenario_id: targetCenId || undefined,
                     department_id: card.department_id || undefined,
+                    dr_type_id: (card as any).dr_type_id || undefined,
                   }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
@@ -677,6 +756,15 @@ const EmergencySection: React.FC = () => {
 
                 <div className="flex-1 min-w-0 overflow-y-auto">
                   <div className="box-border w-full space-y-3 p-2 pr-4">
+                    {drGroups.map(({ drType, recursoGroups, total: drTotal }) => (
+                    <div key={`${colId}:dr:${drType?.id || "__no_dr"}`} className="space-y-2">
+                      <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-blue-500/10 border border-blue-500/20">
+                        <Network className="h-3 w-3 text-blue-600 shrink-0" />
+                        <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700 truncate">
+                          {drType ? `${drType.code} — ${drType.label}` : (lang === "pt" ? "Sem tipo de DR" : "No DR type")}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] ml-auto">{drTotal}</Badge>
+                      </div>
                     {recursoGroups.map(({ recurso, cards: subCards }) => {
                       const subLabel = recurso
                         ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
@@ -722,6 +810,7 @@ const EmergencySection: React.FC = () => {
                                     <p className="text-sm font-bold uppercase leading-tight">{title}</p>
                                     <div className="flex flex-wrap gap-1">
                                       {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
+                                      {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
                                       {linkedBias.length > 0 && (
                                         <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
                                           {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
@@ -742,6 +831,8 @@ const EmergencySection: React.FC = () => {
                         </div>
                       );
                     })}
+                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -787,6 +878,18 @@ const EmergencySection: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
                   {cenarios.map(c => <SelectItem key={c.id} value={c.id}>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
+              <Select value={form.dr_type_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, dr_type_id: v === "none" ? "" : v }))}>
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{lang === "pt" ? "— Sem DR —" : "— No DR —"}</SelectItem>
+                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label} (RTO {d.rto}h / RPO {d.rpo}h)</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -931,6 +1034,21 @@ const EmergencySection: React.FC = () => {
                   if (!linkBiaDialogCard || !biaToLink) return;
                   try {
                     await linkBIA.mutateAsync({ action_card_id: linkBiaDialogCard, bia_process_id: biaToLink });
+                    const targetCard = cards.find(c => c.id === linkBiaDialogCard);
+                    const bia = biaProcesses.find(b => b.id === biaToLink);
+                    if (targetCard && bia?.dr_type_id && !(targetCard as any).dr_type_id) {
+                      await updateCard.mutateAsync({
+                        id: targetCard.id,
+                        title_pt: targetCard.title_pt,
+                        title_en: targetCard.title_en,
+                        severity: targetCard.severity,
+                        capability: targetCard.capability || undefined,
+                        recurso_id: targetCard.recurso_id || undefined,
+                        cenario_id: targetCard.cenario_id || undefined,
+                        department_id: targetCard.department_id || undefined,
+                        dr_type_id: bia.dr_type_id,
+                      });
+                    }
                     setBiaToLink("");
                     toast({ title: lang === "pt" ? "BIA associada" : "BIA linked" });
                   } catch (err: any) {
@@ -940,6 +1058,47 @@ const EmergencySection: React.FC = () => {
                   {linkBIA.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {lang === "pt" ? "Associar" : "Link"}
                 </Button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* BIA detail dialog */}
+      <Dialog open={!!biaDetailId} onOpenChange={(o) => !o && setBiaDetailId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Detalhe da BIA" : "BIA Detail"}</DialogTitle>
+          </DialogHeader>
+          {biaDetailId && (() => {
+            const bia = biaProcesses.find(b => b.id === biaDetailId);
+            if (!bia) return null;
+            const name = (lang === "pt" ? bia.name_pt : bia.name_en) || bia.name_pt;
+            const dr = drTypes.find(d => d.id === bia.dr_type_id);
+            const dept = departments.find(d => d.id === bia.department_id);
+            const bp = businessProcesses.find(b => b.id === bia.business_process_id);
+            const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+              <div className="flex items-start gap-3 py-1.5 border-b border-border/50 last:border-0">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground w-40 shrink-0">{label}</span>
+                <span className="text-sm text-foreground flex-1 min-w-0 break-words">{value || "—"}</span>
+              </div>
+            );
+            return (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-base font-bold leading-tight">{name}</p>
+                  {bia.description && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{bia.description}</p>}
+                </div>
+                <div className="rounded-md border border-border p-3 bg-secondary/30">
+                  <Row label={lang === "pt" ? "Criticidade" : "Criticality"} value={bia.criticality} />
+                  <Row label="RTO / RPO" value={`${bia.rto}h / ${bia.rpo}h`} />
+                  <Row label={lang === "pt" ? "Tipo de DR" : "DR Type"} value={dr ? `${dr.code} — ${dr.label} (RTO ${dr.rto}h / RPO ${dr.rpo}h)` : null} />
+                  <Row label={lang === "pt" ? "Departamento" : "Department"} value={dept?.name} />
+                  <Row label={lang === "pt" ? "Tipo de Função" : "Function Type"} value={bp?.tipo_funcao} />
+                  <Row label={lang === "pt" ? "Função" : "Function"} value={bp?.funcao} />
+                  <Row label={lang === "pt" ? "Macro Processo" : "Macro Process"} value={bp?.macro_processo} />
+                  <Row label={lang === "pt" ? "Processo" : "Process"} value={bp?.processo} />
+                </div>
               </div>
             );
           })()}
@@ -992,6 +1151,7 @@ const EmergencySection: React.FC = () => {
                     {deptLabel && <span>{deptLabel}</span>}
                     {recLabel && <span>· {recLabel}</span>}
                     {cLabel && <span>· {cLabel}</span>}
+                    {getDRLabel(card) && <span>· DR: {getDRLabel(card)}</span>}
                   </div>
                   <div className="flex items-center gap-2 pt-1">
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => openEdit(card)}>
@@ -1028,10 +1188,15 @@ const EmergencySection: React.FC = () => {
                               : biaName;
                             return (
                               <div key={link.id} className="p-3 rounded-lg border border-blue-200 bg-blue-50/60 flex items-start gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-bold text-slate-900 leading-tight">{biaName}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => setBiaDetailId(bia.id)}
+                                  className="flex-1 min-w-0 text-left group"
+                                  title={lang === "pt" ? "Ver detalhe da BIA" : "View BIA detail"}
+                                >
+                                  <p className="text-sm font-bold text-blue-800 leading-tight group-hover:underline">{biaName}</p>
                                   <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{desc}</p>
-                                </div>
+                                </button>
                                 <Button
                                   variant="ghost"
                                   size="icon"

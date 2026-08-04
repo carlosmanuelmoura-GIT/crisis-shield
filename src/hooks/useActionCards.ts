@@ -14,6 +14,7 @@ export interface DBActionCard {
   recurso_id: string | null;
   cenario_id: string | null;
   department_id: string | null;
+  dr_type_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -121,7 +122,7 @@ export function useCreateActionCard() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string }) => {
+    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string }) => {
       const { error } = await supabase.from("action_cards").insert({
         title_pt: data.title_pt,
         title_en: data.title_en,
@@ -132,6 +133,7 @@ export function useCreateActionCard() {
         recurso_id: data.recurso_id || null,
         cenario_id: data.cenario_id || null,
         department_id: data.department_id || null,
+        dr_type_id: data.dr_type_id || null,
         owner_id: user?.id,
       } as any);
       if (error) throw error;
@@ -144,7 +146,7 @@ export function useUpdateActionCard() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string }) => {
       const { error } = await supabase.from("action_cards").update({
         title_pt: data.title_pt,
         title_en: data.title_en,
@@ -155,6 +157,7 @@ export function useUpdateActionCard() {
         recurso_id: data.recurso_id || null,
         cenario_id: data.cenario_id || null,
         department_id: data.department_id || null,
+        dr_type_id: data.dr_type_id || null,
       } as any).eq("id", id);
       if (error) throw error;
     },
