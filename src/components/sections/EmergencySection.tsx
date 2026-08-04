@@ -104,6 +104,7 @@ const EmergencySection: React.FC = () => {
   const [linkBiaDialogCard, setLinkBiaDialogCard] = useState<string | null>(null);
   const [biaToLink, setBiaToLink] = useState<string>("");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [biaDetailId, setBiaDetailId] = useState<string | null>(null);
 
   // Confirmation dialog for checking items
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -1033,6 +1034,21 @@ const EmergencySection: React.FC = () => {
                   if (!linkBiaDialogCard || !biaToLink) return;
                   try {
                     await linkBIA.mutateAsync({ action_card_id: linkBiaDialogCard, bia_process_id: biaToLink });
+                    const targetCard = cards.find(c => c.id === linkBiaDialogCard);
+                    const bia = biaProcesses.find(b => b.id === biaToLink);
+                    if (targetCard && bia?.dr_type_id && !(targetCard as any).dr_type_id) {
+                      await updateCard.mutateAsync({
+                        id: targetCard.id,
+                        title_pt: targetCard.title_pt,
+                        title_en: targetCard.title_en,
+                        severity: targetCard.severity,
+                        capability: targetCard.capability || undefined,
+                        recurso_id: targetCard.recurso_id || undefined,
+                        cenario_id: targetCard.cenario_id || undefined,
+                        department_id: targetCard.department_id || undefined,
+                        dr_type_id: bia.dr_type_id,
+                      });
+                    }
                     setBiaToLink("");
                     toast({ title: lang === "pt" ? "BIA associada" : "BIA linked" });
                   } catch (err: any) {
@@ -1042,6 +1058,47 @@ const EmergencySection: React.FC = () => {
                   {linkBIA.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {lang === "pt" ? "Associar" : "Link"}
                 </Button>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* BIA detail dialog */}
+      <Dialog open={!!biaDetailId} onOpenChange={(o) => !o && setBiaDetailId(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{lang === "pt" ? "Detalhe da BIA" : "BIA Detail"}</DialogTitle>
+          </DialogHeader>
+          {biaDetailId && (() => {
+            const bia = biaProcesses.find(b => b.id === biaDetailId);
+            if (!bia) return null;
+            const name = (lang === "pt" ? bia.name_pt : bia.name_en) || bia.name_pt;
+            const dr = drTypes.find(d => d.id === bia.dr_type_id);
+            const dept = departments.find(d => d.id === bia.department_id);
+            const bp = businessProcesses.find(b => b.id === bia.business_process_id);
+            const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+              <div className="flex items-start gap-3 py-1.5 border-b border-border/50 last:border-0">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground w-40 shrink-0">{label}</span>
+                <span className="text-sm text-foreground flex-1 min-w-0 break-words">{value || "—"}</span>
+              </div>
+            );
+            return (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-base font-bold leading-tight">{name}</p>
+                  {bia.description && <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{bia.description}</p>}
+                </div>
+                <div className="rounded-md border border-border p-3 bg-secondary/30">
+                  <Row label={lang === "pt" ? "Criticidade" : "Criticality"} value={bia.criticality} />
+                  <Row label="RTO / RPO" value={`${bia.rto}h / ${bia.rpo}h`} />
+                  <Row label={lang === "pt" ? "Tipo de DR" : "DR Type"} value={dr ? `${dr.code} — ${dr.label} (RTO ${dr.rto}h / RPO ${dr.rpo}h)` : null} />
+                  <Row label={lang === "pt" ? "Departamento" : "Department"} value={dept?.name} />
+                  <Row label={lang === "pt" ? "Tipo de Função" : "Function Type"} value={bp?.tipo_funcao} />
+                  <Row label={lang === "pt" ? "Função" : "Function"} value={bp?.funcao} />
+                  <Row label={lang === "pt" ? "Macro Processo" : "Macro Process"} value={bp?.macro_processo} />
+                  <Row label={lang === "pt" ? "Processo" : "Process"} value={bp?.processo} />
+                </div>
               </div>
             );
           })()}
@@ -1131,10 +1188,15 @@ const EmergencySection: React.FC = () => {
                               : biaName;
                             return (
                               <div key={link.id} className="p-3 rounded-lg border border-blue-200 bg-blue-50/60 flex items-start gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-bold text-slate-900 leading-tight">{biaName}</p>
+                                <button
+                                  type="button"
+                                  onClick={() => setBiaDetailId(bia.id)}
+                                  className="flex-1 min-w-0 text-left group"
+                                  title={lang === "pt" ? "Ver detalhe da BIA" : "View BIA detail"}
+                                >
+                                  <p className="text-sm font-bold text-blue-800 leading-tight group-hover:underline">{biaName}</p>
                                   <p className="text-xs text-slate-600 mt-1 whitespace-pre-wrap">{desc}</p>
-                                </div>
+                                </button>
                                 <Button
                                   variant="ghost"
                                   size="icon"
