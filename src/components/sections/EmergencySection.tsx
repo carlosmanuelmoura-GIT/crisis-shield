@@ -521,6 +521,16 @@ const EmergencySection: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
+              <Select value={filterCenario} onValueChange={setFilterCenario}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  {cenarios.map(c => <SelectItem key={c.id} value={c.id}>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
               <Select value={filterDR} onValueChange={setFilterDR}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
@@ -528,16 +538,6 @@ const EmergencySection: React.FC = () => {
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
                   {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label}</SelectItem>)}
                   <SelectItem value="__none">{lang === "pt" ? "Sem tipo de DR" : "No DR type"}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
-              <Select value={filterCenario} onValueChange={setFilterCenario}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {cenarios.map(c => <SelectItem key={c.id} value={c.id}>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
