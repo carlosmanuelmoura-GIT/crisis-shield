@@ -20,6 +20,7 @@ export type Database = {
           cenario_id: string | null
           created_at: string
           department_id: string | null
+          dr_type_id: string | null
           funcao: string
           id: string
           macro_processo: string
@@ -35,6 +36,7 @@ export type Database = {
           cenario_id?: string | null
           created_at?: string
           department_id?: string | null
+          dr_type_id?: string | null
           funcao?: string
           id?: string
           macro_processo?: string
@@ -50,6 +52,7 @@ export type Database = {
           cenario_id?: string | null
           created_at?: string
           department_id?: string | null
+          dr_type_id?: string | null
           funcao?: string
           id?: string
           macro_processo?: string
@@ -73,6 +76,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_cards_dr_type_id_fkey"
+            columns: ["dr_type_id"]
+            isOneToOne: false
+            referencedRelation: "dr_types"
             referencedColumns: ["id"]
           },
           {
