@@ -134,6 +134,7 @@ const EmergencySection: React.FC = () => {
   const groupedByCenario = useMemo(() => {
     const cenMap = new Map(cenarios.map(c => [c.id, c]));
     const recMap = new Map(recursos.map(r => [r.id, r]));
+    const drMap = new Map(drTypes.map(d => [d.id, d]));
 
     const byCen = new Map<string, typeof filtered>();
     const cenUnassigned: typeof filtered = [];
@@ -174,16 +175,38 @@ const EmergencySection: React.FC = () => {
       return out;
     };
 
-    const groups: { cenario: typeof cenarios[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
+    const buildDrGroups = (cardList: typeof filtered) => {
+      const byDr = new Map<string, typeof filtered>();
+      const drUnassigned: typeof filtered = [];
+      cardList.forEach(c => {
+        const id = (c as any).dr_type_id;
+        if (id && drMap.has(id)) {
+          const arr = byDr.get(id) || [];
+          arr.push(c); byDr.set(id, arr);
+        } else drUnassigned.push(c);
+      });
+      const keys = [...byDr.keys()].sort((a, b) =>
+        (drMap.get(a)?.sort_order ?? 999) - (drMap.get(b)?.sort_order ?? 999)
+      );
+      const out: { drType: typeof drTypes[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
+      keys.forEach(k => {
+        const list = byDr.get(k)!;
+        out.push({ drType: drMap.get(k)!, recursoGroups: buildRecGroups(list), total: list.length });
+      });
+      if (drUnassigned.length) out.push({ drType: null, recursoGroups: buildRecGroups(drUnassigned), total: drUnassigned.length });
+      return out;
+    };
+
+    const groups: { cenario: typeof cenarios[0] | null; drGroups: ReturnType<typeof buildDrGroups>; total: number }[] = [];
     sortedCenKeys.forEach(id => {
       const list = byCen.get(id)!;
-      groups.push({ cenario: cenMap.get(id)!, recursoGroups: buildRecGroups(list), total: list.length });
+      groups.push({ cenario: cenMap.get(id)!, drGroups: buildDrGroups(list), total: list.length });
     });
     if (cenUnassigned.length) {
-      groups.push({ cenario: null, recursoGroups: buildRecGroups(cenUnassigned), total: cenUnassigned.length });
+      groups.push({ cenario: null, drGroups: buildDrGroups(cenUnassigned), total: cenUnassigned.length });
     }
     return groups;
-  }, [filtered, cenarios, recursos]);
+  }, [filtered, cenarios, recursos, drTypes]);
 
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -369,7 +392,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all");
+    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
@@ -394,6 +417,13 @@ const EmergencySection: React.FC = () => {
     if (!dId) return null;
     const d = departments.find(dep => dep.id === dId);
     return d ? d.name : null;
+  };
+
+  const getDRLabel = (card: typeof cards[0]) => {
+    const id = (card as any).dr_type_id;
+    if (!id) return null;
+    const d = drTypes.find(x => x.id === id);
+    return d ? `${d.code} — ${d.label}` : null;
   };
 
   const getRecursoLabel = (card: typeof cards[0]) => {
