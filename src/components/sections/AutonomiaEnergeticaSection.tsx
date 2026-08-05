@@ -114,6 +114,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    setTierTouched(false);
     setDialogOpen(true);
   };
 
@@ -121,6 +122,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
     setEditing(b);
     setForm({
       name: b.name,
+      tier: computeTier(b),
       autonomia_horas_contingencia: b.autonomia_horas_contingencia?.toString() ?? "",
       combustivel_litros: b.combustivel_litros?.toString() ?? "",
       num_geradores: b.num_geradores?.toString() ?? "",
@@ -128,10 +130,25 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       depositos: b.depositos ?? "",
       observacoes: b.observacoes ?? "",
     });
+    setTierTouched(true);
     setDialogOpen(true);
   };
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
+
+  /** Atualiza autonomia/geradores e, se o utilizador ainda não escolheu, sugere o Tier. */
+  const updateAndSuggest = (patch: Partial<typeof emptyForm>) => {
+    setForm(f => {
+      const next = { ...f, ...patch };
+      if (!tierTouched) {
+        next.tier = suggestTier({
+          num_geradores: num(next.num_geradores),
+          autonomia_horas_contingencia: num(next.autonomia_horas_contingencia),
+        });
+      }
+      return next;
+    });
+  };
 
   const save = async () => {
     if (!form.name.trim()) {
@@ -140,6 +157,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
     }
     const payload = {
       name: form.name.trim(),
+      tier: form.tier,
       autonomia_horas_contingencia: num(form.autonomia_horas_contingencia),
       combustivel_litros: num(form.combustivel_litros),
       num_geradores: num(form.num_geradores),
@@ -147,6 +165,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       depositos: form.depositos.trim() || null,
       observacoes: form.observacoes.trim() || null,
     };
+
     try {
       if (editing) await updateB.mutateAsync({ id: editing.id, ...payload });
       else await createB.mutateAsync(payload);
