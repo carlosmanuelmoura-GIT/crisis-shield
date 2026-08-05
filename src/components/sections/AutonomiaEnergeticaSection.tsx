@@ -46,8 +46,8 @@ import { generateDieselReportPDF, computeTier, TierKey } from "@/lib/generateDie
 const TIER_META: Record<TierKey, { pt: string; en: string; cls: string }> = {
   tier1: { pt: "Tier 1 · Crítico", en: "Tier 1 · Critical", cls: "bg-primary/10 text-primary border-primary/30" },
   tier2: { pt: "Tier 2 · Intermédio", en: "Tier 2 · Intermediate", cls: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
-  tier3: { pt: "Tier 3 · Regional", en: "Tier 3 · Regional", cls: "bg-muted text-muted-foreground border-border" },
-  fragil: { pt: "Tier 3 · Frágil", en: "Tier 3 · Fragile", cls: "bg-destructive/10 text-destructive border-destructive/30" },
+  tier3: { pt: "Tier 3 · Agência & Numerário", en: "Tier 3 · Branch & Cash", cls: "bg-muted text-muted-foreground border-border" },
+  fragil: { pt: "Tier 4 · Agências", en: "Tier 4 · Branches", cls: "bg-destructive/10 text-destructive border-destructive/30" },
   na: { pt: "Por validar", en: "To validate", cls: "bg-muted text-muted-foreground border-border" },
 };
 
