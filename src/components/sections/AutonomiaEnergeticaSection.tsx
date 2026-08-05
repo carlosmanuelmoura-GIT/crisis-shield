@@ -41,18 +41,28 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { generateDieselReportPDF, computeTier, TierKey } from "@/lib/generateDieselReportPDF";
+import { generateDieselReportPDF, computeTier, suggestTier, TierKey } from "@/lib/generateDieselReportPDF";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TIER_META: Record<TierKey, { pt: string; en: string; cls: string }> = {
   tier1: { pt: "Tier 1 · Crítico", en: "Tier 1 · Critical", cls: "bg-primary/10 text-primary border-primary/30" },
   tier2: { pt: "Tier 2 · Intermédio", en: "Tier 2 · Intermediate", cls: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
   tier3: { pt: "Tier 3 · Agência & Numerário", en: "Tier 3 · Branch & Cash", cls: "bg-muted text-muted-foreground border-border" },
-  fragil: { pt: "Tier 4 · Agências", en: "Tier 4 · Branches", cls: "bg-destructive/10 text-destructive border-destructive/30" },
+  tier4: { pt: "Tier 4 · Agências", en: "Tier 4 · Branches", cls: "bg-destructive/10 text-destructive border-destructive/30" },
   na: { pt: "Por validar", en: "To validate", cls: "bg-muted text-muted-foreground border-border" },
 };
 
+const TIER_KEYS: TierKey[] = ["tier1", "tier2", "tier3", "tier4", "na"];
+
 const emptyForm = {
   name: "",
+  tier: "na" as TierKey,
   autonomia_horas_contingencia: "",
   combustivel_litros: "",
   num_geradores: "",
@@ -60,6 +70,7 @@ const emptyForm = {
   depositos: "",
   observacoes: "",
 };
+
 
 const AutonomiaEnergeticaSection: React.FC = () => {
   const { lang } = useApp();
