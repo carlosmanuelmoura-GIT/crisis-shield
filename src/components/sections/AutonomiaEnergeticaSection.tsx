@@ -85,6 +85,8 @@ const AutonomiaEnergeticaSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Building | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [tierTouched, setTierTouched] = useState(false);
+
 
   const stats = useMemo(() => {
     const totalFuel = buildings.reduce((s, b) => s + (b.combustivel_litros ?? 0), 0);
