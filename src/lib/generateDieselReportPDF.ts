@@ -101,12 +101,13 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
     (best, b) => ((b.autonomia_horas_contingencia ?? -1) > (best?.autonomia_horas_contingencia ?? -1) ? b : best),
     null
   );
-  const fragile = buildings.filter(b => (b.num_geradores ?? 0) <= 0).length;
+  const fragile = buildings.filter(b => computeTier(b) === "tier4").length;
 
   const cards: [string, string][] = [
     ["RESERVA TOTAL DIESEL", `${totalFuel.toLocaleString("pt-PT")} L`],
     ["NÓ CORE", core ? `${core.autonomia_horas_contingencia ?? 0}h — ${core.name}` : "—"],
-    ["EDIFÍCIOS FRÁGEIS (APENAS UPS)", `${fragile}`],
+    ["TIER 4 — AGÊNCIAS", `${fragile}`],
+
     ["EQUIPAMENTO", `${totalGens} geradores · ${totalUps} UPS`],
   ];
   const cw = (contentW - 9) / 4;
