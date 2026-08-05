@@ -95,7 +95,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
         (b.autonomia_horas_contingencia ?? -1) > (best?.autonomia_horas_contingencia ?? -1) ? b : best,
       null
     );
-    const fragile = buildings.filter(b => (b.num_geradores ?? 0) <= 0);
+    const fragile = buildings.filter(b => computeTier(b) === "tier4");
     return { totalFuel, totalGens, totalUps, core, fragile };
   }, [buildings]);
 
