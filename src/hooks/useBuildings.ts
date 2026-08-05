@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 export interface Building {
   id: string;
   name: string;
+  tier: string | null;
   autonomia_horas_contingencia: number | null;
   depositos: string | null;
   combustivel_litros: number | null;
@@ -18,6 +19,7 @@ export interface Building {
 
 export type BuildingInput = {
   name: string;
+  tier?: string | null;
   autonomia_horas_contingencia?: number | null;
   depositos?: string | null;
   combustivel_litros?: number | null;
@@ -25,6 +27,7 @@ export type BuildingInput = {
   num_ups?: number | null;
   observacoes?: string | null;
 };
+
 
 export function useBuildings() {
   return useQuery({
