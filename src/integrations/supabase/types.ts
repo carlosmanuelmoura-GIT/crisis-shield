@@ -251,6 +251,7 @@ export type Database = {
           num_ups: number | null
           observacoes: string | null
           owner_id: string | null
+          tier: string
           updated_at: string
         }
         Insert: {
@@ -264,6 +265,7 @@ export type Database = {
           num_ups?: number | null
           observacoes?: string | null
           owner_id?: string | null
+          tier?: string
           updated_at?: string
         }
         Update: {
@@ -277,6 +279,7 @@ export type Database = {
           num_ups?: number | null
           observacoes?: string | null
           owner_id?: string | null
+          tier?: string
           updated_at?: string
         }
         Relationships: []
