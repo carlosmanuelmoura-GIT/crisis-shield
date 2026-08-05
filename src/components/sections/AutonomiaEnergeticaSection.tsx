@@ -196,8 +196,8 @@ const AutonomiaEnergeticaSection: React.FC = () => {
     { key: "all", label: `${pt ? "Todos" : "All"} (${buildings.length})` },
     { key: "tier1", label: pt ? "Tier 1 · Crítico" : "Tier 1 · Critical" },
     { key: "tier2", label: pt ? "Tier 2 · Intermédio" : "Tier 2 · Intermediate" },
-    { key: "tier3", label: pt ? "Tier 3 · Regional" : "Tier 3 · Regional" },
-    { key: "fragil", label: pt ? "Frágeis (apenas UPS)" : "Fragile (UPS only)" },
+    { key: "tier3", label: pt ? "Tier 3 · Agência & Numerário" : "Tier 3 · Branch & Cash" },
+    { key: "fragil", label: pt ? "Tier 4 · Agências" : "Tier 4 · Branches" },
   ];
 
   return (
