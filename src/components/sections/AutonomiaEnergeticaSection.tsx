@@ -466,6 +466,34 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                 className="bg-secondary border-border"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Tier</Label>
+              <Select
+                value={form.tier}
+                onValueChange={(v: TierKey) => {
+                  setTierTouched(true);
+                  setForm(f => ({ ...f, tier: v }));
+                }}
+              >
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIER_KEYS.map(k => (
+                    <SelectItem key={k} value={k}>
+                      {pt ? TIER_META[k].pt : TIER_META[k].en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!tierTouched && (
+                <p className="text-xs text-muted-foreground">
+                  {pt
+                    ? "Sugerido automaticamente a partir da autonomia e dos geradores. Pode alterar."
+                    : "Auto-suggested from autonomy and generators. You can change it."}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">{pt ? "Autonomia (h)" : "Autonomy (h)"}</Label>
@@ -473,7 +501,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                   type="number"
                   step="0.5"
                   value={form.autonomia_horas_contingencia}
-                  onChange={e => setForm(f => ({ ...f, autonomia_horas_contingencia: e.target.value }))}
+                  onChange={e => updateAndSuggest({ autonomia_horas_contingencia: e.target.value })}
                   className="bg-secondary border-border"
                 />
               </div>
@@ -493,10 +521,11 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                   type="number"
                   step="1"
                   value={form.num_geradores}
-                  onChange={e => setForm(f => ({ ...f, num_geradores: e.target.value }))}
+                  onChange={e => updateAndSuggest({ num_geradores: e.target.value })}
                   className="bg-secondary border-border"
                 />
               </div>
+
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Nº UPS</Label>
                 <Input
