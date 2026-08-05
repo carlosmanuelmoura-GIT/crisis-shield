@@ -178,7 +178,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       icon: Zap,
     },
     {
-      label: pt ? "Edifícios frágeis (apenas UPS)" : "Fragile buildings (UPS only)",
+      label: pt ? "Tier 4 · Agências (apenas UPS)" : "Tier 4 · Branches (UPS only)",
       value: `${stats.fragile.length}`,
       hint: pt ? "Sem grupo gerador" : "No generator set",
       icon: AlertTriangle,
