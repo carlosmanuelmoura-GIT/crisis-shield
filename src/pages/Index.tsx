@@ -35,6 +35,7 @@ const sectionMap: Record<string, React.FC> = {
   "test-calendar": TestCalendarSection,
   documentacao: DocumentationSection,
   "import-export": ImportExportSection,
+  "autonomia-energetica": AutonomiaEnergeticaSection,
 };
 
 const Index = () => {
