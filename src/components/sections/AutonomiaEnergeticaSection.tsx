@@ -41,18 +41,28 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
-import { generateDieselReportPDF, computeTier, TierKey } from "@/lib/generateDieselReportPDF";
+import { generateDieselReportPDF, computeTier, suggestTier, TierKey } from "@/lib/generateDieselReportPDF";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TIER_META: Record<TierKey, { pt: string; en: string; cls: string }> = {
   tier1: { pt: "Tier 1 · Crítico", en: "Tier 1 · Critical", cls: "bg-primary/10 text-primary border-primary/30" },
   tier2: { pt: "Tier 2 · Intermédio", en: "Tier 2 · Intermediate", cls: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
   tier3: { pt: "Tier 3 · Agência & Numerário", en: "Tier 3 · Branch & Cash", cls: "bg-muted text-muted-foreground border-border" },
-  fragil: { pt: "Tier 4 · Agências", en: "Tier 4 · Branches", cls: "bg-destructive/10 text-destructive border-destructive/30" },
+  tier4: { pt: "Tier 4 · Agências", en: "Tier 4 · Branches", cls: "bg-destructive/10 text-destructive border-destructive/30" },
   na: { pt: "Por validar", en: "To validate", cls: "bg-muted text-muted-foreground border-border" },
 };
 
+const TIER_KEYS: TierKey[] = ["tier1", "tier2", "tier3", "tier4", "na"];
+
 const emptyForm = {
   name: "",
+  tier: "na" as TierKey,
   autonomia_horas_contingencia: "",
   combustivel_litros: "",
   num_geradores: "",
@@ -60,6 +70,7 @@ const emptyForm = {
   depositos: "",
   observacoes: "",
 };
+
 
 const AutonomiaEnergeticaSection: React.FC = () => {
   const { lang } = useApp();
@@ -74,6 +85,8 @@ const AutonomiaEnergeticaSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Building | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [tierTouched, setTierTouched] = useState(false);
+
 
   const stats = useMemo(() => {
     const totalFuel = buildings.reduce((s, b) => s + (b.combustivel_litros ?? 0), 0);
@@ -84,7 +97,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
         (b.autonomia_horas_contingencia ?? -1) > (best?.autonomia_horas_contingencia ?? -1) ? b : best,
       null
     );
-    const fragile = buildings.filter(b => (b.num_geradores ?? 0) <= 0);
+    const fragile = buildings.filter(b => computeTier(b) === "tier4");
     return { totalFuel, totalGens, totalUps, core, fragile };
   }, [buildings]);
 
@@ -103,6 +116,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm);
+    setTierTouched(false);
     setDialogOpen(true);
   };
 
@@ -110,6 +124,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
     setEditing(b);
     setForm({
       name: b.name,
+      tier: computeTier(b),
       autonomia_horas_contingencia: b.autonomia_horas_contingencia?.toString() ?? "",
       combustivel_litros: b.combustivel_litros?.toString() ?? "",
       num_geradores: b.num_geradores?.toString() ?? "",
@@ -117,10 +132,25 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       depositos: b.depositos ?? "",
       observacoes: b.observacoes ?? "",
     });
+    setTierTouched(true);
     setDialogOpen(true);
   };
 
   const num = (v: string) => (v.trim() === "" ? null : Number(v));
+
+  /** Atualiza autonomia/geradores e, se o utilizador ainda não escolheu, sugere o Tier. */
+  const updateAndSuggest = (patch: Partial<typeof emptyForm>) => {
+    setForm(f => {
+      const next = { ...f, ...patch };
+      if (!tierTouched) {
+        next.tier = suggestTier({
+          num_geradores: num(next.num_geradores),
+          autonomia_horas_contingencia: num(next.autonomia_horas_contingencia),
+        });
+      }
+      return next;
+    });
+  };
 
   const save = async () => {
     if (!form.name.trim()) {
@@ -129,6 +159,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
     }
     const payload = {
       name: form.name.trim(),
+      tier: form.tier,
       autonomia_horas_contingencia: num(form.autonomia_horas_contingencia),
       combustivel_litros: num(form.combustivel_litros),
       num_geradores: num(form.num_geradores),
@@ -136,6 +167,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       depositos: form.depositos.trim() || null,
       observacoes: form.observacoes.trim() || null,
     };
+
     try {
       if (editing) await updateB.mutateAsync({ id: editing.id, ...payload });
       else await createB.mutateAsync(payload);
@@ -197,7 +229,9 @@ const AutonomiaEnergeticaSection: React.FC = () => {
     { key: "tier1", label: pt ? "Tier 1 · Crítico" : "Tier 1 · Critical" },
     { key: "tier2", label: pt ? "Tier 2 · Intermédio" : "Tier 2 · Intermediate" },
     { key: "tier3", label: pt ? "Tier 3 · Agência & Numerário" : "Tier 3 · Branch & Cash" },
-    { key: "fragil", label: pt ? "Tier 4 · Agências" : "Tier 4 · Branches" },
+    { key: "tier4", label: pt ? "Tier 4 · Agências" : "Tier 4 · Branches" },
+    { key: "na", label: pt ? "Por validar" : "To validate" },
+
   ];
 
   return (
@@ -432,6 +466,34 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                 className="bg-secondary border-border"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Tier</Label>
+              <Select
+                value={form.tier}
+                onValueChange={(v: TierKey) => {
+                  setTierTouched(true);
+                  setForm(f => ({ ...f, tier: v }));
+                }}
+              >
+                <SelectTrigger className="bg-secondary border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIER_KEYS.map(k => (
+                    <SelectItem key={k} value={k}>
+                      {pt ? TIER_META[k].pt : TIER_META[k].en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!tierTouched && (
+                <p className="text-xs text-muted-foreground">
+                  {pt
+                    ? "Sugerido automaticamente a partir da autonomia e dos geradores. Pode alterar."
+                    : "Auto-suggested from autonomy and generators. You can change it."}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">{pt ? "Autonomia (h)" : "Autonomy (h)"}</Label>
@@ -439,7 +501,7 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                   type="number"
                   step="0.5"
                   value={form.autonomia_horas_contingencia}
-                  onChange={e => setForm(f => ({ ...f, autonomia_horas_contingencia: e.target.value }))}
+                  onChange={e => updateAndSuggest({ autonomia_horas_contingencia: e.target.value })}
                   className="bg-secondary border-border"
                 />
               </div>
@@ -459,10 +521,11 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                   type="number"
                   step="1"
                   value={form.num_geradores}
-                  onChange={e => setForm(f => ({ ...f, num_geradores: e.target.value }))}
+                  onChange={e => updateAndSuggest({ num_geradores: e.target.value })}
                   className="bg-secondary border-border"
                 />
               </div>
+
               <div className="space-y-1.5">
                 <Label className="text-sm font-medium">Nº UPS</Label>
                 <Input

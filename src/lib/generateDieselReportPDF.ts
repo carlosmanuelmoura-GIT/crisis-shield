@@ -3,6 +3,7 @@ import jsPDF from "jspdf";
 export interface DieselBuilding {
   id: string;
   name: string;
+  tier?: string | null;
   autonomia_horas_contingencia: number | null;
   combustivel_litros: number | null;
   num_geradores: number | null;
@@ -13,13 +14,13 @@ export interface DieselBuilding {
 
 const BRAND_BLUE: [number, number, number] = [30, 64, 148];
 
-export type TierKey = "tier1" | "tier2" | "tier3" | "fragil" | "na";
+export type TierKey = "tier1" | "tier2" | "tier3" | "tier4" | "na";
 
 export const TIER_LABEL: Record<TierKey, string> = {
   tier1: "TIER 1 — CRÍTICO",
   tier2: "TIER 2 — INTERMÉDIO",
-  tier3: "TIER 3 — REGIONAL",
-  fragil: "TIER 3 — FRÁGIL (APENAS UPS)",
+  tier3: "TIER 3 — AGÊNCIA & NUMERÁRIO",
+  tier4: "TIER 4 — AGÊNCIAS",
   na: "POR VALIDAR",
 };
 
@@ -27,21 +28,30 @@ const TIER_COLOR: Record<TierKey, [number, number, number]> = {
   tier1: [30, 64, 148],
   tier2: [217, 119, 6],
   tier3: [100, 116, 139],
-  fragil: [220, 38, 38],
+  tier4: [220, 38, 38],
   na: [148, 163, 184],
 };
 
-export function computeTier(b: DieselBuilding): TierKey {
+/** Sugestão automática de tier a partir da autonomia/geradores. */
+export function suggestTier(b: Pick<DieselBuilding, "num_geradores" | "autonomia_horas_contingencia">): TierKey {
   const gens = b.num_geradores ?? 0;
   const h = b.autonomia_horas_contingencia;
-  if (gens <= 0) return "fragil";
+  if (gens <= 0) return "tier4";
   if (h == null) return "na";
   if (h >= 48) return "tier1";
   if (h >= 12) return "tier2";
   return "tier3";
 }
 
-const TIER_ORDER: TierKey[] = ["tier1", "tier2", "tier3", "fragil", "na"];
+/** Tier efetivo: valor gravado, com fallback para a sugestão automática. */
+export function computeTier(b: DieselBuilding): TierKey {
+  const t = b.tier;
+  if (t && t in TIER_LABEL) return t as TierKey;
+  return suggestTier(b);
+}
+
+const TIER_ORDER: TierKey[] = ["tier1", "tier2", "tier3", "tier4", "na"];
+
 
 export function generateDieselReportPDF(buildings: DieselBuilding[]) {
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
@@ -91,12 +101,13 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
     (best, b) => ((b.autonomia_horas_contingencia ?? -1) > (best?.autonomia_horas_contingencia ?? -1) ? b : best),
     null
   );
-  const fragile = buildings.filter(b => (b.num_geradores ?? 0) <= 0).length;
+  const fragile = buildings.filter(b => computeTier(b) === "tier4").length;
 
   const cards: [string, string][] = [
     ["RESERVA TOTAL DIESEL", `${totalFuel.toLocaleString("pt-PT")} L`],
     ["NÓ CORE", core ? `${core.autonomia_horas_contingencia ?? 0}h — ${core.name}` : "—"],
-    ["EDIFÍCIOS FRÁGEIS (APENAS UPS)", `${fragile}`],
+    ["TIER 4 — AGÊNCIAS", `${fragile}`],
+
     ["EQUIPAMENTO", `${totalGens} geradores · ${totalUps} UPS`],
   ];
   const cw = (contentW - 9) / 4;
