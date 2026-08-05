@@ -45,4 +45,5 @@ Botão "Relatório Diesel" gera e descarrega um PDF com cabeçalho institucional
 - Novo `src/components/sections/AutonomiaEnergeticaSection.tsx`, registado no mapa de secções de `Index.tsx` com o id `autonomia-energetica`.
 - Reutiliza `src/hooks/useBuildings.ts` (sem alterações de schema).
 - Novo `src/lib/generateDieselReportPDF.ts` com jsPDF, seguindo o padrão de `generateDeptActionCardsPDF.ts`.
-- Cores e tipografia dos tokens do design system existente (sem cores fixas).
+- Mantém-se integralmente o design system atual da aplicação: tema claro slate/branco, primário azul, semáforos (vermelho/âmbar/amarelo/esmeralda), fontes Inter e JetBrains Mono. Sem tema escuro nem cores fixas — apenas tokens semânticos e componentes shadcn já usados noutras secções (cartões, badges, tabelas, diálogos).
+- O ecrã de referência serve apenas de inspiração para a estrutura (indicadores no topo, filtros, tabela), não para as cores.
