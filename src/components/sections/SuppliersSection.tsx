@@ -639,8 +639,9 @@ const SuppliersSection: React.FC = () => {
                 [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
                 
-                [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), `${detail.rto_supplier_hours ?? "—"}h`],
-                [L({ pt: "RTO Processo", en: "Process RTO" }), `${detail.rto_process_hours ?? "—"}h`],
+                [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), detail.supplier_rto_compliant == null ? "—" : detail.supplier_rto_compliant ? L({ pt: "Conforme", en: "Compliant" }) : L({ pt: "Não conforme", en: "Non-compliant" })],
+                [L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" }), drOf(detail.dr_type_id) ? `${drOf(detail.dr_type_id)!.code} — ${drOf(detail.dr_type_id)!.label} (${drOf(detail.dr_type_id)!.rto}h)` : "—"],
+
                 [L({ pt: "Essencialidade", en: "Essentiality" }), L(ESS_LABEL[detail.essentiality])],
                 [L({ pt: "Alternativas Viáveis", en: "Viable alternatives" }), L(ALT_LABEL[detail.alternatives])],
                 [L({ pt: "Tempo de Substituição", en: "Substitution time" }), L(SUB_LABEL[detail.substitution_time])],
