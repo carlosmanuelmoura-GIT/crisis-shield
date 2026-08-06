@@ -911,47 +911,8 @@ const BackOfficeSection: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Building */}
-      <Dialog open={bldDialog} onOpenChange={setBldDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>{editingBld ? (lang === "pt" ? "Editar Edifício" : "Edit Building") : (lang === "pt" ? "Novo Edifício" : "New Building")}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Edifício / Zona" : "Building / Zone"}</Label>
-              <Input value={bldForm.name} onChange={e => setBldForm(f => ({ ...f, name: e.target.value }))} className="bg-secondary border-border" />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</Label>
-                <Input type="number" step="0.5" value={bldForm.autonomia_horas_contingencia} onChange={e => setBldForm(f => ({ ...f, autonomia_horas_contingencia: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</Label>
-                <Input type="number" step="1" value={bldForm.combustivel_litros} onChange={e => setBldForm(f => ({ ...f, combustivel_litros: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{lang === "pt" ? "Nº Geradores" : "Generators"}</Label>
-                <Input type="number" step="1" value={bldForm.num_geradores} onChange={e => setBldForm(f => ({ ...f, num_geradores: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Nº UPS</Label>
-                <Input type="number" step="1" value={bldForm.num_ups} onChange={e => setBldForm(f => ({ ...f, num_ups: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Depósitos" : "Tanks"}</Label>
-              <Textarea rows={2} value={bldForm.depositos} onChange={e => setBldForm(f => ({ ...f, depositos: e.target.value }))} className="bg-secondary border-border" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Observações" : "Notes"}</Label>
-              <Textarea rows={3} value={bldForm.observacoes} onChange={e => setBldForm(f => ({ ...f, observacoes: e.target.value }))} className="bg-secondary border-border" />
-            </div>
-            <Button onClick={handleSaveBld} disabled={!bldForm.name.trim() || createBld.isPending || updateBld.isPending} className="w-full">
-              {(createBld.isPending || updateBld.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Sub-Capacidade */}
       <Dialog open={subCapDialog} onOpenChange={setSubCapDialog}>
