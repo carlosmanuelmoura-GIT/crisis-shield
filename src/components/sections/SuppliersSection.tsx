@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Pencil, Eye, Trash2, AlertTriangle, ShieldAlert, Truck, CalendarClock, X } from "lucide-react";
+import { Plus, Pencil, Eye, Trash2, AlertTriangle, ShieldAlert, Truck, CalendarClock, X, FileDown } from "lucide-react";
+import { generateSuppliersPDF } from "@/lib/generateSuppliersPDF";
 import {
   useSuppliers,
   useSupplierRelations,
@@ -178,6 +179,32 @@ const SuppliersSection: React.FC = () => {
     setSearch("");
   };
 
+  const handleExportPDF = () => {
+    generateSuppliersPDF({
+      lang: lang === "pt" ? "pt" : "en",
+      kpis,
+      rows: filtered.map((s) => ({
+        id: s.id,
+        name: s.name,
+        subcontractors: s.subcontractors ?? "",
+        critical_area: s.critical_area ?? "",
+        supplier_type: s.supplier_type,
+        dr_label: drLabel(s.dr_type_id),
+        rto_compliant: s.supplier_rto_compliant,
+        essentiality: s.essentiality,
+        alternatives: s.alternatives,
+        substitution_time: s.substitution_time,
+        exit_strategy: s.exit_strategy,
+        last_gcn_test: s.last_gcn_test,
+        department: deptName(s.department_id),
+        funcoes: funcoesOf(s.id),
+        notes: s.notes ?? "",
+      })),
+    });
+  };
+
+
+
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
@@ -277,10 +304,16 @@ const SuppliersSection: React.FC = () => {
             })}
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          {L({ pt: "Novo Fornecedor", en: "New Supplier" })}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportPDF}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {L({ pt: "Exportar PDF", en: "Export PDF" })}
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            {L({ pt: "Novo Fornecedor", en: "New Supplier" })}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

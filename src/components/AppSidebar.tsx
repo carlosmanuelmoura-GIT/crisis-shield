@@ -37,9 +37,9 @@ const operationalItems = [
 { id: "bia", icon: BarChart3, label: { pt: "BIA", en: "BIA" } },
 { id: "pcn-departamentais", icon: Building2, label: { pt: "PCN Departamentais", en: "Departmental BCPs" } },
 { id: "pessoas-criticas", icon: Users, label: { pt: "Pessoas Críticas", en: "Critical People" } },
+{ id: "suppliers", icon: Truck, label: { pt: "Fornecedores Críticos", en: "Critical Suppliers" } },
 { id: "contacts", icon: Phone, label: { pt: "Contactos", en: "Contacts" } },
 { id: "sms", icon: MessageSquare, label: { pt: "SMS Express", en: "SMS Express" } },
-{ id: "suppliers", icon: Truck, label: { pt: "Fornecedores Críticos", en: "Critical Suppliers" } },
 { id: "test-calendar", icon: ClipboardList, label: { pt: "Calendário de Testes", en: "Test Calendar" } }];
 
 
