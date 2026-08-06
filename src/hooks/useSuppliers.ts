@@ -123,14 +123,14 @@ export function useCreateSupplier() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ funcoes, macro_processos, ...input }: SupplierInput) => {
+    mutationFn: async ({ funcoes, ...input }: SupplierInput) => {
       const { data, error } = await supabase
         .from("suppliers")
         .insert({ ...input, owner_id: user?.id })
         .select("id")
         .single();
       if (error) throw error;
-      await syncRelations(data.id, funcoes, macro_processos);
+      await syncRelations(data.id, funcoes);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["suppliers"] });
@@ -142,10 +142,10 @@ export function useCreateSupplier() {
 export function useUpdateSupplier() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, funcoes, macro_processos, ...input }: { id: string } & SupplierInput) => {
+    mutationFn: async ({ id, funcoes, ...input }: { id: string } & SupplierInput) => {
       const { error } = await supabase.from("suppliers").update(input).eq("id", id);
       if (error) throw error;
-      await syncRelations(id, funcoes, macro_processos);
+      await syncRelations(id, funcoes);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["suppliers"] });
