@@ -106,15 +106,8 @@ const BackOfficeSection: React.FC = () => {
   const [editingPlat, setEditingPlat] = useState<string | null>(null);
   const [platForm, setPlatForm] = useState({ name: "", dr_type_id: "" });
 
-  // --- Buildings ---
-  const { data: buildingsList = [], isLoading: bldLoading } = useBuildings();
-  const createBld = useCreateBuilding();
-  const updateBld = useUpdateBuilding();
-  const deleteBld = useDeleteBuilding();
-  const [bldDialog, setBldDialog] = useState(false);
-  const [editingBld, setEditingBld] = useState<string | null>(null);
-  const emptyBldForm = { name: "", autonomia_horas_contingencia: "", depositos: "", combustivel_litros: "", num_geradores: "", num_ups: "", observacoes: "" };
-  const [bldForm, setBldForm] = useState(emptyBldForm);
+
+
 
   // --- Departments ---
   const { data: departmentsList = [], isLoading: deptLoading } = useDepartments();
