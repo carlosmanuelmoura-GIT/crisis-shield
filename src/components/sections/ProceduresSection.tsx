@@ -354,9 +354,6 @@ const ProceduresSection: React.FC = () => {
                       <Badge variant="outline" className="font-mono text-[10px] bg-primary/10 border-primary/30 text-primary">{code}</Badge>
                       <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{t(ph.label_pt, ph.label_en)}</Badge>
                     </div>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setDetailId(null)}>
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
                   <h3 className="text-xl font-bold uppercase tracking-wide leading-tight">
                     {detailTitle}
