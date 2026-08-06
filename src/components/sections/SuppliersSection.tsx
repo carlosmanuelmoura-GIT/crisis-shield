@@ -404,10 +404,14 @@ const SuppliersSection: React.FC = () => {
                           </p>
                         </TableCell>
 
-                        <TableCell className="space-y-1">
-                          <Badge variant={s.essentiality === "high" ? "destructive" : "secondary"}>{L(ESS_LABEL[s.essentiality])}</Badge>{" "}
-                          <Badge variant={s.alternatives === "none" ? "destructive" : "outline"}>{L(ALT_LABEL[s.alternatives])}</Badge>{" "}
-                          <Badge variant={s.substitution_time === "high" ? "destructive" : "outline"}>{L(SUB_LABEL[s.substitution_time])}</Badge>
+                        <TableCell>
+                          <DepBadge risk={ESS_RISK[s.essentiality]}>{L(ESS_LABEL[s.essentiality])}</DepBadge>
+                        </TableCell>
+                        <TableCell>
+                          <DepBadge risk={ALT_RISK[s.alternatives]}>{L(ALT_LABEL[s.alternatives])}</DepBadge>
+                        </TableCell>
+                        <TableCell>
+                          <DepBadge risk={SUB_RISK[s.substitution_time]}>{L(SUB_LABEL[s.substitution_time])}</DepBadge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={s.exit_strategy === "validado" ? "default" : s.exit_strategy === "nao_testado" ? "secondary" : "destructive"}>
@@ -419,7 +423,6 @@ const SuppliersSection: React.FC = () => {
                             {s.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" })}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs">{deptName(s.department_id)}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           <Button variant="ghost" size="icon" onClick={() => setDetail(s)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
