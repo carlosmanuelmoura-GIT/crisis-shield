@@ -59,10 +59,11 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Análise de Fornecedores Críticos", en: "Critical Supplier Analysis" },
         desc: {
-          pt: "Avaliação de risco, dependência e conformidade dos fornecedores críticos de TI, infraestruturas e pagamentos, com subcontratados de 4ª parte, alertas de RTO mismatch, estado das estratégias de saída, testes GCN conjuntos e matriz de concentração 2x2 para identificar situações de lock-in.",
-          en: "Risk, dependency and compliance assessment of critical IT, infrastructure and payment suppliers, covering 4th-party subcontractors, RTO mismatch alerts, exit strategy status, joint BCM tests and a 2x2 concentration matrix to spot lock-in situations.",
+          pt: "Avaliação de risco e dependência dos fornecedores críticos de TI, infraestruturas e pagamentos, com associação às funções de negócio, subcontratados de 4ª parte, alertas de RTO mismatch, estratégias de saída, testes GCN conjuntos, matriz de concentração 2x2 (essencialidade vs esforço de substituição) para identificar lock-in, e importação/exportação em XLSX.",
+          en: "Risk and dependency assessment of critical IT, infrastructure and payment suppliers, with linkage to business functions, 4th-party subcontractors, RTO mismatch alerts, exit strategies, joint BCM tests, a 2x2 concentration matrix (essentiality vs replacement effort) to spot lock-in, and XLSX import/export.",
         },
       },
+
       {
         name: { pt: "SMS Express", en: "SMS Express" },
         desc: {
