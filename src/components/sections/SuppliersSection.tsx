@@ -366,10 +366,11 @@ const SuppliersSection: React.FC = () => {
                       <TableHead>{L({ pt: "Função", en: "Function" })}</TableHead>
                       
                       <TableHead>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</TableHead>
-                      <TableHead>{L({ pt: "Dependências", en: "Dependencies" })}</TableHead>
+                      <TableHead>{L({ pt: "Essencialidade", en: "Essentiality" })}</TableHead>
+                      <TableHead>{L({ pt: "Alternativas Viáveis", en: "Viable alternatives" })}</TableHead>
+                      <TableHead>{L({ pt: "Tempo de Substituição", en: "Substitution time" })}</TableHead>
                       <TableHead>{L({ pt: "Estratégia de Saída", en: "Exit strategy" })}</TableHead>
                       <TableHead>{L({ pt: "Último Teste GCN", en: "Last BCM test" })}</TableHead>
-                      <TableHead>{L({ pt: "Departamento", en: "Department" })}</TableHead>
                       <TableHead className="text-right">{L({ pt: "Ações", en: "Actions" })}</TableHead>
                     </TableRow>
                   </TableHeader>
