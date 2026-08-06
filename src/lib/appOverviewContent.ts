@@ -105,6 +105,14 @@ export const APP_OVERVIEW: OverviewSection[] = [
         },
       },
       {
+        name: { pt: "Autonomia Energética Edifícios", en: "Building Energy Autonomy" },
+        desc: {
+          pt: "Gestão dos edifícios e da sua autonomia em situação de falha energética: KPIs de autonomia, geradores e depósitos de combustível, classificação por Tier (Tipo 1, Tipo 2, Tipo 3 — Agência & Numerário e Tipo 4 — Agências), filtros por criticidade e geração do Relatório Diesel em PDF. Inclui o CRUD completo dos edifícios, anteriormente no Back Office.",
+          en: "Management of buildings and their autonomy during a power outage: autonomy KPIs, generators and fuel tanks, Tier classification (Type 1, Type 2, Type 3 — Branch & Cash and Type 4 — Branches), criticality filters and Diesel Report PDF generation. Includes the full building CRUD, previously in the Back Office.",
+        },
+      },
+      {
+
         name: { pt: "Salas de Reuniões Virtuais", en: "Virtual Meeting Rooms" },
         desc: {
           pt: "Acesso direto às salas de reunião permanentes usadas pela estrutura de crise.",
