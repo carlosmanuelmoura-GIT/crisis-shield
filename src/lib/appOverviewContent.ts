@@ -146,17 +146,18 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Tabelas Mestras", en: "Master Tables" },
         desc: {
-          pt: "CRUD de perfis de utilizador, processos de negócio, tipos de falha, cenários, plataformas CMDB, tipos de DR, departamentos e categorias documentais.",
-          en: "CRUD for user roles, business processes, failure types, scenarios, CMDB platforms, DR types, departments and document categories.",
+          pt: "CRUD de perfis de utilizador, processos de negócio, tipos de falha, cenários, plataformas CMDB, tipos de DR, departamentos e categorias documentais. Os edifícios são geridos no módulo Autonomia Energética Edifícios.",
+          en: "CRUD for user roles, business processes, failure types, scenarios, CMDB platforms, DR types, departments and document categories. Buildings are managed in the Building Energy Autonomy module.",
         },
       },
       {
         name: { pt: "Import / Export", en: "Import / Export" },
         desc: {
-          pt: "Migração de dados em XLSX para plataformas, processos, BIAs e pessoas críticas, com templates alinhados às colunas de exportação.",
-          en: "XLSX data migration for platforms, processes, BIAs and critical people, with templates aligned to the export columns.",
+          pt: "Migração de dados em XLSX para plataformas, processos, BIAs, pessoas críticas e fornecedores críticos, com templates alinhados às colunas de exportação (o template de fornecedores inclui a folha auxiliar \"Funcoes\" com as funções existentes).",
+          en: "XLSX data migration for platforms, processes, BIAs, critical people and critical suppliers, with templates aligned to the export columns (the supplier template includes an auxiliary \"Funcoes\" sheet listing existing functions).",
         },
       },
+
     ],
   },
   {
