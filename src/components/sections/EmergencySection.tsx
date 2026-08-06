@@ -1137,6 +1137,7 @@ const EmergencySection: React.FC = () => {
                         {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                       </Badge>
                     </div>
+                  </div>
                   <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
                   <div className="flex flex-wrap gap-2 text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
                     {deptLabel && <span>{deptLabel}</span>}
