@@ -15,6 +15,8 @@ export interface Supplier {
   critical_area: string;
   rto_supplier_hours: number | null;
   rto_process_hours: number | null;
+  dr_type_id: string | null;
+  supplier_rto_compliant: boolean | null;
   essentiality: Essentiality;
   alternatives: Alternatives;
   substitution_time: SubstitutionTime;
@@ -32,8 +34,8 @@ export interface SupplierInput {
   name: string;
   subcontractors?: string;
   critical_area?: string;
-  rto_supplier_hours?: number | null;
-  rto_process_hours?: number | null;
+  dr_type_id?: string | null;
+  supplier_rto_compliant?: boolean | null;
   essentiality?: Essentiality;
   alternatives?: Alternatives;
   substitution_time?: SubstitutionTime;
@@ -43,6 +45,7 @@ export interface SupplierInput {
   notes?: string;
   funcoes?: string[];
 }
+
 
 export interface SupplierCatalogEntry {
   id: string;
