@@ -434,7 +434,7 @@ const ImportExportSection: React.FC = () => {
   const exportTemplateSuppliers = () => {
     const ws = XLSX.utils.json_to_sheet([{
       Nome: "", Subcontratados: "", Area_Critica: "",
-      RTO_Fornecedor_Horas: "", RTO_Processo_Horas: "",
+      RTO_Fornecedor_Conformidade: "Conforme", Tipo_DR_Processo: "",
       Essencialidade: "medium", Alternativas: "limited", Tempo_Substituicao: "medium",
       Estrategia_Saida: "nao_existente", Ultimo_Teste_GCN: "", Departamento_Nome: "",
       Notas: "", Funcoes: "",
@@ -442,8 +442,10 @@ const ImportExportSection: React.FC = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Fornecedores");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funcoesList.map(f => ({ Funcao: f }))), "Funcoes");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(drTypes.map(d => ({ Codigo: d.code, Descricao: d.label, RTO_Horas: d.rto }))), "TiposDR");
     XLSX.writeFile(wb, "template_fornecedores_criticos.xlsx");
   };
+
 
   const importSuppliers = async (file: File) => {
     setImporting("suppliers");
