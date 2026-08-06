@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
-  Plus, Pencil, Trash2, Copy, X, Loader2,
+  Plus, Pencil, Trash2, Copy, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
   LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown,
 } from "lucide-react";
