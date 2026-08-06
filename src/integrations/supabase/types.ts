@@ -1185,6 +1185,163 @@ export type Database = {
           },
         ]
       }
+      supplier_catalog: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      supplier_functions: {
+        Row: {
+          created_at: string
+          funcao: string
+          id: string
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string
+          funcao: string
+          id?: string
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string
+          funcao?: string
+          id?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_functions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_macro_processes: {
+        Row: {
+          created_at: string
+          id: string
+          macro_processo: string
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          macro_processo: string
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          macro_processo?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_macro_processes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          alternatives: string
+          catalog_id: string | null
+          created_at: string
+          critical_area: string
+          department_id: string | null
+          essentiality: string
+          exit_strategy: string
+          id: string
+          last_gcn_test: string | null
+          name: string
+          notes: string
+          owner_id: string | null
+          rto_process_hours: number | null
+          rto_supplier_hours: number | null
+          subcontractors: string
+          substitution_time: string
+          updated_at: string
+        }
+        Insert: {
+          alternatives?: string
+          catalog_id?: string | null
+          created_at?: string
+          critical_area?: string
+          department_id?: string | null
+          essentiality?: string
+          exit_strategy?: string
+          id?: string
+          last_gcn_test?: string | null
+          name: string
+          notes?: string
+          owner_id?: string | null
+          rto_process_hours?: number | null
+          rto_supplier_hours?: number | null
+          subcontractors?: string
+          substitution_time?: string
+          updated_at?: string
+        }
+        Update: {
+          alternatives?: string
+          catalog_id?: string | null
+          created_at?: string
+          critical_area?: string
+          department_id?: string | null
+          essentiality?: string
+          exit_strategy?: string
+          id?: string
+          last_gcn_test?: string | null
+          name?: string
+          notes?: string
+          owner_id?: string | null
+          rto_process_hours?: number | null
+          rto_supplier_hours?: number | null
+          subcontractors?: string
+          substitution_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_catalog_id_fkey"
+            columns: ["catalog_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_buildings: {
         Row: {
           building_id: string
