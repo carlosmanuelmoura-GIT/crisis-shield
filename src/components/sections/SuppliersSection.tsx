@@ -387,6 +387,7 @@ const SuppliersSection: React.FC = () => {
                         <TableCell>
                           <p className="font-medium">{s.name}</p>
                           {s.subcontractors && <p className="text-xs text-muted-foreground">{s.subcontractors}</p>}
+                          {s.supplier_type && <p className="text-xs text-muted-foreground">{s.supplier_type}</p>}
                           {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
                         </TableCell>
                         <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
