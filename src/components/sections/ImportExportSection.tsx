@@ -479,6 +479,7 @@ const ImportExportSection: React.FC = () => {
             name,
             subcontractors: String(row.Subcontratados ?? "").trim(),
             critical_area: String(row.Area_Critica ?? "").trim(),
+            supplier_type: String(row.Tipo_Fornecedor ?? "").trim() || null,
             supplier_rto_compliant: compliant,
             dr_type_id: drId,
 
