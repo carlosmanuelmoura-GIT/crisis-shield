@@ -320,7 +320,7 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="cenarios" className="text-xs"><Link2 className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Cenários" : "Scenarios"}</TabsTrigger>
           <TabsTrigger value="platforms" className="text-xs"><Server className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Plataformas" : "Platforms"}</TabsTrigger>
           <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
-          <TabsTrigger value="buildings" className="text-xs"><BuildingIcon className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Edifícios" : "Buildings"}</TabsTrigger>
+          
           <TabsTrigger value="departments" className="text-xs"><Building className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Departamentos" : "Departments"}</TabsTrigger>
           <TabsTrigger value="doccats" className="text-xs"><FileText className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Documentação GCN" : "Documentation"}</TabsTrigger>
         </TabsList>
