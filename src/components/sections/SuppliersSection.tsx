@@ -376,13 +376,18 @@ const SuppliersSection: React.FC = () => {
                         <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
                         
                         <TableCell>
-                          <Badge className={cn(hasRtoMismatch(s) ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white")}>
-                            {s.rto_supplier_hours ?? "—"}h {hasRtoMismatch(s) && "⚠"}
+                          <Badge className={cn(s.supplier_rto_compliant === false ? "bg-destructive text-destructive-foreground" : s.supplier_rto_compliant === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
+                            {s.supplier_rto_compliant == null
+                              ? "—"
+                              : s.supplier_rto_compliant
+                                ? L({ pt: "Conforme", en: "Compliant" })
+                                : `${L({ pt: "Não conforme", en: "Non-compliant" })} ⚠`}
                           </Badge>
                           <p className="text-[11px] text-muted-foreground mt-1">
-                            {L({ pt: "Processo", en: "Process" })}: {s.rto_process_hours ?? "—"}h
+                            {L({ pt: "Processo", en: "Process" })}: {drLabel(s.dr_type_id)}
                           </p>
                         </TableCell>
+
                         <TableCell className="space-y-1">
                           <Badge variant={s.essentiality === "high" ? "destructive" : "secondary"}>{L(ESS_LABEL[s.essentiality])}</Badge>{" "}
                           <Badge variant={s.alternatives === "none" ? "destructive" : "outline"}>{L(ALT_LABEL[s.alternatives])}</Badge>{" "}
