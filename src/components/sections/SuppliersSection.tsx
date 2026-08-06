@@ -167,6 +167,7 @@ const SuppliersSection: React.FC = () => {
 
   const resetFilters = () => {
     setFArea(ALL);
+    setFType(ALL);
     setFEss(ALL);
     setFRto(ALL);
     setFDr(ALL);
