@@ -42,7 +42,6 @@ export interface SupplierInput {
   department_id?: string | null;
   notes?: string;
   funcoes?: string[];
-  macro_processos?: string[];
 }
 
 export interface SupplierCatalogEntry {
@@ -99,21 +98,16 @@ export function useSupplierRelations() {
   return useQuery({
     queryKey: ["supplier_relations"],
     queryFn: async () => {
-      const [f, m] = await Promise.all([
-        supabase.from("supplier_functions").select("supplier_id,funcao"),
-        supabase.from("supplier_macro_processes").select("supplier_id,macro_processo"),
-      ]);
+      const f = await supabase.from("supplier_functions").select("supplier_id,funcao");
       if (f.error) throw f.error;
-      if (m.error) throw m.error;
       return {
         funcoes: (f.data ?? []) as { supplier_id: string; funcao: string }[],
-        macros: (m.data ?? []) as { supplier_id: string; macro_processo: string }[],
       };
     },
   });
 }
 
-async function syncRelations(supplierId: string, funcoes?: string[], macros?: string[]) {
+async function syncRelations(supplierId: string, funcoes?: string[]) {
   if (funcoes) {
     await supabase.from("supplier_functions").delete().eq("supplier_id", supplierId);
     if (funcoes.length) {
@@ -123,29 +117,20 @@ async function syncRelations(supplierId: string, funcoes?: string[], macros?: st
       if (error) throw error;
     }
   }
-  if (macros) {
-    await supabase.from("supplier_macro_processes").delete().eq("supplier_id", supplierId);
-    if (macros.length) {
-      const { error } = await supabase
-        .from("supplier_macro_processes")
-        .insert(macros.map((macro_processo) => ({ supplier_id: supplierId, macro_processo })));
-      if (error) throw error;
-    }
-  }
 }
 
 export function useCreateSupplier() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ funcoes, macro_processos, ...input }: SupplierInput) => {
+    mutationFn: async ({ funcoes, ...input }: SupplierInput) => {
       const { data, error } = await supabase
         .from("suppliers")
         .insert({ ...input, owner_id: user?.id })
         .select("id")
         .single();
       if (error) throw error;
-      await syncRelations(data.id, funcoes, macro_processos);
+      await syncRelations(data.id, funcoes);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["suppliers"] });
@@ -157,10 +142,10 @@ export function useCreateSupplier() {
 export function useUpdateSupplier() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, funcoes, macro_processos, ...input }: { id: string } & SupplierInput) => {
+    mutationFn: async ({ id, funcoes, ...input }: { id: string } & SupplierInput) => {
       const { error } = await supabase.from("suppliers").update(input).eq("id", id);
       if (error) throw error;
-      await syncRelations(id, funcoes, macro_processos);
+      await syncRelations(id, funcoes);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["suppliers"] });

@@ -68,7 +68,7 @@ const emptyForm = (): SupplierInput => ({
   department_id: null,
   notes: "",
   funcoes: [],
-  macro_processos: [],
+  
 });
 
 const SuppliersSection: React.FC = () => {
@@ -101,27 +101,12 @@ const SuppliersSection: React.FC = () => {
     () => Array.from(new Set(bps.map((b) => b.funcao).filter(Boolean))).sort(),
     [bps]
   );
-  const macroList = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          bps
-            .filter((b) => !form.funcoes?.length || form.funcoes.includes(b.funcao))
-            .map((b) => b.macro_processo)
-            .filter(Boolean)
-        )
-      ).sort(),
-    [bps, form.funcoes]
-  );
-
   const areas = useMemo(
     () => Array.from(new Set(suppliers.map((s) => s.critical_area).filter(Boolean))).sort(),
     [suppliers]
   );
 
   const funcoesOf = (id: string) => relations?.funcoes.filter((r) => r.supplier_id === id).map((r) => r.funcao) ?? [];
-  const macrosOf = (id: string) =>
-    relations?.macros.filter((r) => r.supplier_id === id).map((r) => r.macro_processo) ?? [];
   const deptName = (id: string | null) => departments.find((d) => d.id === id)?.name ?? "—";
 
   const filtered = useMemo(
@@ -179,7 +164,7 @@ const SuppliersSection: React.FC = () => {
       department_id: s.department_id,
       notes: s.notes,
       funcoes: funcoesOf(s.id),
-      macro_processos: macrosOf(s.id),
+      
     });
     setDialogOpen(true);
   };
@@ -332,7 +317,7 @@ const SuppliersSection: React.FC = () => {
                     <TableRow>
                       <TableHead>{L({ pt: "Fornecedor & Subcontratados", en: "Supplier & subcontractors" })}</TableHead>
                       <TableHead>{L({ pt: "Função", en: "Function" })}</TableHead>
-                      <TableHead>{L({ pt: "Macro Processo", en: "Macro process" })}</TableHead>
+                      
                       <TableHead>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</TableHead>
                       <TableHead>{L({ pt: "Dependências", en: "Dependencies" })}</TableHead>
                       <TableHead>{L({ pt: "Estratégia de Saída", en: "Exit strategy" })}</TableHead>
@@ -358,7 +343,7 @@ const SuppliersSection: React.FC = () => {
                           {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
                         </TableCell>
                         <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
-                        <TableCell className="text-xs">{macrosOf(s.id).join(", ") || "—"}</TableCell>
+                        
                         <TableCell>
                           <Badge className={cn(hasRtoMismatch(s) ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white")}>
                             {s.rto_supplier_hours ?? "—"}h {hasRtoMismatch(s) && "⚠"}
@@ -551,35 +536,19 @@ const SuppliersSection: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <Label>{L({ pt: "Funções", en: "Functions" })}</Label>
-                <ScrollArea className="h-40 rounded-md border p-2 mt-1">
-                  {funcoesList.map((f) => (
-                    <label key={f} className="flex items-start gap-2 py-1 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={form.funcoes?.includes(f)}
-                        onCheckedChange={() => setForm({ ...form, funcoes: toggleIn(form.funcoes, f) })}
-                      />
-                      <span>{f}</span>
-                    </label>
-                  ))}
-                </ScrollArea>
-              </div>
-              <div>
-                <Label>{L({ pt: "Macro Processos", en: "Macro processes" })}</Label>
-                <ScrollArea className="h-40 rounded-md border p-2 mt-1">
-                  {macroList.map((m) => (
-                    <label key={m} className="flex items-start gap-2 py-1 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={form.macro_processos?.includes(m)}
-                        onCheckedChange={() => setForm({ ...form, macro_processos: toggleIn(form.macro_processos, m) })}
-                      />
-                      <span>{m}</span>
-                    </label>
-                  ))}
-                </ScrollArea>
-              </div>
+            <div>
+              <Label>{L({ pt: "Funções", en: "Functions" })}</Label>
+              <ScrollArea className="h-40 rounded-md border p-2 mt-1">
+                {funcoesList.map((f) => (
+                  <label key={f} className="flex items-start gap-2 py-1 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={form.funcoes?.includes(f)}
+                      onCheckedChange={() => setForm({ ...form, funcoes: toggleIn(form.funcoes, f) })}
+                    />
+                    <span>{f}</span>
+                  </label>
+                ))}
+              </ScrollArea>
             </div>
 
             <div>
@@ -616,7 +585,7 @@ const SuppliersSection: React.FC = () => {
                 [L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" }), detail.subcontractors || "—"],
                 [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
-                [L({ pt: "Macro Processos", en: "Macro processes" }), macrosOf(detail.id).join(", ") || "—"],
+                
                 [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), `${detail.rto_supplier_hours ?? "—"}h`],
                 [L({ pt: "RTO Processo", en: "Process RTO" }), `${detail.rto_process_hours ?? "—"}h`],
                 [L({ pt: "Essencialidade", en: "Essentiality" }), L(ESS_LABEL[detail.essentiality])],
