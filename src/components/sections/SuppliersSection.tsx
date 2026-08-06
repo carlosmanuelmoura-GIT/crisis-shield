@@ -349,7 +349,7 @@ const SuppliersSection: React.FC = () => {
                 <Label className="text-xs">{L({ pt: "Pesquisar", en: "Search" })}</Label>
                 <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={L({ pt: "Fornecedor…", en: "Supplier…" })} />
               </div>
-              {(fArea !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+              {(fArea !== ALL || fType !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
 
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   <X className="h-4 w-4 mr-1" /> {L({ pt: "Limpar", en: "Clear" })}
