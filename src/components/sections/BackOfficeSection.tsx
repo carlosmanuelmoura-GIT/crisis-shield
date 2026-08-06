@@ -21,11 +21,10 @@ import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } fro
 import { useSubCapacidades, useCreateSubCapacidade, useUpdateSubCapacidade, useDeleteSubCapacidade } from "@/hooks/useSubCapacidades";
 import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso } from "@/hooks/useCenarios";
 import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
-import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/useBuildings";
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useDocumentCategories, useCreateDocumentCategory, useUpdateDocumentCategory, useDeleteDocumentCategory } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
-const BuildingIcon = Building2;
+
 
 const roleLabels: Record<string, string> = {
   steering_gcn: "Steering GCN",
