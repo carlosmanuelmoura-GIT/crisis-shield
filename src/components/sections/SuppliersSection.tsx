@@ -277,10 +277,16 @@ const SuppliersSection: React.FC = () => {
             })}
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          {L({ pt: "Novo Fornecedor", en: "New Supplier" })}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExportPDF}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {L({ pt: "Exportar PDF", en: "Export PDF" })}
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            {L({ pt: "Novo Fornecedor", en: "New Supplier" })}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
