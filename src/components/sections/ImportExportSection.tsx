@@ -14,7 +14,7 @@ import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCr
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSuppliers, useSupplierRelations, useCreateSupplier } from "@/hooks/useSuppliers";
+import { useSuppliers, useSupplierRelations, useCreateSupplier, SUPPLIER_TYPES } from "@/hooks/useSuppliers";
 import { Download, Upload, Loader2, Server, Briefcase, BarChart3, Users, Truck } from "lucide-react";
 import * as XLSX from "xlsx";
 
