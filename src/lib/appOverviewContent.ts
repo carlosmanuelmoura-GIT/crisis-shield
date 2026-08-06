@@ -57,6 +57,13 @@ export const APP_OVERVIEW: OverviewSection[] = [
         },
       },
       {
+        name: { pt: "Análise de Fornecedores Críticos", en: "Critical Supplier Analysis" },
+        desc: {
+          pt: "Avaliação de risco, dependência e conformidade dos fornecedores críticos de TI, infraestruturas e pagamentos, com subcontratados de 4ª parte, alertas de RTO mismatch, estado das estratégias de saída, testes GCN conjuntos e matriz de concentração 2x2 para identificar situações de lock-in.",
+          en: "Risk, dependency and compliance assessment of critical IT, infrastructure and payment suppliers, covering 4th-party subcontractors, RTO mismatch alerts, exit strategy status, joint BCM tests and a 2x2 concentration matrix to spot lock-in situations.",
+        },
+      },
+      {
         name: { pt: "SMS Express", en: "SMS Express" },
         desc: {
           pt: "Acesso rápido ao envio de alertas por SMS através do portal MEO Empresas, aberto em novo separador.",
