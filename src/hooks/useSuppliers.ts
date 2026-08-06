@@ -42,7 +42,6 @@ export interface SupplierInput {
   department_id?: string | null;
   notes?: string;
   funcoes?: string[];
-  macro_processos?: string[];
 }
 
 export interface SupplierCatalogEntry {
@@ -99,36 +98,22 @@ export function useSupplierRelations() {
   return useQuery({
     queryKey: ["supplier_relations"],
     queryFn: async () => {
-      const [f, m] = await Promise.all([
-        supabase.from("supplier_functions").select("supplier_id,funcao"),
-        supabase.from("supplier_macro_processes").select("supplier_id,macro_processo"),
-      ]);
+      const f = await supabase.from("supplier_functions").select("supplier_id,funcao");
       if (f.error) throw f.error;
-      if (m.error) throw m.error;
       return {
         funcoes: (f.data ?? []) as { supplier_id: string; funcao: string }[],
-        macros: (m.data ?? []) as { supplier_id: string; macro_processo: string }[],
       };
     },
   });
 }
 
-async function syncRelations(supplierId: string, funcoes?: string[], macros?: string[]) {
+async function syncRelations(supplierId: string, funcoes?: string[]) {
   if (funcoes) {
     await supabase.from("supplier_functions").delete().eq("supplier_id", supplierId);
     if (funcoes.length) {
       const { error } = await supabase
         .from("supplier_functions")
         .insert(funcoes.map((funcao) => ({ supplier_id: supplierId, funcao })));
-      if (error) throw error;
-    }
-  }
-  if (macros) {
-    await supabase.from("supplier_macro_processes").delete().eq("supplier_id", supplierId);
-    if (macros.length) {
-      const { error } = await supabase
-        .from("supplier_macro_processes")
-        .insert(macros.map((macro_processo) => ({ supplier_id: supplierId, macro_processo })));
       if (error) throw error;
     }
   }
