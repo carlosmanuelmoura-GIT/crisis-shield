@@ -109,6 +109,7 @@ const SuppliersSection: React.FC = () => {
 
   const [tab, setTab] = useState("list");
   const [fArea, setFArea] = useState(ALL);
+  const [fType, setFType] = useState(ALL);
   const [fEss, setFEss] = useState(ALL);
   const [fRto, setFRto] = useState(ALL);
   const [fDr, setFDr] = useState(ALL);
