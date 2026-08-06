@@ -17,6 +17,7 @@ import DocumentationSection from "@/components/sections/DocumentationSection";
 import ImportExportSection from "@/components/sections/ImportExportSection";
 import PessoasCriticasSection from "@/components/sections/PessoasCriticasSection";
 import AutonomiaEnergeticaSection from "@/components/sections/AutonomiaEnergeticaSection";
+import SuppliersSection from "@/components/sections/SuppliersSection";
 
 const sectionMap: Record<string, React.FC> = {
   scenarios: ScenariosSection,
