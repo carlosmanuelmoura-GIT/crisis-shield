@@ -37,6 +37,7 @@ const sectionMap: Record<string, React.FC> = {
   documentacao: DocumentationSection,
   "import-export": ImportExportSection,
   "autonomia-energetica": AutonomiaEnergeticaSection,
+  suppliers: SuppliersSection,
 };
 
 const Index = () => {
