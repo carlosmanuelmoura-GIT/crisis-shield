@@ -16,7 +16,6 @@ import {
   LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown,
 } from "lucide-react";
 import { generateDeptActionCardsPDF } from "@/lib/generateDeptActionCardsPDF";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const iconMap: Record<string, React.FC<{ className?: string }>> = {
   Monitor, Home, UserCheck, Network, Zap,
@@ -1162,7 +1161,7 @@ const EmergencySection: React.FC = () => {
                 </div>
 
                 {/* Body */}
-                <ScrollArea className="min-h-0 flex-1">
+                <div data-action-card-scroll className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                   <div className="p-5 space-y-5">
                     {/* Linked BIAs */}
                     {linkedBias.length > 0 && (
@@ -1296,7 +1295,7 @@ const EmergencySection: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </ScrollArea>
+                </div>
 
                 {/* Footer */}
                 <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-3 flex items-center gap-3">
