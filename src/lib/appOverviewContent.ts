@@ -59,10 +59,11 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Análise de Fornecedores Críticos", en: "Critical Supplier Analysis" },
         desc: {
-          pt: "Avaliação de risco, dependência e conformidade dos fornecedores críticos de TI, infraestruturas e pagamentos, com subcontratados de 4ª parte, alertas de RTO mismatch, estado das estratégias de saída, testes GCN conjuntos e matriz de concentração 2x2 para identificar situações de lock-in.",
-          en: "Risk, dependency and compliance assessment of critical IT, infrastructure and payment suppliers, covering 4th-party subcontractors, RTO mismatch alerts, exit strategy status, joint BCM tests and a 2x2 concentration matrix to spot lock-in situations.",
+          pt: "Avaliação de risco e dependência dos fornecedores críticos de TI, infraestruturas e pagamentos, com associação às funções de negócio, subcontratados de 4ª parte, alertas de RTO mismatch, estratégias de saída, testes GCN conjuntos, matriz de concentração 2x2 (essencialidade vs esforço de substituição) para identificar lock-in, e importação/exportação em XLSX.",
+          en: "Risk and dependency assessment of critical IT, infrastructure and payment suppliers, with linkage to business functions, 4th-party subcontractors, RTO mismatch alerts, exit strategies, joint BCM tests, a 2x2 concentration matrix (essentiality vs replacement effort) to spot lock-in, and XLSX import/export.",
         },
       },
+
       {
         name: { pt: "SMS Express", en: "SMS Express" },
         desc: {
@@ -104,7 +105,15 @@ export const APP_OVERVIEW: OverviewSection[] = [
         },
       },
       {
+        name: { pt: "Autonomia Energética Edifícios", en: "Building Energy Autonomy" },
+        desc: {
+          pt: "Gestão dos edifícios e da sua autonomia em situação de falha energética: KPIs de autonomia, geradores e depósitos de combustível, classificação por Tier (Tipo 1, Tipo 2, Tipo 3 — Agência & Numerário e Tipo 4 — Agências), filtros por criticidade e geração do Relatório Diesel em PDF. Inclui o CRUD completo dos edifícios, anteriormente no Back Office.",
+          en: "Management of buildings and their autonomy during a power outage: autonomy KPIs, generators and fuel tanks, Tier classification (Type 1, Type 2, Type 3 — Branch & Cash and Type 4 — Branches), criticality filters and Diesel Report PDF generation. Includes the full building CRUD, previously in the Back Office.",
+        },
+      },
+      {
         name: { pt: "Salas de Reuniões Virtuais", en: "Virtual Meeting Rooms" },
+
         desc: {
           pt: "Acesso direto às salas de reunião permanentes usadas pela estrutura de crise.",
           en: "Direct access to the standing meeting rooms used by the crisis structure.",
@@ -137,17 +146,18 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Tabelas Mestras", en: "Master Tables" },
         desc: {
-          pt: "CRUD de perfis de utilizador, processos de negócio, tipos de falha, cenários, plataformas CMDB, tipos de DR, departamentos e categorias documentais.",
-          en: "CRUD for user roles, business processes, failure types, scenarios, CMDB platforms, DR types, departments and document categories.",
+          pt: "CRUD de perfis de utilizador, processos de negócio, tipos de falha, cenários, plataformas CMDB, tipos de DR, departamentos e categorias documentais. Os edifícios são geridos no módulo Autonomia Energética Edifícios.",
+          en: "CRUD for user roles, business processes, failure types, scenarios, CMDB platforms, DR types, departments and document categories. Buildings are managed in the Building Energy Autonomy module.",
         },
       },
       {
         name: { pt: "Import / Export", en: "Import / Export" },
         desc: {
-          pt: "Migração de dados em XLSX para plataformas, processos, BIAs e pessoas críticas, com templates alinhados às colunas de exportação.",
-          en: "XLSX data migration for platforms, processes, BIAs and critical people, with templates aligned to the export columns.",
+          pt: "Migração de dados em XLSX para plataformas, processos, BIAs, pessoas críticas e fornecedores críticos, com templates alinhados às colunas de exportação (o template de fornecedores inclui a folha auxiliar \"Funcoes\" com as funções existentes).",
+          en: "XLSX data migration for platforms, processes, BIAs, critical people and critical suppliers, with templates aligned to the export columns (the supplier template includes an auxiliary \"Funcoes\" sheet listing existing functions).",
         },
       },
+
     ],
   },
   {
