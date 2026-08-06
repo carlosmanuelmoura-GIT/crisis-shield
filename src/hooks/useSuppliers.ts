@@ -172,8 +172,8 @@ export function useDeleteSupplier() {
 }
 
 /* ── Helpers ── */
-export const hasRtoMismatch = (s: Supplier) =>
-  s.rto_supplier_hours != null && s.rto_process_hours != null && s.rto_supplier_hours > s.rto_process_hours;
+export const hasRtoMismatch = (s: Supplier) => s.supplier_rto_compliant === false;
+
 
 export const isLockIn = (s: Supplier) => s.essentiality === "high" && s.alternatives === "none";
 
