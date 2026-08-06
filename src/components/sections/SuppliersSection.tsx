@@ -12,7 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Pencil, Eye, Trash2, AlertTriangle, ShieldAlert, Truck, CalendarClock, X } from "lucide-react";
+import { Plus, Pencil, Eye, Trash2, AlertTriangle, ShieldAlert, Truck, CalendarClock, X, FileDown } from "lucide-react";
+import { generateSuppliersPDF } from "@/lib/generateSuppliersPDF";
 import {
   useSuppliers,
   useSupplierRelations,
