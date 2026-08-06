@@ -143,6 +143,7 @@ const SuppliersSection: React.FC = () => {
     () =>
       suppliers.filter((s) => {
         if (fArea !== ALL && s.critical_area !== fArea) return false;
+        if (fType !== ALL && s.supplier_type !== fType) return false;
         if (fEss !== ALL && s.essentiality !== fEss) return false;
         if (fRto === "mismatch" && s.supplier_rto_compliant !== false) return false;
         if (fRto === "ok" && s.supplier_rto_compliant !== true) return false;
@@ -151,7 +152,7 @@ const SuppliersSection: React.FC = () => {
         if (search && !`${s.name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
-    [suppliers, fArea, fEss, fRto, fDr, fLockIn, search]
+    [suppliers, fArea, fType, fEss, fRto, fDr, fLockIn, search]
   );
 
 
