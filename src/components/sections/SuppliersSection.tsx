@@ -530,6 +530,15 @@ const SuppliersSection: React.FC = () => {
                 <Input value={form.critical_area ?? ""} onChange={(e) => setForm({ ...form, critical_area: e.target.value })} />
               </div>
               <div>
+                <Label>{L({ pt: "Tipo de Fornecedor", en: "Supplier type" })}</Label>
+                <Select value={form.supplier_type ?? ""} onValueChange={(v) => setForm({ ...form, supplier_type: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {SUPPLIER_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>{L({ pt: "Departamento responsável", en: "Responsible department" })}</Label>
                 <Select value={form.department_id ?? ""} onValueChange={(v) => setForm({ ...form, department_id: v })}>
                   <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
