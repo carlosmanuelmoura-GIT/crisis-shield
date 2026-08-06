@@ -310,6 +310,16 @@ const SuppliersSection: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="w-56">
+                <Label className="text-xs">{L({ pt: "Tipo de Fornecedor", en: "Supplier type" })}</Label>
+                <Select value={fType} onValueChange={setFType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
+                    {SUPPLIER_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="w-48">
                 <Label className="text-xs">{L({ pt: "Nível de Dependência", en: "Dependency level" })}</Label>
                 <Select value={fEss} onValueChange={setFEss}>
