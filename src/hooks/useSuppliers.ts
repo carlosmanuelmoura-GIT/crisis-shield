@@ -48,6 +48,7 @@ export interface SupplierInput {
   name: string;
   subcontractors?: string;
   critical_area?: string;
+  supplier_type?: string | null;
   dr_type_id?: string | null;
   supplier_rto_compliant?: boolean | null;
   essentiality?: Essentiality;
