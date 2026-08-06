@@ -489,13 +489,30 @@ const SuppliersSection: React.FC = () => {
                 </Select>
               </div>
               <div>
-                <Label>{L({ pt: "RTO Fornecedor (h)", en: "Supplier RTO (h)" })}</Label>
-                <Input type="number" value={form.rto_supplier_hours ?? ""} onChange={(e) => setForm({ ...form, rto_supplier_hours: e.target.value === "" ? null : Number(e.target.value) })} />
+                <Label>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</Label>
+                <Select
+                  value={form.supplier_rto_compliant == null ? "" : form.supplier_rto_compliant ? "yes" : "no"}
+                  onValueChange={(v) => setForm({ ...form, supplier_rto_compliant: v === "yes" })}
+                >
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">{L({ pt: "Conforme", en: "Compliant" })}</SelectItem>
+                    <SelectItem value="no">{L({ pt: "Não conforme", en: "Non-compliant" })}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label>{L({ pt: "RTO Processo (h)", en: "Process RTO (h)" })}</Label>
-                <Input type="number" value={form.rto_process_hours ?? ""} onChange={(e) => setForm({ ...form, rto_process_hours: e.target.value === "" ? null : Number(e.target.value) })} />
+                <Label>{L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" })}</Label>
+                <Select value={form.dr_type_id ?? ""} onValueChange={(v) => setForm({ ...form, dr_type_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {drTypes.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.code} — {d.label} ({d.rto}h)</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
                 <Label>{L({ pt: "Essencialidade", en: "Essentiality" })}</Label>
                 <Select value={form.essentiality} onValueChange={(v: any) => setForm({ ...form, essentiality: v })}>
