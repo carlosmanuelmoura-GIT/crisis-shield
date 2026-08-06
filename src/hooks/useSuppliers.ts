@@ -1,0 +1,198 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+export type Essentiality = "low" | "medium" | "high";
+export type Alternatives = "multiple" | "limited" | "none";
+export type SubstitutionTime = "low" | "medium" | "high";
+export type ExitStrategy = "validado" | "nao_testado" | "nao_existente";
+
+export interface Supplier {
+  id: string;
+  catalog_id: string | null;
+  name: string;
+  subcontractors: string;
+  critical_area: string;
+  rto_supplier_hours: number | null;
+  rto_process_hours: number | null;
+  essentiality: Essentiality;
+  alternatives: Alternatives;
+  substitution_time: SubstitutionTime;
+  exit_strategy: ExitStrategy;
+  last_gcn_test: string | null;
+  department_id: string | null;
+  notes: string;
+  owner_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupplierInput {
+  catalog_id?: string | null;
+  name: string;
+  subcontractors?: string;
+  critical_area?: string;
+  rto_supplier_hours?: number | null;
+  rto_process_hours?: number | null;
+  essentiality?: Essentiality;
+  alternatives?: Alternatives;
+  substitution_time?: SubstitutionTime;
+  exit_strategy?: ExitStrategy;
+  last_gcn_test?: string | null;
+  department_id?: string | null;
+  notes?: string;
+  funcoes?: string[];
+  macro_processos?: string[];
+}
+
+export interface SupplierCatalogEntry {
+  id: string;
+  name: string;
+}
+
+export function useSupplierCatalog() {
+  return useQuery({
+    queryKey: ["supplier_catalog"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("supplier_catalog").select("id,name").order("name");
+      if (error) throw error;
+      return data as SupplierCatalogEntry[];
+    },
+  });
+}
+
+export function useCreateSupplierCatalogEntry() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { error } = await supabase.from("supplier_catalog").insert({ name, owner_id: user?.id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["supplier_catalog"] }),
+  });
+}
+
+export function useDeleteSupplierCatalogEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("supplier_catalog").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["supplier_catalog"] }),
+  });
+}
+
+export function useSuppliers() {
+  return useQuery({
+    queryKey: ["suppliers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("suppliers").select("*").order("name");
+      if (error) throw error;
+      return data as Supplier[];
+    },
+  });
+}
+
+export function useSupplierRelations() {
+  return useQuery({
+    queryKey: ["supplier_relations"],
+    queryFn: async () => {
+      const [f, m] = await Promise.all([
+        supabase.from("supplier_functions").select("supplier_id,funcao"),
+        supabase.from("supplier_macro_processes").select("supplier_id,macro_processo"),
+      ]);
+      if (f.error) throw f.error;
+      if (m.error) throw m.error;
+      return {
+        funcoes: (f.data ?? []) as { supplier_id: string; funcao: string }[],
+        macros: (m.data ?? []) as { supplier_id: string; macro_processo: string }[],
+      };
+    },
+  });
+}
+
+async function syncRelations(supplierId: string, funcoes?: string[], macros?: string[]) {
+  if (funcoes) {
+    await supabase.from("supplier_functions").delete().eq("supplier_id", supplierId);
+    if (funcoes.length) {
+      const { error } = await supabase
+        .from("supplier_functions")
+        .insert(funcoes.map((funcao) => ({ supplier_id: supplierId, funcao })));
+      if (error) throw error;
+    }
+  }
+  if (macros) {
+    await supabase.from("supplier_macro_processes").delete().eq("supplier_id", supplierId);
+    if (macros.length) {
+      const { error } = await supabase
+        .from("supplier_macro_processes")
+        .insert(macros.map((macro_processo) => ({ supplier_id: supplierId, macro_processo })));
+      if (error) throw error;
+    }
+  }
+}
+
+export function useCreateSupplier() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async ({ funcoes, macro_processos, ...input }: SupplierInput) => {
+      const { data, error } = await supabase
+        .from("suppliers")
+        .insert({ ...input, owner_id: user?.id })
+        .select("id")
+        .single();
+      if (error) throw error;
+      await syncRelations(data.id, funcoes, macro_processos);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      qc.invalidateQueries({ queryKey: ["supplier_relations"] });
+    },
+  });
+}
+
+export function useUpdateSupplier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, funcoes, macro_processos, ...input }: { id: string } & SupplierInput) => {
+      const { error } = await supabase.from("suppliers").update(input).eq("id", id);
+      if (error) throw error;
+      await syncRelations(id, funcoes, macro_processos);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      qc.invalidateQueries({ queryKey: ["supplier_relations"] });
+    },
+  });
+}
+
+export function useDeleteSupplier() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("suppliers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["suppliers"] });
+      qc.invalidateQueries({ queryKey: ["supplier_relations"] });
+    },
+  });
+}
+
+/* ── Helpers ── */
+export const hasRtoMismatch = (s: Supplier) =>
+  s.rto_supplier_hours != null && s.rto_process_hours != null && s.rto_supplier_hours > s.rto_process_hours;
+
+export const isLockIn = (s: Supplier) => s.essentiality === "high" && s.alternatives === "none";
+
+export const isGcnExpired = (s: Supplier) => {
+  if (!s.last_gcn_test) return true;
+  const d = new Date(s.last_gcn_test);
+  const limit = new Date();
+  limit.setFullYear(limit.getFullYear() - 1);
+  return d < limit;
+};
