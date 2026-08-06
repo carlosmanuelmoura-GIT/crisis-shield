@@ -653,6 +653,7 @@ const SuppliersSection: React.FC = () => {
               {[
                 [L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" }), detail.subcontractors || "—"],
                 [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
+                [L({ pt: "Tipo de Fornecedor", en: "Supplier type" }), detail.supplier_type || "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
                 
                 [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), detail.supplier_rto_compliant == null ? "—" : detail.supplier_rto_compliant ? L({ pt: "Conforme", en: "Compliant" }) : L({ pt: "Não conforme", en: "Non-compliant" })],
