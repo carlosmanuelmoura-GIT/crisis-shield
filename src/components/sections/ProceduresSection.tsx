@@ -329,7 +329,7 @@ const ProceduresSection: React.FC = () => {
 
       {/* Detail Dialog */}
       <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 flex flex-col overflow-hidden">
+        <DialogContent className="max-w-4xl w-[calc(100%-2rem)] h-[90dvh] max-h-[90dvh] p-0 flex flex-col overflow-hidden">
           {detail && (() => {
             const ph = PHASES[phaseIndex(detailPhase)];
             const code = codeFor(detailPhase, detailIdx);
@@ -346,9 +346,9 @@ const ProceduresSection: React.FC = () => {
               }
             };
             return (
-              <div className="flex flex-col h-full">
+              <div className="flex min-h-0 h-full flex-col">
                 {/* Header */}
-                <div className="p-5 border-b border-border">
+                <div className="shrink-0 p-5 border-b border-border">
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="font-mono text-[10px] bg-primary/10 border-primary/30 text-primary">{code}</Badge>
@@ -360,7 +360,7 @@ const ProceduresSection: React.FC = () => {
                   </h3>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -431,7 +431,7 @@ const ProceduresSection: React.FC = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-border p-4 flex items-center justify-end gap-2">
+                <div className="shrink-0 border-t border-border p-4 flex items-center justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={() => { openEdit(detail); }}>
                     <Pencil className="h-4 w-4 mr-1.5" />
                     {lang === "pt" ? "Editar" : "Edit"}

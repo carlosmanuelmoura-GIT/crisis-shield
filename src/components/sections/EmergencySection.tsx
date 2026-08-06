@@ -1106,7 +1106,7 @@ const EmergencySection: React.FC = () => {
 
       {/* Action Card detail drawer */}
       <Dialog open={!!selectedCardId} onOpenChange={(o) => !o && setSelectedCardId(null)}>
-        <DialogContent closeClassName="text-slate-300 hover:text-white hover:bg-white/10" className="max-w-4xl w-full max-h-[90vh] p-0 flex flex-col gap-0 bg-slate-50 overflow-hidden">
+        <DialogContent closeClassName="text-slate-300 hover:text-white hover:bg-white/10" className="max-w-4xl w-[calc(100%-2rem)] h-[90dvh] max-h-[90dvh] p-0 flex flex-col gap-0 bg-slate-50 overflow-hidden">
           {selectedCardId && (() => {
             const card = cards.find(c => c.id === selectedCardId);
             if (!card) return null;
@@ -1127,7 +1127,7 @@ const EmergencySection: React.FC = () => {
             return (
               <>
                 {/* Header (slate-900) */}
-                <div className="bg-slate-900 text-slate-50 px-5 py-4 space-y-3">
+                <div className="shrink-0 bg-slate-900 text-slate-50 px-5 py-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-white/10 text-slate-100 uppercase tracking-wider">
@@ -1162,7 +1162,7 @@ const EmergencySection: React.FC = () => {
                 </div>
 
                 {/* Body */}
-                <ScrollArea className="flex-1">
+                <ScrollArea className="min-h-0 flex-1">
                   <div className="p-5 space-y-5">
                     {/* Linked BIAs */}
                     {linkedBias.length > 0 && (
@@ -1299,7 +1299,7 @@ const EmergencySection: React.FC = () => {
                 </ScrollArea>
 
                 {/* Footer */}
-                <div className="border-t border-slate-200 bg-white px-5 py-3 flex items-center gap-3">
+                <div className="shrink-0 border-t border-slate-200 bg-white px-5 py-3 flex items-center gap-3">
                   <div className="flex-1">
                     <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
                       <span className="font-semibold uppercase tracking-wider">{lang === "pt" ? "Progresso" : "Progress"}</span>
