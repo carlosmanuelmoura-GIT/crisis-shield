@@ -658,47 +658,7 @@ const BackOfficeSection: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* ===== BUILDINGS ===== */}
-        <TabsContent value="buildings" className="space-y-3 mt-3">
-          <div className="flex justify-end">
-            <Button size="sm" onClick={openCreateBld} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
-          </div>
-          {bldLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : buildingsList.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum edifício configurado." : "No buildings configured."}</p>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
-                    <TableHead className="text-xs text-right w-24">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</TableHead>
-                    <TableHead className="text-xs text-right w-28">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</TableHead>
-                    <TableHead className="text-xs text-right w-20">{lang === "pt" ? "Geradores" : "Generators"}</TableHead>
-                    <TableHead className="text-xs text-right w-16">UPS</TableHead>
-                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {buildingsList.map(b => (
-                    <TableRow key={b.id}>
-                      <TableCell className="text-sm font-medium">{b.name}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.autonomia_horas_contingencia ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.combustivel_litros?.toLocaleString("pt-PT") ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.num_geradores ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.num_ups ?? "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBld(b)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteBld(b.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
+
 
         {/* ===== DEPARTMENTS ===== */}
         <TabsContent value="departments" className="space-y-3 mt-3">
