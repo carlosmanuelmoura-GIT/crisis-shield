@@ -410,8 +410,9 @@ const ImportExportSection: React.FC = () => {
     Nome: s.name,
     Subcontratados: s.subcontractors || "",
     Area_Critica: s.critical_area || "",
-    RTO_Fornecedor_Horas: s.rto_supplier_hours ?? "",
-    RTO_Processo_Horas: s.rto_process_hours ?? "",
+    RTO_Fornecedor_Conformidade: s.supplier_rto_compliant == null ? "" : s.supplier_rto_compliant ? "Conforme" : "Nao conforme",
+    Tipo_DR_Processo: drTypes.find(d => d.id === s.dr_type_id)?.code ?? "",
+
     Essencialidade: s.essentiality,
     Alternativas: s.alternatives,
     Tempo_Substituicao: s.substitution_time,
@@ -433,7 +434,7 @@ const ImportExportSection: React.FC = () => {
   const exportTemplateSuppliers = () => {
     const ws = XLSX.utils.json_to_sheet([{
       Nome: "", Subcontratados: "", Area_Critica: "",
-      RTO_Fornecedor_Horas: "", RTO_Processo_Horas: "",
+      RTO_Fornecedor_Conformidade: "Conforme", Tipo_DR_Processo: "",
       Essencialidade: "medium", Alternativas: "limited", Tempo_Substituicao: "medium",
       Estrategia_Saida: "nao_existente", Ultimo_Teste_GCN: "", Departamento_Nome: "",
       Notas: "", Funcoes: "",
@@ -441,8 +442,10 @@ const ImportExportSection: React.FC = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Fornecedores");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funcoesList.map(f => ({ Funcao: f }))), "Funcoes");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(drTypes.map(d => ({ Codigo: d.code, Descricao: d.label, RTO_Horas: d.rto }))), "TiposDR");
     XLSX.writeFile(wb, "template_fornecedores_criticos.xlsx");
   };
+
 
   const importSuppliers = async (file: File) => {
     setImporting("suppliers");
@@ -466,14 +469,19 @@ const ImportExportSection: React.FC = () => {
             if (!ok) errors.push(`${name}: função "${f}" não existe`);
             return ok;
           });
-        const num = (v: any) => (v === "" || v == null ? null : Number(v));
+        const conf = String(row.RTO_Fornecedor_Conformidade ?? "").trim().toLowerCase();
+        const compliant = conf === "" ? null : !conf.startsWith("nao") && !conf.startsWith("não") && conf !== "non-compliant";
+        const drCode = String(row.Tipo_DR_Processo ?? "").trim().toLowerCase();
+        const drId = drCode ? (drTypes.find(d => d.code.toLowerCase() === drCode)?.id ?? null) : null;
+        if (drCode && !drId) errors.push(`${name}: Tipo de DR "${row.Tipo_DR_Processo}" não existe`);
         try {
           await createSupplier.mutateAsync({
             name,
             subcontractors: String(row.Subcontratados ?? "").trim(),
             critical_area: String(row.Area_Critica ?? "").trim(),
-            rto_supplier_hours: num(row.RTO_Fornecedor_Horas),
-            rto_process_hours: num(row.RTO_Processo_Horas),
+            supplier_rto_compliant: compliant,
+            dr_type_id: drId,
+
             essentiality: (String(row.Essencialidade ?? "medium").trim() || "medium") as any,
             alternatives: (String(row.Alternativas ?? "limited").trim() || "limited") as any,
             substitution_time: (String(row.Tempo_Substituicao ?? "medium").trim() || "medium") as any,

@@ -15,6 +15,8 @@ export interface Supplier {
   critical_area: string;
   rto_supplier_hours: number | null;
   rto_process_hours: number | null;
+  dr_type_id: string | null;
+  supplier_rto_compliant: boolean | null;
   essentiality: Essentiality;
   alternatives: Alternatives;
   substitution_time: SubstitutionTime;
@@ -32,8 +34,8 @@ export interface SupplierInput {
   name: string;
   subcontractors?: string;
   critical_area?: string;
-  rto_supplier_hours?: number | null;
-  rto_process_hours?: number | null;
+  dr_type_id?: string | null;
+  supplier_rto_compliant?: boolean | null;
   essentiality?: Essentiality;
   alternatives?: Alternatives;
   substitution_time?: SubstitutionTime;
@@ -43,6 +45,7 @@ export interface SupplierInput {
   notes?: string;
   funcoes?: string[];
 }
+
 
 export interface SupplierCatalogEntry {
   id: string;
@@ -169,8 +172,8 @@ export function useDeleteSupplier() {
 }
 
 /* ── Helpers ── */
-export const hasRtoMismatch = (s: Supplier) =>
-  s.rto_supplier_hours != null && s.rto_process_hours != null && s.rto_supplier_hours > s.rto_process_hours;
+export const hasRtoMismatch = (s: Supplier) => s.supplier_rto_compliant === false;
+
 
 export const isLockIn = (s: Supplier) => s.essentiality === "high" && s.alternatives === "none";
 

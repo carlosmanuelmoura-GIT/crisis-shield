@@ -27,6 +27,8 @@ import {
   type SupplierInput,
 } from "@/hooks/useSuppliers";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useDRTypes } from "@/hooks/useCMDBPlatforms";
+
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -58,8 +60,9 @@ const emptyForm = (): SupplierInput => ({
   name: "",
   subcontractors: "",
   critical_area: "",
-  rto_supplier_hours: null,
-  rto_process_hours: null,
+  dr_type_id: null,
+  supplier_rto_compliant: null,
+
   essentiality: "medium",
   alternatives: "limited",
   substitution_time: "medium",
@@ -81,6 +84,8 @@ const SuppliersSection: React.FC = () => {
   const { data: catalog = [] } = useSupplierCatalog();
   const { data: departments = [] } = useDepartments();
   const { data: bps = [] } = useBusinessProcesses();
+  const { data: drTypes = [] } = useDRTypes();
+
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplier = useDeleteSupplier();
@@ -89,6 +94,8 @@ const SuppliersSection: React.FC = () => {
   const [fArea, setFArea] = useState(ALL);
   const [fEss, setFEss] = useState(ALL);
   const [fRto, setFRto] = useState(ALL);
+  const [fDr, setFDr] = useState(ALL);
+
   const [fLockIn, setFLockIn] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -108,20 +115,28 @@ const SuppliersSection: React.FC = () => {
 
   const funcoesOf = (id: string) => relations?.funcoes.filter((r) => r.supplier_id === id).map((r) => r.funcao) ?? [];
   const deptName = (id: string | null) => departments.find((d) => d.id === id)?.name ?? "—";
+  const drOf = (id: string | null) => drTypes.find((d) => d.id === id);
+  const drLabel = (id: string | null) => {
+    const d = drOf(id);
+    return d ? `${d.code} — ${d.rto}h` : "—";
+  };
 
   const filtered = useMemo(
     () =>
       suppliers.filter((s) => {
         if (fArea !== ALL && s.critical_area !== fArea) return false;
         if (fEss !== ALL && s.essentiality !== fEss) return false;
-        if (fRto === "mismatch" && !hasRtoMismatch(s)) return false;
-        if (fRto === "ok" && hasRtoMismatch(s)) return false;
+        if (fRto === "mismatch" && s.supplier_rto_compliant !== false) return false;
+        if (fRto === "ok" && s.supplier_rto_compliant !== true) return false;
+        if (fDr !== ALL && s.dr_type_id !== fDr) return false;
         if (fLockIn && !(isLockIn(s) && s.substitution_time === "high")) return false;
         if (search && !`${s.name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
-    [suppliers, fArea, fEss, fRto, fLockIn, search]
+    [suppliers, fArea, fEss, fRto, fDr, fLockIn, search]
   );
+
+
 
   const kpis = useMemo(
     () => ({
@@ -137,6 +152,8 @@ const SuppliersSection: React.FC = () => {
     setFArea(ALL);
     setFEss(ALL);
     setFRto(ALL);
+    setFDr(ALL);
+
     setFLockIn(false);
     setSearch("");
   };
@@ -154,8 +171,9 @@ const SuppliersSection: React.FC = () => {
       name: s.name,
       subcontractors: s.subcontractors,
       critical_area: s.critical_area,
-      rto_supplier_hours: s.rto_supplier_hours,
-      rto_process_hours: s.rto_process_hours,
+      dr_type_id: s.dr_type_id,
+      supplier_rto_compliant: s.supplier_rto_compliant,
+
       essentiality: s.essentiality,
       alternatives: s.alternatives,
       substitution_time: s.substitution_time,
@@ -284,13 +302,25 @@ const SuppliersSection: React.FC = () => {
                 </Select>
               </div>
               <div className="w-48">
-                <Label className="text-xs">{L({ pt: "Estado de RTO", en: "RTO status" })}</Label>
+                <Label className="text-xs">{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</Label>
                 <Select value={fRto} onValueChange={setFRto}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
                     <SelectItem value="ok">{L({ pt: "Conforme", en: "Compliant" })}</SelectItem>
-                    <SelectItem value="mismatch">{L({ pt: "Mismatch", en: "Mismatch" })}</SelectItem>
+                    <SelectItem value="mismatch">{L({ pt: "Não conforme", en: "Non-compliant" })}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-48">
+                <Label className="text-xs">{L({ pt: "Tipo de DR (Processo)", en: "DR type (process)" })}</Label>
+                <Select value={fDr} onValueChange={setFDr}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
+                    {drTypes.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.code} — {d.rto}h</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -298,7 +328,8 @@ const SuppliersSection: React.FC = () => {
                 <Label className="text-xs">{L({ pt: "Pesquisar", en: "Search" })}</Label>
                 <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={L({ pt: "Fornecedor…", en: "Supplier…" })} />
               </div>
-              {(fArea !== ALL || fEss !== ALL || fRto !== ALL || fLockIn || search) && (
+              {(fArea !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   <X className="h-4 w-4 mr-1" /> {L({ pt: "Limpar", en: "Clear" })}
                 </Button>
@@ -345,13 +376,18 @@ const SuppliersSection: React.FC = () => {
                         <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
                         
                         <TableCell>
-                          <Badge className={cn(hasRtoMismatch(s) ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white")}>
-                            {s.rto_supplier_hours ?? "—"}h {hasRtoMismatch(s) && "⚠"}
+                          <Badge className={cn(s.supplier_rto_compliant === false ? "bg-destructive text-destructive-foreground" : s.supplier_rto_compliant === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
+                            {s.supplier_rto_compliant == null
+                              ? "—"
+                              : s.supplier_rto_compliant
+                                ? L({ pt: "Conforme", en: "Compliant" })
+                                : `${L({ pt: "Não conforme", en: "Non-compliant" })} ⚠`}
                           </Badge>
                           <p className="text-[11px] text-muted-foreground mt-1">
-                            {L({ pt: "Processo", en: "Process" })}: {s.rto_process_hours ?? "—"}h
+                            {L({ pt: "Processo", en: "Process" })}: {drLabel(s.dr_type_id)}
                           </p>
                         </TableCell>
+
                         <TableCell className="space-y-1">
                           <Badge variant={s.essentiality === "high" ? "destructive" : "secondary"}>{L(ESS_LABEL[s.essentiality])}</Badge>{" "}
                           <Badge variant={s.alternatives === "none" ? "destructive" : "outline"}>{L(ALT_LABEL[s.alternatives])}</Badge>{" "}
@@ -487,13 +523,30 @@ const SuppliersSection: React.FC = () => {
                 </Select>
               </div>
               <div>
-                <Label>{L({ pt: "RTO Fornecedor (h)", en: "Supplier RTO (h)" })}</Label>
-                <Input type="number" value={form.rto_supplier_hours ?? ""} onChange={(e) => setForm({ ...form, rto_supplier_hours: e.target.value === "" ? null : Number(e.target.value) })} />
+                <Label>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</Label>
+                <Select
+                  value={form.supplier_rto_compliant == null ? "" : form.supplier_rto_compliant ? "yes" : "no"}
+                  onValueChange={(v) => setForm({ ...form, supplier_rto_compliant: v === "yes" })}
+                >
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">{L({ pt: "Conforme", en: "Compliant" })}</SelectItem>
+                    <SelectItem value="no">{L({ pt: "Não conforme", en: "Non-compliant" })}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label>{L({ pt: "RTO Processo (h)", en: "Process RTO (h)" })}</Label>
-                <Input type="number" value={form.rto_process_hours ?? ""} onChange={(e) => setForm({ ...form, rto_process_hours: e.target.value === "" ? null : Number(e.target.value) })} />
+                <Label>{L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" })}</Label>
+                <Select value={form.dr_type_id ?? ""} onValueChange={(v) => setForm({ ...form, dr_type_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {drTypes.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.code} — {d.label} ({d.rto}h)</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
               <div>
                 <Label>{L({ pt: "Essencialidade", en: "Essentiality" })}</Label>
                 <Select value={form.essentiality} onValueChange={(v: any) => setForm({ ...form, essentiality: v })}>
@@ -586,8 +639,9 @@ const SuppliersSection: React.FC = () => {
                 [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
                 
-                [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), `${detail.rto_supplier_hours ?? "—"}h`],
-                [L({ pt: "RTO Processo", en: "Process RTO" }), `${detail.rto_process_hours ?? "—"}h`],
+                [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), detail.supplier_rto_compliant == null ? "—" : detail.supplier_rto_compliant ? L({ pt: "Conforme", en: "Compliant" }) : L({ pt: "Não conforme", en: "Non-compliant" })],
+                [L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" }), drOf(detail.dr_type_id) ? `${drOf(detail.dr_type_id)!.code} — ${drOf(detail.dr_type_id)!.label} (${drOf(detail.dr_type_id)!.rto}h)` : "—"],
+
                 [L({ pt: "Essencialidade", en: "Essentiality" }), L(ESS_LABEL[detail.essentiality])],
                 [L({ pt: "Alternativas Viáveis", en: "Viable alternatives" }), L(ALT_LABEL[detail.alternatives])],
                 [L({ pt: "Tempo de Substituição", en: "Substitution time" }), L(SUB_LABEL[detail.substitution_time])],

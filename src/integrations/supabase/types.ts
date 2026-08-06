@@ -1274,6 +1274,7 @@ export type Database = {
           created_at: string
           critical_area: string
           department_id: string | null
+          dr_type_id: string | null
           essentiality: string
           exit_strategy: string
           id: string
@@ -1285,6 +1286,7 @@ export type Database = {
           rto_supplier_hours: number | null
           subcontractors: string
           substitution_time: string
+          supplier_rto_compliant: boolean | null
           updated_at: string
         }
         Insert: {
@@ -1293,6 +1295,7 @@ export type Database = {
           created_at?: string
           critical_area?: string
           department_id?: string | null
+          dr_type_id?: string | null
           essentiality?: string
           exit_strategy?: string
           id?: string
@@ -1304,6 +1307,7 @@ export type Database = {
           rto_supplier_hours?: number | null
           subcontractors?: string
           substitution_time?: string
+          supplier_rto_compliant?: boolean | null
           updated_at?: string
         }
         Update: {
@@ -1312,6 +1316,7 @@ export type Database = {
           created_at?: string
           critical_area?: string
           department_id?: string | null
+          dr_type_id?: string | null
           essentiality?: string
           exit_strategy?: string
           id?: string
@@ -1323,6 +1328,7 @@ export type Database = {
           rto_supplier_hours?: number | null
           subcontractors?: string
           substitution_time?: string
+          supplier_rto_compliant?: boolean | null
           updated_at?: string
         }
         Relationships: [
@@ -1338,6 +1344,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppliers_dr_type_id_fkey"
+            columns: ["dr_type_id"]
+            isOneToOne: false
+            referencedRelation: "dr_types"
             referencedColumns: ["id"]
           },
         ]
