@@ -179,6 +179,32 @@ const SuppliersSection: React.FC = () => {
     setSearch("");
   };
 
+  const handleExportPDF = () => {
+    generateSuppliersPDF({
+      lang: lang === "pt" ? "pt" : "en",
+      kpis,
+      rows: filtered.map((s) => ({
+        id: s.id,
+        name: s.name,
+        subcontractors: s.subcontractors ?? "",
+        critical_area: s.critical_area ?? "",
+        supplier_type: s.supplier_type,
+        dr_label: drLabel(s.dr_type_id),
+        rto_compliant: s.supplier_rto_compliant,
+        essentiality: s.essentiality,
+        alternatives: s.alternatives,
+        substitution_time: s.substitution_time,
+        exit_strategy: s.exit_strategy,
+        last_gcn_test: s.last_gcn_test,
+        department: deptName(s.department_id),
+        funcoes: funcoesOf(s.id),
+        notes: s.notes ?? "",
+      })),
+    });
+  };
+
+
+
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
