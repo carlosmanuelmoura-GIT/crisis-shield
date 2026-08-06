@@ -188,6 +188,7 @@ const SuppliersSection: React.FC = () => {
       name: s.name,
       subcontractors: s.subcontractors,
       critical_area: s.critical_area,
+      supplier_type: s.supplier_type,
       dr_type_id: s.dr_type_id,
       supplier_rto_compliant: s.supplier_rto_compliant,
 
