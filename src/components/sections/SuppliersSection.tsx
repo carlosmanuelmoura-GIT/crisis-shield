@@ -152,6 +152,8 @@ const SuppliersSection: React.FC = () => {
     setFArea(ALL);
     setFEss(ALL);
     setFRto(ALL);
+    setFDr(ALL);
+
     setFLockIn(false);
     setSearch("");
   };
