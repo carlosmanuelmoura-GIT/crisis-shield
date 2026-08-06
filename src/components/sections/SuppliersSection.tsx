@@ -115,20 +115,28 @@ const SuppliersSection: React.FC = () => {
 
   const funcoesOf = (id: string) => relations?.funcoes.filter((r) => r.supplier_id === id).map((r) => r.funcao) ?? [];
   const deptName = (id: string | null) => departments.find((d) => d.id === id)?.name ?? "—";
+  const drOf = (id: string | null) => drTypes.find((d) => d.id === id);
+  const drLabel = (id: string | null) => {
+    const d = drOf(id);
+    return d ? `${d.code} — ${d.rto}h` : "—";
+  };
 
   const filtered = useMemo(
     () =>
       suppliers.filter((s) => {
         if (fArea !== ALL && s.critical_area !== fArea) return false;
         if (fEss !== ALL && s.essentiality !== fEss) return false;
-        if (fRto === "mismatch" && !hasRtoMismatch(s)) return false;
-        if (fRto === "ok" && hasRtoMismatch(s)) return false;
+        if (fRto === "mismatch" && s.supplier_rto_compliant !== false) return false;
+        if (fRto === "ok" && s.supplier_rto_compliant !== true) return false;
+        if (fDr !== ALL && s.dr_type_id !== fDr) return false;
         if (fLockIn && !(isLockIn(s) && s.substitution_time === "high")) return false;
         if (search && !`${s.name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
-    [suppliers, fArea, fEss, fRto, fLockIn, search]
+    [suppliers, fArea, fEss, fRto, fDr, fLockIn, search]
   );
+
+
 
   const kpis = useMemo(
     () => ({
