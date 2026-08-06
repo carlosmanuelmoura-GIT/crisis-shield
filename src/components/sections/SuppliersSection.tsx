@@ -25,6 +25,7 @@ import {
   isGcnExpired,
   type Supplier,
   type SupplierInput,
+  SUPPLIER_TYPES,
 } from "@/hooks/useSuppliers";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useDRTypes } from "@/hooks/useCMDBPlatforms";
