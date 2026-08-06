@@ -410,8 +410,9 @@ const ImportExportSection: React.FC = () => {
     Nome: s.name,
     Subcontratados: s.subcontractors || "",
     Area_Critica: s.critical_area || "",
-    RTO_Fornecedor_Horas: s.rto_supplier_hours ?? "",
-    RTO_Processo_Horas: s.rto_process_hours ?? "",
+    RTO_Fornecedor_Conformidade: s.supplier_rto_compliant == null ? "" : s.supplier_rto_compliant ? "Conforme" : "Nao conforme",
+    Tipo_DR_Processo: drTypes.find(d => d.id === s.dr_type_id)?.code ?? "",
+
     Essencialidade: s.essentiality,
     Alternativas: s.alternatives,
     Tempo_Substituicao: s.substitution_time,
