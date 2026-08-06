@@ -130,8 +130,8 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Tabelas Mestras", en: "Master Tables" },
         desc: {
-          pt: "CRUD de perfis de utilizador, processos de negócio, tipos de falha, cenários, plataformas CMDB, tipos de DR, edifícios, departamentos e categorias documentais.",
-          en: "CRUD for user roles, business processes, failure types, scenarios, CMDB platforms, DR types, buildings, departments and document categories.",
+          pt: "CRUD de perfis de utilizador, processos de negócio, tipos de falha, cenários, plataformas CMDB, tipos de DR, departamentos e categorias documentais.",
+          en: "CRUD for user roles, business processes, failure types, scenarios, CMDB platforms, DR types, departments and document categories.",
         },
       },
       {
