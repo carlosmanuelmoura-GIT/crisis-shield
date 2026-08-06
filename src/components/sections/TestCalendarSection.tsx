@@ -324,7 +324,7 @@ const TestCalendarSection: React.FC = () => {
                 <Label className="text-xs">{lang === "pt" ? "Edifícios Envolvidos" : "Buildings Involved"}</Label>
                 <ScrollArea className="h-32 border rounded-md p-2 mt-1">
                   {buildings.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure edifícios no Back Office." : "Configure buildings in Back Office."}</p>
+                    <p className="text-xs text-muted-foreground">{lang === "pt" ? "Configure edifícios em Autonomia Energética Edifícios." : "Configure buildings in Building Power Autonomy."}</p>
                   ) : buildings.map(b => (
                     <label key={b.id} className="flex items-center gap-2 py-0.5 cursor-pointer">
                       <Checkbox checked={form.building_ids.includes(b.id)} onCheckedChange={() => setForm(f => ({ ...f, building_ids: toggleMulti(f.building_ids, b.id) }))} />

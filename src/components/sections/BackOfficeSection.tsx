@@ -21,11 +21,10 @@ import { useRecursos, useCreateRecurso, useUpdateRecurso, useDeleteRecurso } fro
 import { useSubCapacidades, useCreateSubCapacidade, useUpdateSubCapacidade, useDeleteSubCapacidade } from "@/hooks/useSubCapacidades";
 import { useCenarios, useCreateCenario, useUpdateCenario, useDeleteCenario, useCenarioRecursos, useLinkCenarioRecurso, useUnlinkCenarioRecurso } from "@/hooks/useCenarios";
 import { useDRTypes, useUpdateDRType, useCMDBPlatforms, useCreateCMDBPlatform, useUpdateCMDBPlatform, useDeleteCMDBPlatform } from "@/hooks/useCMDBPlatforms";
-import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from "@/hooks/useBuildings";
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from "@/hooks/useDepartments";
 import { useDocumentCategories, useCreateDocumentCategory, useUpdateDocumentCategory, useDeleteDocumentCategory } from "@/hooks/useDocuments";
 import { useToast } from "@/hooks/use-toast";
-const BuildingIcon = Building2;
+
 
 const roleLabels: Record<string, string> = {
   steering_gcn: "Steering GCN",
@@ -106,15 +105,8 @@ const BackOfficeSection: React.FC = () => {
   const [editingPlat, setEditingPlat] = useState<string | null>(null);
   const [platForm, setPlatForm] = useState({ name: "", dr_type_id: "" });
 
-  // --- Buildings ---
-  const { data: buildingsList = [], isLoading: bldLoading } = useBuildings();
-  const createBld = useCreateBuilding();
-  const updateBld = useUpdateBuilding();
-  const deleteBld = useDeleteBuilding();
-  const [bldDialog, setBldDialog] = useState(false);
-  const [editingBld, setEditingBld] = useState<string | null>(null);
-  const emptyBldForm = { name: "", autonomia_horas_contingencia: "", depositos: "", combustivel_litros: "", num_geradores: "", num_ups: "", observacoes: "" };
-  const [bldForm, setBldForm] = useState(emptyBldForm);
+
+
 
   // --- Departments ---
   const { data: departmentsList = [], isLoading: deptLoading } = useDepartments();
@@ -148,41 +140,8 @@ const BackOfficeSection: React.FC = () => {
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
-  const openCreateBld = () => { setEditingBld(null); setBldForm(emptyBldForm); setBldDialog(true); };
-  const openEditBld = (b: typeof buildingsList[0]) => {
-    setEditingBld(b.id);
-    setBldForm({
-      name: b.name ?? "",
-      autonomia_horas_contingencia: b.autonomia_horas_contingencia?.toString() ?? "",
-      depositos: b.depositos ?? "",
-      combustivel_litros: b.combustivel_litros?.toString() ?? "",
-      num_geradores: b.num_geradores?.toString() ?? "",
-      num_ups: b.num_ups?.toString() ?? "",
-      observacoes: b.observacoes ?? "",
-    });
-    setBldDialog(true);
-  };
-  const handleSaveBld = async () => {
-    try {
-      const numOrNull = (v: string) => v.trim() === "" ? null : Number(v.replace(",", "."));
-      const payload = {
-        name: bldForm.name.trim(),
-        autonomia_horas_contingencia: numOrNull(bldForm.autonomia_horas_contingencia),
-        depositos: bldForm.depositos.trim() || null,
-        combustivel_litros: numOrNull(bldForm.combustivel_litros),
-        num_geradores: bldForm.num_geradores.trim() === "" ? null : parseInt(bldForm.num_geradores, 10),
-        num_ups: bldForm.num_ups.trim() === "" ? null : parseInt(bldForm.num_ups, 10),
-        observacoes: bldForm.observacoes.trim() || null,
-      };
-      if (editingBld) await updateBld.mutateAsync({ id: editingBld, ...payload });
-      else await createBld.mutateAsync(payload);
-      setBldDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
-    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
-  };
-  const handleDeleteBld = async (id: string) => {
-    try { await deleteBld.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
-    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
-  };
+
+
 
   // Departments handlers
   const openCreateDept = () => { setEditingDept(null); setDeptForm({ name: "", code: "", has_cc: false }); setDeptDialog(true); };
@@ -320,7 +279,7 @@ const BackOfficeSection: React.FC = () => {
           <TabsTrigger value="cenarios" className="text-xs"><Link2 className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Cenários" : "Scenarios"}</TabsTrigger>
           <TabsTrigger value="platforms" className="text-xs"><Server className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Plataformas" : "Platforms"}</TabsTrigger>
           <TabsTrigger value="drtypes" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Tipos DR" : "DR Types"}</TabsTrigger>
-          <TabsTrigger value="buildings" className="text-xs"><BuildingIcon className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Edifícios" : "Buildings"}</TabsTrigger>
+          
           <TabsTrigger value="departments" className="text-xs"><Building className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Departamentos" : "Departments"}</TabsTrigger>
           <TabsTrigger value="doccats" className="text-xs"><FileText className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Documentação GCN" : "Documentation"}</TabsTrigger>
         </TabsList>
@@ -658,47 +617,7 @@ const BackOfficeSection: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* ===== BUILDINGS ===== */}
-        <TabsContent value="buildings" className="space-y-3 mt-3">
-          <div className="flex justify-end">
-            <Button size="sm" onClick={openCreateBld} className="h-8 text-xs"><Plus className="h-3.5 w-3.5 mr-1" />{lang === "pt" ? "Novo" : "New"}</Button>
-          </div>
-          {bldLoading ? <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div> : buildingsList.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">{lang === "pt" ? "Nenhum edifício configurado." : "No buildings configured."}</p>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">{lang === "pt" ? "Nome" : "Name"}</TableHead>
-                    <TableHead className="text-xs text-right w-24">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</TableHead>
-                    <TableHead className="text-xs text-right w-28">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</TableHead>
-                    <TableHead className="text-xs text-right w-20">{lang === "pt" ? "Geradores" : "Generators"}</TableHead>
-                    <TableHead className="text-xs text-right w-16">UPS</TableHead>
-                    <TableHead className="text-xs w-20">{lang === "pt" ? "Ações" : "Actions"}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {buildingsList.map(b => (
-                    <TableRow key={b.id}>
-                      <TableCell className="text-sm font-medium">{b.name}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.autonomia_horas_contingencia ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.combustivel_litros?.toLocaleString("pt-PT") ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.num_geradores ?? "—"}</TableCell>
-                      <TableCell className="text-sm text-right tabular-nums">{b.num_ups ?? "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditBld(b)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteBld(b.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
+
 
         {/* ===== DEPARTMENTS ===== */}
         <TabsContent value="departments" className="space-y-3 mt-3">
@@ -911,47 +830,8 @@ const BackOfficeSection: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Building */}
-      <Dialog open={bldDialog} onOpenChange={setBldDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>{editingBld ? (lang === "pt" ? "Editar Edifício" : "Edit Building") : (lang === "pt" ? "Novo Edifício" : "New Building")}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Edifício / Zona" : "Building / Zone"}</Label>
-              <Input value={bldForm.name} onChange={e => setBldForm(f => ({ ...f, name: e.target.value }))} className="bg-secondary border-border" />
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{lang === "pt" ? "Autonomia (h)" : "Autonomy (h)"}</Label>
-                <Input type="number" step="0.5" value={bldForm.autonomia_horas_contingencia} onChange={e => setBldForm(f => ({ ...f, autonomia_horas_contingencia: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{lang === "pt" ? "Combustível (L)" : "Fuel (L)"}</Label>
-                <Input type="number" step="1" value={bldForm.combustivel_litros} onChange={e => setBldForm(f => ({ ...f, combustivel_litros: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">{lang === "pt" ? "Nº Geradores" : "Generators"}</Label>
-                <Input type="number" step="1" value={bldForm.num_geradores} onChange={e => setBldForm(f => ({ ...f, num_geradores: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Nº UPS</Label>
-                <Input type="number" step="1" value={bldForm.num_ups} onChange={e => setBldForm(f => ({ ...f, num_ups: e.target.value }))} className="bg-secondary border-border" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Depósitos" : "Tanks"}</Label>
-              <Textarea rows={2} value={bldForm.depositos} onChange={e => setBldForm(f => ({ ...f, depositos: e.target.value }))} className="bg-secondary border-border" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Observações" : "Notes"}</Label>
-              <Textarea rows={3} value={bldForm.observacoes} onChange={e => setBldForm(f => ({ ...f, observacoes: e.target.value }))} className="bg-secondary border-border" />
-            </div>
-            <Button onClick={handleSaveBld} disabled={!bldForm.name.trim() || createBld.isPending || updateBld.isPending} className="w-full">
-              {(createBld.isPending || updateBld.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}{lang === "pt" ? "Guardar" : "Save"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
+
 
       {/* Sub-Capacidade */}
       <Dialog open={subCapDialog} onOpenChange={setSubCapDialog}>
