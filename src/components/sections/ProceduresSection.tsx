@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, Pencil, Trash2, Copy, GripVertical, X,
+  Plus, Pencil, Trash2, Copy, GripVertical,
   Wrench, AlertTriangle, CheckCircle2, User, Settings, ArrowRight,
 } from "lucide-react";
 import { useProcedures, useCreateProcedure, useUpdateProcedure, useDeleteProcedure, DBProcedure, ProcedurePhase } from "@/hooks/useProcedures";
