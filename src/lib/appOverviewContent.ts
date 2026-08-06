@@ -112,8 +112,8 @@ export const APP_OVERVIEW: OverviewSection[] = [
         },
       },
       {
-
         name: { pt: "Salas de Reuniões Virtuais", en: "Virtual Meeting Rooms" },
+
         desc: {
           pt: "Acesso direto às salas de reunião permanentes usadas pela estrutura de crise.",
           en: "Direct access to the standing meeting rooms used by the crisis structure.",
