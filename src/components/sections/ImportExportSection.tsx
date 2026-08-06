@@ -615,8 +615,8 @@ const ImportExportSection: React.FC = () => {
           onImportClick={() => suppliersFileRef.current?.click()}
           importKey="suppliers"
           hint={t(
-            "Colunas: Nome, Subcontratados, Area_Critica, RTO_Fornecedor_Horas, RTO_Processo_Horas, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separadas por ;). O template inclui a folha 'Funcoes' com as funções existentes.",
-            "Columns: Nome, Subcontratados, Area_Critica, RTO_Fornecedor_Horas, RTO_Processo_Horas, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separated by ;). The template includes a 'Funcoes' sheet with existing functions."
+            "Colunas: Nome, Subcontratados, Area_Critica, Tipo_Fornecedor, RTO_Fornecedor_Conformidade, Tipo_DR_Processo, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separadas por ;). O template inclui as folhas 'Funcoes', 'TiposDR' e 'TiposFornecedor'.",
+            "Columns: Nome, Subcontratados, Area_Critica, Tipo_Fornecedor, RTO_Fornecedor_Conformidade, Tipo_DR_Processo, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separated by ;). The template includes 'Funcoes', 'TiposDR' and 'TiposFornecedor' sheets."
           )}
         />
       </div>
