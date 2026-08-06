@@ -302,13 +302,25 @@ const SuppliersSection: React.FC = () => {
                 </Select>
               </div>
               <div className="w-48">
-                <Label className="text-xs">{L({ pt: "Estado de RTO", en: "RTO status" })}</Label>
+                <Label className="text-xs">{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</Label>
                 <Select value={fRto} onValueChange={setFRto}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
                     <SelectItem value="ok">{L({ pt: "Conforme", en: "Compliant" })}</SelectItem>
-                    <SelectItem value="mismatch">{L({ pt: "Mismatch", en: "Mismatch" })}</SelectItem>
+                    <SelectItem value="mismatch">{L({ pt: "Não conforme", en: "Non-compliant" })}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-48">
+                <Label className="text-xs">{L({ pt: "Tipo de DR (Processo)", en: "DR type (process)" })}</Label>
+                <Select value={fDr} onValueChange={setFDr}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
+                    {drTypes.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>{d.code} — {d.rto}h</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -316,7 +328,8 @@ const SuppliersSection: React.FC = () => {
                 <Label className="text-xs">{L({ pt: "Pesquisar", en: "Search" })}</Label>
                 <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={L({ pt: "Fornecedor…", en: "Supplier…" })} />
               </div>
-              {(fArea !== ALL || fEss !== ALL || fRto !== ALL || fLockIn || search) && (
+              {(fArea !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   <X className="h-4 w-4 mr-1" /> {L({ pt: "Limpar", en: "Clear" })}
                 </Button>
