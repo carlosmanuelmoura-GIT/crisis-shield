@@ -51,6 +51,21 @@ const SUB_LABEL: Record<string, { pt: string; en: string }> = {
   medium: { pt: "6 - 18 meses", en: "6 - 18 months" },
   high: { pt: "> 18 meses", en: "> 18 months" },
 };
+const RISK_TONE: Record<"good" | "warn" | "bad", string> = {
+  good: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+  warn: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+  bad: "bg-destructive/10 text-destructive border-destructive/30",
+};
+const ESS_RISK: Record<string, "good" | "warn" | "bad"> = { low: "good", medium: "warn", high: "bad" };
+const ALT_RISK: Record<string, "good" | "warn" | "bad"> = { multiple: "good", limited: "warn", none: "bad" };
+const SUB_RISK: Record<string, "good" | "warn" | "bad"> = { low: "good", medium: "warn", high: "bad" };
+
+const DepBadge: React.FC<{ risk: "good" | "warn" | "bad"; children: React.ReactNode }> = ({ risk, children }) => (
+  <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium", RISK_TONE[risk])}>
+    <span className={cn("h-1.5 w-1.5 rounded-full", risk === "good" ? "bg-emerald-500" : risk === "warn" ? "bg-amber-500" : "bg-destructive")} />
+    {children}
+  </span>
+);
 const EXIT_LABEL: Record<string, { pt: string; en: string }> = {
   validado: { pt: "Validado", en: "Validated" },
   nao_testado: { pt: "Não testado", en: "Not tested" },
