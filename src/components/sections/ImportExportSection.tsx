@@ -14,7 +14,8 @@ import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCr
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { Download, Upload, Loader2, Server, Briefcase, BarChart3, Users } from "lucide-react";
+import { useSuppliers, useSupplierRelations, useCreateSupplier } from "@/hooks/useSuppliers";
+import { Download, Upload, Loader2, Server, Briefcase, BarChart3, Users, Truck } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const ImportExportSection: React.FC = () => {
@@ -31,6 +32,9 @@ const ImportExportSection: React.FC = () => {
   const { data: biaActionCardLinks = [] } = useBIAActionCards();
   const { data: departments = [] } = useDepartments();
   const { data: pessoas = [] } = usePessoasCriticas();
+  const { data: suppliers = [] } = useSuppliers();
+  const { data: supplierRelations } = useSupplierRelations();
+  const createSupplier = useCreateSupplier();
   const createPlat = useCreateCMDBPlatform();
   const createBP = useCreateBusinessProcess();
   const createBIA = useCreateBIAProcess();
@@ -43,6 +47,7 @@ const ImportExportSection: React.FC = () => {
   const bpFileRef = useRef<HTMLInputElement>(null);
   const biaFileRef = useRef<HTMLInputElement>(null);
   const pessoasFileRef = useRef<HTMLInputElement>(null);
+  const suppliersFileRef = useRef<HTMLInputElement>(null);
 
   const t = (pt: string, en: string) => (lang === "pt" ? pt : en);
 
@@ -389,6 +394,105 @@ const ImportExportSection: React.FC = () => {
         count++;
       }
       toast({ title: t(`${count} pessoas importadas`, `${count} people imported`) });
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } finally {
+      setImporting(null);
+    }
+  };
+
+  // ── Fornecedores Críticos ──
+  const funcoesList = Array.from(new Set(processes.map(p => p.funcao).filter(Boolean))).sort();
+  const funcoesOf = (id: string) =>
+    (supplierRelations?.funcoes ?? []).filter(r => r.supplier_id === id).map(r => r.funcao).join("; ");
+
+  const supplierRow = (s: any) => ({
+    Nome: s.name,
+    Subcontratados: s.subcontractors || "",
+    Area_Critica: s.critical_area || "",
+    RTO_Fornecedor_Horas: s.rto_supplier_hours ?? "",
+    RTO_Processo_Horas: s.rto_process_hours ?? "",
+    Essencialidade: s.essentiality,
+    Alternativas: s.alternatives,
+    Tempo_Substituicao: s.substitution_time,
+    Estrategia_Saida: s.exit_strategy,
+    Ultimo_Teste_GCN: s.last_gcn_test ?? "",
+    Departamento_Nome: departments.find(d => d.id === s.department_id)?.name ?? "",
+    Notas: s.notes || "",
+    Funcoes: funcoesOf(s.id),
+  });
+
+  const exportSuppliers = () => {
+    const ws = XLSX.utils.json_to_sheet(suppliers.map(supplierRow));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Fornecedores");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funcoesList.map(f => ({ Funcao: f }))), "Funcoes");
+    XLSX.writeFile(wb, "fornecedores_criticos.xlsx");
+  };
+
+  const exportTemplateSuppliers = () => {
+    const ws = XLSX.utils.json_to_sheet([{
+      Nome: "", Subcontratados: "", Area_Critica: "",
+      RTO_Fornecedor_Horas: "", RTO_Processo_Horas: "",
+      Essencialidade: "medium", Alternativas: "limited", Tempo_Substituicao: "medium",
+      Estrategia_Saida: "nao_existente", Ultimo_Teste_GCN: "", Departamento_Nome: "",
+      Notas: "", Funcoes: "",
+    }]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Fornecedores");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funcoesList.map(f => ({ Funcao: f }))), "Funcoes");
+    XLSX.writeFile(wb, "template_fornecedores_criticos.xlsx");
+  };
+
+  const importSuppliers = async (file: File) => {
+    setImporting("suppliers");
+    try {
+      const ab = await file.arrayBuffer();
+      const wb = XLSX.read(ab);
+      const ws = wb.Sheets["Fornecedores"] ?? wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
+      const deptMap = new Map(departments.map(d => [d.name.toLowerCase().trim(), d.id]));
+      const funcSet = new Set(funcoesList.map(f => f.toLowerCase().trim()));
+
+      let count = 0;
+      const errors: string[] = [];
+      for (const row of rows) {
+        const name = String(row.Nome ?? "").trim();
+        if (!name) continue;
+        const funcoes = String(row.Funcoes ?? "")
+          .split(";").map((s: string) => s.trim()).filter(Boolean)
+          .filter((f: string) => {
+            const ok = funcSet.has(f.toLowerCase());
+            if (!ok) errors.push(`${name}: função "${f}" não existe`);
+            return ok;
+          });
+        const num = (v: any) => (v === "" || v == null ? null : Number(v));
+        try {
+          await createSupplier.mutateAsync({
+            name,
+            subcontractors: String(row.Subcontratados ?? "").trim(),
+            critical_area: String(row.Area_Critica ?? "").trim(),
+            rto_supplier_hours: num(row.RTO_Fornecedor_Horas),
+            rto_process_hours: num(row.RTO_Processo_Horas),
+            essentiality: (String(row.Essencialidade ?? "medium").trim() || "medium") as any,
+            alternatives: (String(row.Alternativas ?? "limited").trim() || "limited") as any,
+            substitution_time: (String(row.Tempo_Substituicao ?? "medium").trim() || "medium") as any,
+            exit_strategy: (String(row.Estrategia_Saida ?? "nao_existente").trim() || "nao_existente") as any,
+            last_gcn_test: String(row.Ultimo_Teste_GCN ?? "").trim() || null,
+            department_id: deptMap.get(String(row.Departamento_Nome ?? "").toLowerCase().trim()) ?? null,
+            notes: String(row.Notas ?? "").trim(),
+            funcoes,
+          });
+          count++;
+        } catch (e: any) {
+          errors.push(`${name}: ${e.message}`);
+        }
+      }
+      toast({
+        title: t(`${count} fornecedores importados`, `${count} suppliers imported`),
+        description: errors.length ? errors.slice(0, 5).join(" | ") : undefined,
+        variant: errors.length ? "destructive" : undefined,
+      });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
