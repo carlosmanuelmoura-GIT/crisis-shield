@@ -148,41 +148,8 @@ const BackOfficeSection: React.FC = () => {
     catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
   };
 
-  const openCreateBld = () => { setEditingBld(null); setBldForm(emptyBldForm); setBldDialog(true); };
-  const openEditBld = (b: typeof buildingsList[0]) => {
-    setEditingBld(b.id);
-    setBldForm({
-      name: b.name ?? "",
-      autonomia_horas_contingencia: b.autonomia_horas_contingencia?.toString() ?? "",
-      depositos: b.depositos ?? "",
-      combustivel_litros: b.combustivel_litros?.toString() ?? "",
-      num_geradores: b.num_geradores?.toString() ?? "",
-      num_ups: b.num_ups?.toString() ?? "",
-      observacoes: b.observacoes ?? "",
-    });
-    setBldDialog(true);
-  };
-  const handleSaveBld = async () => {
-    try {
-      const numOrNull = (v: string) => v.trim() === "" ? null : Number(v.replace(",", "."));
-      const payload = {
-        name: bldForm.name.trim(),
-        autonomia_horas_contingencia: numOrNull(bldForm.autonomia_horas_contingencia),
-        depositos: bldForm.depositos.trim() || null,
-        combustivel_litros: numOrNull(bldForm.combustivel_litros),
-        num_geradores: bldForm.num_geradores.trim() === "" ? null : parseInt(bldForm.num_geradores, 10),
-        num_ups: bldForm.num_ups.trim() === "" ? null : parseInt(bldForm.num_ups, 10),
-        observacoes: bldForm.observacoes.trim() || null,
-      };
-      if (editingBld) await updateBld.mutateAsync({ id: editingBld, ...payload });
-      else await createBld.mutateAsync(payload);
-      setBldDialog(false); toast({ title: lang === "pt" ? "Guardado" : "Saved" });
-    } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
-  };
-  const handleDeleteBld = async (id: string) => {
-    try { await deleteBld.mutateAsync(id); toast({ title: lang === "pt" ? "Eliminado" : "Deleted" }); }
-    catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
-  };
+
+
 
   // Departments handlers
   const openCreateDept = () => { setEditingDept(null); setDeptForm({ name: "", code: "", has_cc: false }); setDeptDialog(true); };
