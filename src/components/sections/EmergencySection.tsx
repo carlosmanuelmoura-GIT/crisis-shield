@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, X, Loader2,
@@ -1106,8 +1105,8 @@ const EmergencySection: React.FC = () => {
       </Dialog>
 
       {/* Action Card detail drawer */}
-      <Sheet open={!!selectedCardId} onOpenChange={(o) => !o && setSelectedCardId(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-[520px] p-0 flex flex-col gap-0 bg-slate-50 [&>button]:hidden">
+      <Dialog open={!!selectedCardId} onOpenChange={(o) => !o && setSelectedCardId(null)}>
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 flex flex-col gap-0 bg-slate-50 overflow-hidden">
           {selectedCardId && (() => {
             const card = cards.find(c => c.id === selectedCardId);
             if (!card) return null;
@@ -1326,8 +1325,8 @@ const EmergencySection: React.FC = () => {
               </>
             );
           })()}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

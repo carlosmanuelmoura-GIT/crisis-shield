@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Plus, Pencil, Trash2, Copy, GripVertical, X,
@@ -328,9 +327,9 @@ const ProceduresSection: React.FC = () => {
         )}
       </div>
 
-      {/* Detail Sheet */}
-      <Sheet open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
+      {/* Detail Dialog */}
+      <Dialog open={!!detailId} onOpenChange={(o) => !o && setDetailId(null)}>
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 flex flex-col overflow-hidden">
           {detail && (() => {
             const ph = PHASES[phaseIndex(detailPhase)];
             const code = codeFor(detailPhase, detailIdx);
@@ -448,8 +447,8 @@ const ProceduresSection: React.FC = () => {
               </div>
             );
           })()}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {/* CRUD Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
