@@ -27,6 +27,8 @@ import {
   type SupplierInput,
 } from "@/hooks/useSuppliers";
 import { useDepartments } from "@/hooks/useDepartments";
+import { useDRTypes } from "@/hooks/useCMDBPlatforms";
+
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
