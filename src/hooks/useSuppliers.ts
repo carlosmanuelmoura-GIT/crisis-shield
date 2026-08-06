@@ -26,6 +26,7 @@ export interface Supplier {
   name: string;
   subcontractors: string;
   critical_area: string;
+  supplier_type: string | null;
   rto_supplier_hours: number | null;
   rto_process_hours: number | null;
   dr_type_id: string | null;
