@@ -545,6 +545,8 @@ const ImportExportSection: React.FC = () => {
         onChange={e => { const f = e.target.files?.[0]; if (f) importBIA(f); e.target.value = ""; }} />
       <input ref={pessoasFileRef} type="file" accept=".xlsx,.xls" className="hidden"
         onChange={e => { const f = e.target.files?.[0]; if (f) importPessoas(f); e.target.value = ""; }} />
+      <input ref={suppliersFileRef} type="file" accept=".xlsx,.xls" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) importSuppliers(f); e.target.value = ""; }} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <ImportCard
@@ -591,6 +593,19 @@ const ImportExportSection: React.FC = () => {
           hint={t(
             "Colunas: Nome, Email, Telefone, Departamento, Funcao, Prioridade, Codigo_Postal",
             "Columns: Nome, Email, Telefone, Departamento, Funcao, Prioridade, Codigo_Postal"
+          )}
+        />
+        <ImportCard
+          icon={Truck}
+          title={t("Fornecedores Críticos", "Critical Suppliers")}
+          count={suppliers.length}
+          onExport={exportSuppliers}
+          onTemplate={exportTemplateSuppliers}
+          onImportClick={() => suppliersFileRef.current?.click()}
+          importKey="suppliers"
+          hint={t(
+            "Colunas: Nome, Subcontratados, Area_Critica, RTO_Fornecedor_Horas, RTO_Processo_Horas, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separadas por ;). O template inclui a folha 'Funcoes' com as funções existentes.",
+            "Columns: Nome, Subcontratados, Area_Critica, RTO_Fornecedor_Horas, RTO_Processo_Horas, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separated by ;). The template includes a 'Funcoes' sheet with existing functions."
           )}
         />
       </div>
