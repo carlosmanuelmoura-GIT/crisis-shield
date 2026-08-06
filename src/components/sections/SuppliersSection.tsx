@@ -164,7 +164,7 @@ const SuppliersSection: React.FC = () => {
       department_id: s.department_id,
       notes: s.notes,
       funcoes: funcoesOf(s.id),
-      macro_processos: macrosOf(s.id),
+      
     });
     setDialogOpen(true);
   };
