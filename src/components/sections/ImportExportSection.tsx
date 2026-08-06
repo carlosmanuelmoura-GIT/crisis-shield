@@ -469,14 +469,19 @@ const ImportExportSection: React.FC = () => {
             if (!ok) errors.push(`${name}: função "${f}" não existe`);
             return ok;
           });
-        const num = (v: any) => (v === "" || v == null ? null : Number(v));
+        const conf = String(row.RTO_Fornecedor_Conformidade ?? "").trim().toLowerCase();
+        const compliant = conf === "" ? null : !conf.startsWith("nao") && !conf.startsWith("não") && conf !== "non-compliant";
+        const drCode = String(row.Tipo_DR_Processo ?? "").trim().toLowerCase();
+        const drId = drCode ? (drTypes.find(d => d.code.toLowerCase() === drCode)?.id ?? null) : null;
+        if (drCode && !drId) errors.push(`${name}: Tipo de DR "${row.Tipo_DR_Processo}" não existe`);
         try {
           await createSupplier.mutateAsync({
             name,
             subcontractors: String(row.Subcontratados ?? "").trim(),
             critical_area: String(row.Area_Critica ?? "").trim(),
-            rto_supplier_hours: num(row.RTO_Fornecedor_Horas),
-            rto_process_hours: num(row.RTO_Processo_Horas),
+            supplier_rto_compliant: compliant,
+            dr_type_id: drId,
+
             essentiality: (String(row.Essencialidade ?? "medium").trim() || "medium") as any,
             alternatives: (String(row.Alternativas ?? "limited").trim() || "limited") as any,
             substitution_time: (String(row.Tempo_Substituicao ?? "medium").trim() || "medium") as any,
