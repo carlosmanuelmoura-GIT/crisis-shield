@@ -58,8 +58,9 @@ const emptyForm = (): SupplierInput => ({
   name: "",
   subcontractors: "",
   critical_area: "",
-  rto_supplier_hours: null,
-  rto_process_hours: null,
+  dr_type_id: null,
+  supplier_rto_compliant: null,
+
   essentiality: "medium",
   alternatives: "limited",
   substitution_time: "medium",
