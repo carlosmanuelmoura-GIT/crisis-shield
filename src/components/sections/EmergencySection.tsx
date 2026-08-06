@@ -1106,7 +1106,7 @@ const EmergencySection: React.FC = () => {
 
       {/* Action Card detail drawer */}
       <Dialog open={!!selectedCardId} onOpenChange={(o) => !o && setSelectedCardId(null)}>
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] p-0 flex flex-col gap-0 bg-slate-50 overflow-hidden">
+        <DialogContent closeClassName="text-slate-300 hover:text-white hover:bg-white/10" className="max-w-4xl w-full max-h-[90vh] p-0 flex flex-col gap-0 bg-slate-50 overflow-hidden">
           {selectedCardId && (() => {
             const card = cards.find(c => c.id === selectedCardId);
             if (!card) return null;
@@ -1137,14 +1137,6 @@ const EmergencySection: React.FC = () => {
                         {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                       </Badge>
                     </div>
-                    <button
-                      onClick={() => setSelectedCardId(null)}
-                      className="text-slate-300 hover:text-white p-1 rounded transition-colors"
-                      aria-label="Close"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
                   <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
                   <div className="flex flex-wrap gap-2 text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
                     {deptLabel && <span>{deptLabel}</span>}
