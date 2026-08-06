@@ -94,6 +94,8 @@ const SuppliersSection: React.FC = () => {
   const [fArea, setFArea] = useState(ALL);
   const [fEss, setFEss] = useState(ALL);
   const [fRto, setFRto] = useState(ALL);
+  const [fDr, setFDr] = useState(ALL);
+
   const [fLockIn, setFLockIn] = useState(false);
   const [search, setSearch] = useState("");
 
