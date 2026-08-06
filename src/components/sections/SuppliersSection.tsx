@@ -84,6 +84,8 @@ const SuppliersSection: React.FC = () => {
   const { data: catalog = [] } = useSupplierCatalog();
   const { data: departments = [] } = useDepartments();
   const { data: bps = [] } = useBusinessProcesses();
+  const { data: drTypes = [] } = useDRTypes();
+
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplier = useDeleteSupplier();
