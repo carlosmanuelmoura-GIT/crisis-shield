@@ -7,12 +7,26 @@ export type Alternatives = "multiple" | "limited" | "none";
 export type SubstitutionTime = "low" | "medium" | "high";
 export type ExitStrategy = "validado" | "nao_testado" | "nao_existente";
 
+export const SUPPLIER_TYPES = [
+  "Infraestrutura TI",
+  "Energia",
+  "Software",
+  "Serviços SI/TI",
+  "Manutenção de Infraestruturas Técnicas",
+  "Telecomunicações",
+  "Manutenção de Edifícios",
+  "Pagamentos",
+  "Emissão de Numerário",
+] as const;
+export type SupplierType = (typeof SUPPLIER_TYPES)[number];
+
 export interface Supplier {
   id: string;
   catalog_id: string | null;
   name: string;
   subcontractors: string;
   critical_area: string;
+  supplier_type: string | null;
   rto_supplier_hours: number | null;
   rto_process_hours: number | null;
   dr_type_id: string | null;
@@ -34,6 +48,7 @@ export interface SupplierInput {
   name: string;
   subcontractors?: string;
   critical_area?: string;
+  supplier_type?: string | null;
   dr_type_id?: string | null;
   supplier_rto_compliant?: boolean | null;
   essentiality?: Essentiality;

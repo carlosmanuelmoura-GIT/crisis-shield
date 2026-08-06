@@ -14,7 +14,7 @@ import { usePessoasCriticas, useInsertPessoaCritica } from "@/hooks/usePessoasCr
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSuppliers, useSupplierRelations, useCreateSupplier } from "@/hooks/useSuppliers";
+import { useSuppliers, useSupplierRelations, useCreateSupplier, SUPPLIER_TYPES } from "@/hooks/useSuppliers";
 import { Download, Upload, Loader2, Server, Briefcase, BarChart3, Users, Truck } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -410,6 +410,7 @@ const ImportExportSection: React.FC = () => {
     Nome: s.name,
     Subcontratados: s.subcontractors || "",
     Area_Critica: s.critical_area || "",
+    Tipo_Fornecedor: s.supplier_type || "",
     RTO_Fornecedor_Conformidade: s.supplier_rto_compliant == null ? "" : s.supplier_rto_compliant ? "Conforme" : "Nao conforme",
     Tipo_DR_Processo: drTypes.find(d => d.id === s.dr_type_id)?.code ?? "",
 
@@ -433,7 +434,7 @@ const ImportExportSection: React.FC = () => {
 
   const exportTemplateSuppliers = () => {
     const ws = XLSX.utils.json_to_sheet([{
-      Nome: "", Subcontratados: "", Area_Critica: "",
+      Nome: "", Subcontratados: "", Area_Critica: "", Tipo_Fornecedor: "",
       RTO_Fornecedor_Conformidade: "Conforme", Tipo_DR_Processo: "",
       Essencialidade: "medium", Alternativas: "limited", Tempo_Substituicao: "medium",
       Estrategia_Saida: "nao_existente", Ultimo_Teste_GCN: "", Departamento_Nome: "",
@@ -443,6 +444,7 @@ const ImportExportSection: React.FC = () => {
     XLSX.utils.book_append_sheet(wb, ws, "Fornecedores");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funcoesList.map(f => ({ Funcao: f }))), "Funcoes");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(drTypes.map(d => ({ Codigo: d.code, Descricao: d.label, RTO_Horas: d.rto }))), "TiposDR");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(SUPPLIER_TYPES.map(t => ({ Tipo_Fornecedor: t }))), "TiposFornecedor");
     XLSX.writeFile(wb, "template_fornecedores_criticos.xlsx");
   };
 
@@ -479,6 +481,7 @@ const ImportExportSection: React.FC = () => {
             name,
             subcontractors: String(row.Subcontratados ?? "").trim(),
             critical_area: String(row.Area_Critica ?? "").trim(),
+            supplier_type: String(row.Tipo_Fornecedor ?? "").trim() || null,
             supplier_rto_compliant: compliant,
             dr_type_id: drId,
 
@@ -612,8 +615,8 @@ const ImportExportSection: React.FC = () => {
           onImportClick={() => suppliersFileRef.current?.click()}
           importKey="suppliers"
           hint={t(
-            "Colunas: Nome, Subcontratados, Area_Critica, RTO_Fornecedor_Horas, RTO_Processo_Horas, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separadas por ;). O template inclui a folha 'Funcoes' com as funções existentes.",
-            "Columns: Nome, Subcontratados, Area_Critica, RTO_Fornecedor_Horas, RTO_Processo_Horas, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separated by ;). The template includes a 'Funcoes' sheet with existing functions."
+            "Colunas: Nome, Subcontratados, Area_Critica, Tipo_Fornecedor, RTO_Fornecedor_Conformidade, Tipo_DR_Processo, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separadas por ;). O template inclui as folhas 'Funcoes', 'TiposDR' e 'TiposFornecedor'.",
+            "Columns: Nome, Subcontratados, Area_Critica, Tipo_Fornecedor, RTO_Fornecedor_Conformidade, Tipo_DR_Processo, Essencialidade, Alternativas, Tempo_Substituicao, Estrategia_Saida, Ultimo_Teste_GCN, Departamento_Nome, Notas, Funcoes (separated by ;). The template includes 'Funcoes', 'TiposDR' and 'TiposFornecedor' sheets."
           )}
         />
       </div>

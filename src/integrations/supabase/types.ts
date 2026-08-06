@@ -1287,6 +1287,7 @@ export type Database = {
           subcontractors: string
           substitution_time: string
           supplier_rto_compliant: boolean | null
+          supplier_type: string | null
           updated_at: string
         }
         Insert: {
@@ -1308,6 +1309,7 @@ export type Database = {
           subcontractors?: string
           substitution_time?: string
           supplier_rto_compliant?: boolean | null
+          supplier_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -1329,6 +1331,7 @@ export type Database = {
           subcontractors?: string
           substitution_time?: string
           supplier_rto_compliant?: boolean | null
+          supplier_type?: string | null
           updated_at?: string
         }
         Relationships: [

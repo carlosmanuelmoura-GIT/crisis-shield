@@ -25,6 +25,7 @@ import {
   isGcnExpired,
   type Supplier,
   type SupplierInput,
+  SUPPLIER_TYPES,
 } from "@/hooks/useSuppliers";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useDRTypes } from "@/hooks/useCMDBPlatforms";
@@ -50,6 +51,21 @@ const SUB_LABEL: Record<string, { pt: string; en: string }> = {
   medium: { pt: "6 - 18 meses", en: "6 - 18 months" },
   high: { pt: "> 18 meses", en: "> 18 months" },
 };
+const RISK_TONE: Record<"good" | "warn" | "bad", string> = {
+  good: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+  warn: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+  bad: "bg-destructive/10 text-destructive border-destructive/30",
+};
+const ESS_RISK: Record<string, "good" | "warn" | "bad"> = { low: "good", medium: "warn", high: "bad" };
+const ALT_RISK: Record<string, "good" | "warn" | "bad"> = { multiple: "good", limited: "warn", none: "bad" };
+const SUB_RISK: Record<string, "good" | "warn" | "bad"> = { low: "good", medium: "warn", high: "bad" };
+
+const DepBadge: React.FC<{ risk: "good" | "warn" | "bad"; children: React.ReactNode }> = ({ risk, children }) => (
+  <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium", RISK_TONE[risk])}>
+    <span className={cn("h-1.5 w-1.5 rounded-full", risk === "good" ? "bg-emerald-500" : risk === "warn" ? "bg-amber-500" : "bg-destructive")} />
+    {children}
+  </span>
+);
 const EXIT_LABEL: Record<string, { pt: string; en: string }> = {
   validado: { pt: "Validado", en: "Validated" },
   nao_testado: { pt: "Não testado", en: "Not tested" },
@@ -60,6 +76,7 @@ const emptyForm = (): SupplierInput => ({
   name: "",
   subcontractors: "",
   critical_area: "",
+  supplier_type: null,
   dr_type_id: null,
   supplier_rto_compliant: null,
 
@@ -92,6 +109,7 @@ const SuppliersSection: React.FC = () => {
 
   const [tab, setTab] = useState("list");
   const [fArea, setFArea] = useState(ALL);
+  const [fType, setFType] = useState(ALL);
   const [fEss, setFEss] = useState(ALL);
   const [fRto, setFRto] = useState(ALL);
   const [fDr, setFDr] = useState(ALL);
@@ -125,6 +143,7 @@ const SuppliersSection: React.FC = () => {
     () =>
       suppliers.filter((s) => {
         if (fArea !== ALL && s.critical_area !== fArea) return false;
+        if (fType !== ALL && s.supplier_type !== fType) return false;
         if (fEss !== ALL && s.essentiality !== fEss) return false;
         if (fRto === "mismatch" && s.supplier_rto_compliant !== false) return false;
         if (fRto === "ok" && s.supplier_rto_compliant !== true) return false;
@@ -133,7 +152,7 @@ const SuppliersSection: React.FC = () => {
         if (search && !`${s.name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
-    [suppliers, fArea, fEss, fRto, fDr, fLockIn, search]
+    [suppliers, fArea, fType, fEss, fRto, fDr, fLockIn, search]
   );
 
 
@@ -150,6 +169,7 @@ const SuppliersSection: React.FC = () => {
 
   const resetFilters = () => {
     setFArea(ALL);
+    setFType(ALL);
     setFEss(ALL);
     setFRto(ALL);
     setFDr(ALL);
@@ -171,6 +191,7 @@ const SuppliersSection: React.FC = () => {
       name: s.name,
       subcontractors: s.subcontractors,
       critical_area: s.critical_area,
+      supplier_type: s.supplier_type,
       dr_type_id: s.dr_type_id,
       supplier_rto_compliant: s.supplier_rto_compliant,
 
@@ -289,6 +310,16 @@ const SuppliersSection: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="w-56">
+                <Label className="text-xs">{L({ pt: "Tipo de Fornecedor", en: "Supplier type" })}</Label>
+                <Select value={fType} onValueChange={setFType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
+                    {SUPPLIER_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="w-48">
                 <Label className="text-xs">{L({ pt: "Nível de Dependência", en: "Dependency level" })}</Label>
                 <Select value={fEss} onValueChange={setFEss}>
@@ -328,7 +359,7 @@ const SuppliersSection: React.FC = () => {
                 <Label className="text-xs">{L({ pt: "Pesquisar", en: "Search" })}</Label>
                 <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={L({ pt: "Fornecedor…", en: "Supplier…" })} />
               </div>
-              {(fArea !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+              {(fArea !== ALL || fType !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
 
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   <X className="h-4 w-4 mr-1" /> {L({ pt: "Limpar", en: "Clear" })}
@@ -350,10 +381,11 @@ const SuppliersSection: React.FC = () => {
                       <TableHead>{L({ pt: "Função", en: "Function" })}</TableHead>
                       
                       <TableHead>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</TableHead>
-                      <TableHead>{L({ pt: "Dependências", en: "Dependencies" })}</TableHead>
+                      <TableHead>{L({ pt: "Essencialidade", en: "Essentiality" })}</TableHead>
+                      <TableHead>{L({ pt: "Alternativas Viáveis", en: "Viable alternatives" })}</TableHead>
+                      <TableHead>{L({ pt: "Tempo de Substituição", en: "Substitution time" })}</TableHead>
                       <TableHead>{L({ pt: "Estratégia de Saída", en: "Exit strategy" })}</TableHead>
                       <TableHead>{L({ pt: "Último Teste GCN", en: "Last BCM test" })}</TableHead>
-                      <TableHead>{L({ pt: "Departamento", en: "Department" })}</TableHead>
                       <TableHead className="text-right">{L({ pt: "Ações", en: "Actions" })}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -371,6 +403,7 @@ const SuppliersSection: React.FC = () => {
                         <TableCell>
                           <p className="font-medium">{s.name}</p>
                           {s.subcontractors && <p className="text-xs text-muted-foreground">{s.subcontractors}</p>}
+                          {s.supplier_type && <p className="text-xs text-muted-foreground">{s.supplier_type}</p>}
                           {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
                         </TableCell>
                         <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
@@ -388,10 +421,14 @@ const SuppliersSection: React.FC = () => {
                           </p>
                         </TableCell>
 
-                        <TableCell className="space-y-1">
-                          <Badge variant={s.essentiality === "high" ? "destructive" : "secondary"}>{L(ESS_LABEL[s.essentiality])}</Badge>{" "}
-                          <Badge variant={s.alternatives === "none" ? "destructive" : "outline"}>{L(ALT_LABEL[s.alternatives])}</Badge>{" "}
-                          <Badge variant={s.substitution_time === "high" ? "destructive" : "outline"}>{L(SUB_LABEL[s.substitution_time])}</Badge>
+                        <TableCell>
+                          <DepBadge risk={ESS_RISK[s.essentiality]}>{L(ESS_LABEL[s.essentiality])}</DepBadge>
+                        </TableCell>
+                        <TableCell>
+                          <DepBadge risk={ALT_RISK[s.alternatives]}>{L(ALT_LABEL[s.alternatives])}</DepBadge>
+                        </TableCell>
+                        <TableCell>
+                          <DepBadge risk={SUB_RISK[s.substitution_time]}>{L(SUB_LABEL[s.substitution_time])}</DepBadge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={s.exit_strategy === "validado" ? "default" : s.exit_strategy === "nao_testado" ? "secondary" : "destructive"}>
@@ -403,7 +440,6 @@ const SuppliersSection: React.FC = () => {
                             {s.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" })}
                           </span>
                         </TableCell>
-                        <TableCell className="text-xs">{deptName(s.department_id)}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
                           <Button variant="ghost" size="icon" onClick={() => setDetail(s)}><Eye className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
@@ -512,6 +548,15 @@ const SuppliersSection: React.FC = () => {
               <div>
                 <Label>{L({ pt: "Área Crítica", en: "Critical Area" })}</Label>
                 <Input value={form.critical_area ?? ""} onChange={(e) => setForm({ ...form, critical_area: e.target.value })} />
+              </div>
+              <div>
+                <Label>{L({ pt: "Tipo de Fornecedor", en: "Supplier type" })}</Label>
+                <Select value={form.supplier_type ?? ""} onValueChange={(v) => setForm({ ...form, supplier_type: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {SUPPLIER_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>{L({ pt: "Departamento responsável", en: "Responsible department" })}</Label>
@@ -637,6 +682,7 @@ const SuppliersSection: React.FC = () => {
               {[
                 [L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" }), detail.subcontractors || "—"],
                 [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
+                [L({ pt: "Tipo de Fornecedor", en: "Supplier type" }), detail.supplier_type || "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
                 
                 [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), detail.supplier_rto_compliant == null ? "—" : detail.supplier_rto_compliant ? L({ pt: "Conforme", en: "Compliant" }) : L({ pt: "Não conforme", en: "Non-compliant" })],
