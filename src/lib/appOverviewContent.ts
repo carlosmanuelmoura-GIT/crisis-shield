@@ -59,8 +59,9 @@ export const APP_OVERVIEW: OverviewSection[] = [
       {
         name: { pt: "Análise de Fornecedores Críticos", en: "Critical Supplier Analysis" },
         desc: {
-          pt: "Avaliação de risco e dependência dos fornecedores críticos de TI, infraestruturas e pagamentos, com associação às funções de negócio, subcontratados de 4ª parte, alertas de RTO mismatch, estratégias de saída, testes GCN conjuntos, matriz de concentração 2x2 (essencialidade vs esforço de substituição) para identificar lock-in, e importação/exportação em XLSX.",
-          en: "Risk and dependency assessment of critical IT, infrastructure and payment suppliers, with linkage to business functions, 4th-party subcontractors, RTO mismatch alerts, exit strategies, joint BCM tests, a 2x2 concentration matrix (essentiality vs replacement effort) to spot lock-in, and XLSX import/export.",
+          pt: "Avaliação de risco e dependência dos fornecedores críticos de TI, infraestruturas e pagamentos. A lista está organizada em dois níveis: linha principal por fornecedor (com o número total de contratos) que expande para os contratos detalhados, cada um com processo crítico, tipo de fornecedor, tipo de serviço (CORE/Específico), funções, subcontratados de 4ª parte, alertas de RTO mismatch, estratégias de saída e testes GCN conjuntos. Inclui matriz de concentração 2x2 (essencialidade vs esforço de substituição) para identificar lock-in, relatório PDF e importação/exportação em XLSX.",
+          en: "Risk and dependency assessment of critical IT, infrastructure and payment suppliers. The list has two levels: a supplier row (with the total number of contracts) that expands into detailed contracts, each with critical process, supplier type, service type (CORE/Specific), functions, 4th-party subcontractors, RTO mismatch alerts, exit strategies and joint BCM tests. Includes a 2x2 concentration matrix (essentiality vs replacement effort) to spot lock-in, a PDF report and XLSX import/export.",
+
         },
       },
 
