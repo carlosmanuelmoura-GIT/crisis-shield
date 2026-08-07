@@ -3,9 +3,11 @@ import jsPDF from "jspdf";
 export interface SupplierPDFRow {
   id: string;
   name: string;
+  contract_name: string;
   subcontractors: string;
   critical_area: string;
   supplier_type: string | null;
+  service_type: string | null;
   dr_label: string;
   rto_compliant: boolean | null;
   essentiality: string;
@@ -40,6 +42,10 @@ const SUB: Record<string, { pt: string; en: string }> = {
   low: { pt: "< 6 meses", en: "< 6 months" },
   medium: { pt: "6 - 18 meses", en: "6 - 18 months" },
   high: { pt: "> 18 meses", en: "> 18 months" },
+};
+const SVC: Record<string, { pt: string; en: string }> = {
+  core: { pt: "CORE", en: "CORE" },
+  especifico: { pt: "ESPECÍFICO", en: "SPECIFIC" },
 };
 const EXIT: Record<string, { pt: string; en: string }> = {
   validado: { pt: "Validado", en: "Validated" },
@@ -303,7 +309,9 @@ export function generateSuppliersPDF({ lang, rows, kpis }: SuppliersPDFInput) {
     const pairs: [string, string][] = [
       [L({ pt: "Subcontratados / 4ª parte", en: "Subcontractors / 4th party" }), r.subcontractors || "—"],
       [L({ pt: "Tipo de Fornecedor", en: "Supplier type" }), r.supplier_type || "—"],
-      [L({ pt: "Área Crítica", en: "Critical area" }), r.critical_area || "—"],
+      [L({ pt: "Contrato", en: "Contract" }), r.contract_name || "—"],
+      [L({ pt: "Processo Crítico", en: "Critical process" }), r.critical_area || "—"],
+      [L({ pt: "Tipo de Serviço", en: "Service type" }), r.service_type ? L(SVC[r.service_type]) : "—"],
       [L({ pt: "Funções", en: "Functions" }), r.funcoes.join(", ") || "—"],
       [L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" }), r.dr_label || "—"],
       [
