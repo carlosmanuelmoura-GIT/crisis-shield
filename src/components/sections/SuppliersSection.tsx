@@ -112,16 +112,19 @@ const SuppliersSection: React.FC = () => {
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplier = useDeleteSupplier();
+  const createCatalogEntry = useCreateSupplierCatalogEntry();
 
   const [tab, setTab] = useState("list");
   const [fArea, setFArea] = useState(ALL);
   const [fType, setFType] = useState(ALL);
+  const [fSvc, setFSvc] = useState(ALL);
   const [fEss, setFEss] = useState(ALL);
   const [fRto, setFRto] = useState(ALL);
   const [fDr, setFDr] = useState(ALL);
 
   const [fLockIn, setFLockIn] = useState(false);
   const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -150,22 +153,23 @@ const SuppliersSection: React.FC = () => {
       suppliers.filter((s) => {
         if (fArea !== ALL && s.critical_area !== fArea) return false;
         if (fType !== ALL && s.supplier_type !== fType) return false;
+        if (fSvc !== ALL && s.service_type !== fSvc) return false;
         if (fEss !== ALL && s.essentiality !== fEss) return false;
         if (fRto === "mismatch" && s.supplier_rto_compliant !== false) return false;
         if (fRto === "ok" && s.supplier_rto_compliant !== true) return false;
         if (fDr !== ALL && s.dr_type_id !== fDr) return false;
         if (fLockIn && !(isLockIn(s) && s.substitution_time === "high")) return false;
-        if (search && !`${s.name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
+        if (search && !`${s.name} ${s.contract_name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
-    [suppliers, fArea, fType, fEss, fRto, fDr, fLockIn, search]
+    [suppliers, fArea, fType, fSvc, fEss, fRto, fDr, fLockIn, search]
   );
 
-
+  const grouped = useMemo(() => groupBySupplier(filtered), [filtered]);
 
   const kpis = useMemo(
     () => ({
-      total: suppliers.length,
+      total: groupBySupplier(suppliers).length,
       lockIn: suppliers.filter(isLockIn).length,
       mismatch: suppliers.filter(hasRtoMismatch).length,
       gcn: suppliers.filter(isGcnExpired).length,
@@ -176,6 +180,7 @@ const SuppliersSection: React.FC = () => {
   const resetFilters = () => {
     setFArea(ALL);
     setFType(ALL);
+    setFSvc(ALL);
     setFEss(ALL);
     setFRto(ALL);
     setFDr(ALL);
@@ -191,9 +196,11 @@ const SuppliersSection: React.FC = () => {
       rows: filtered.map((s) => ({
         id: s.id,
         name: s.name,
+        contract_name: s.contract_name || s.name,
         subcontractors: s.subcontractors ?? "",
         critical_area: s.critical_area ?? "",
         supplier_type: s.supplier_type,
+        service_type: s.service_type,
         dr_label: drLabel(s.dr_type_id),
         rto_compliant: s.supplier_rto_compliant,
         essentiality: s.essentiality,
@@ -207,6 +214,7 @@ const SuppliersSection: React.FC = () => {
       })),
     });
   };
+
 
 
 
