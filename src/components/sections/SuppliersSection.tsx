@@ -221,9 +221,11 @@ const SuppliersSection: React.FC = () => {
     setForm({
       catalog_id: s.catalog_id,
       name: s.name,
+      contract_name: s.contract_name,
       subcontractors: s.subcontractors,
       critical_area: s.critical_area,
       supplier_type: s.supplier_type,
+      service_type: s.service_type,
       dr_type_id: s.dr_type_id,
       supplier_rto_compliant: s.supplier_rto_compliant,
 
@@ -243,14 +245,21 @@ const SuppliersSection: React.FC = () => {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     try {
-      if (editingId) await updateSupplier.mutateAsync({ id: editingId, ...form });
-      else await createSupplier.mutateAsync(form);
+      let payload = { ...form, contract_name: form.contract_name?.trim() || form.name.trim() };
+      if (!payload.catalog_id) {
+        const existing = catalog.find((c) => c.name.toLowerCase() === payload.name.trim().toLowerCase());
+        const entry = existing ?? (await createCatalogEntry.mutateAsync(payload.name.trim()));
+        payload = { ...payload, catalog_id: entry.id, name: entry.name };
+      }
+      if (editingId) await updateSupplier.mutateAsync({ id: editingId, ...payload });
+      else await createSupplier.mutateAsync(payload);
       setDialogOpen(false);
       toast({ title: lang === "pt" ? "Guardado" : "Saved" });
     } catch (e: any) {
       toast({ title: lang === "pt" ? "Erro ao guardar" : "Save error", description: e.message, variant: "destructive" });
     }
   };
+
 
   const handleDelete = async (id: string) => {
     await deleteSupplier.mutateAsync(id);
