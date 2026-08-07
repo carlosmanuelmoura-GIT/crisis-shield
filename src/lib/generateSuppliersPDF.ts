@@ -215,16 +215,17 @@ export function generateSuppliersPDF({ lang, rows, kpis }: SuppliersPDFInput) {
   sectionTitle(L({ pt: "Lista de Fornecedores", en: "Supplier List" }));
 
   const COLS = [
-    { label: L({ pt: "FORNECEDOR / SUBCONTRATADOS", en: "SUPPLIER / SUBCONTRACTORS" }), w: contentW * 0.19 },
-    { label: L({ pt: "TIPO", en: "TYPE" }), w: contentW * 0.12 },
-    { label: L({ pt: "FUNÇÕES", en: "FUNCTIONS" }), w: contentW * 0.13 },
-    { label: L({ pt: "RTO PROCESSO", en: "PROCESS RTO" }), w: contentW * 0.09 },
+    { label: L({ pt: "FORNECEDOR / CONTRATO", en: "SUPPLIER / CONTRACT" }), w: contentW * 0.18 },
+    { label: L({ pt: "TIPO", en: "TYPE" }), w: contentW * 0.11 },
+    { label: L({ pt: "FUNÇÕES", en: "FUNCTIONS" }), w: contentW * 0.12 },
+    { label: L({ pt: "RTO PROCESSO", en: "PROCESS RTO" }), w: contentW * 0.08 },
     { label: L({ pt: "RTO FORN.", en: "SUPPLIER RTO" }), w: contentW * 0.09 },
-    { label: L({ pt: "ESSENC.", en: "ESSENT." }), w: contentW * 0.07 },
+    { label: L({ pt: "TIPO SERVIÇO", en: "SERVICE TYPE" }), w: contentW * 0.08 },
+    { label: L({ pt: "ESSENC.", en: "ESSENT." }), w: contentW * 0.06 },
     { label: L({ pt: "ALTERNATIVAS", en: "ALTERNATIVES" }), w: contentW * 0.09 },
-    { label: L({ pt: "SUBSTITUIÇÃO", en: "SUBSTITUTION" }), w: contentW * 0.08 },
-    { label: L({ pt: "SAÍDA", en: "EXIT" }), w: contentW * 0.07 },
-    { label: L({ pt: "ÚLT. TESTE", en: "LAST TEST" }), w: contentW * 0.07 },
+    { label: L({ pt: "SUBSTITUIÇÃO", en: "SUBSTITUTION" }), w: contentW * 0.07 },
+    { label: L({ pt: "SAÍDA", en: "EXIT" }), w: contentW * 0.06 },
+    { label: L({ pt: "ÚLT. TESTE", en: "LAST TEST" }), w: contentW * 0.06 },
   ];
 
   const drawTableHead = () => {
@@ -244,62 +245,88 @@ export function generateSuppliersPDF({ lang, rows, kpis }: SuppliersPDFInput) {
   };
   drawTableHead();
 
-  rows.forEach((r, idx) => {
-    const nameLines = doc.splitTextToSize(
-      r.subcontractors ? `${r.name} (${r.subcontractors})` : r.name,
-      COLS[0].w - 4
-    );
-    const typeLines = doc.splitTextToSize(r.supplier_type || "—", COLS[1].w - 4);
-    const funcLines = doc.splitTextToSize(r.funcoes.join(", ") || "—", COLS[2].w - 4);
-    const altLines = doc.splitTextToSize(L(ALT[r.alternatives] ?? { pt: "—", en: "—" }), COLS[6].w - 4);
-    const rowH = Math.max(
-      8,
-      Math.max(nameLines.length, typeLines.length, funcLines.length, altLines.length) * 3.4 + 4
-    );
-    ensure(rowH + 2);
-    if (idx % 2 === 1) {
-      doc.setFillColor(248, 250, 252);
-      doc.rect(margin, y - 4, contentW, rowH, "F");
-    }
-    let x = margin + 2;
-    doc.setFontSize(7);
+  const groups: { name: string; items: SupplierPDFRow[] }[] = [];
+  rows.forEach((r) => {
+    const g = groups.find((x) => x.name === r.name);
+    if (g) g.items.push(r);
+    else groups.push({ name: r.name, items: [r] });
+  });
+
+  groups.forEach((g) => {
+    ensure(10);
+    doc.setFillColor(226, 232, 240);
+    doc.rect(margin, y - 4, contentW, 7, "F");
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
     doc.setTextColor(15, 23, 42);
-    doc.text(nameLines, x, y);
-    x += COLS[0].w;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(51, 65, 85);
-    doc.text(typeLines, x, y);
-    x += COLS[1].w;
-    doc.text(funcLines, x, y);
-    x += COLS[2].w;
-    doc.text(r.dr_label || "—", x, y);
-    x += COLS[3].w;
-    if (r.rto_compliant === false) doc.setTextColor(185, 28, 28);
-    else if (r.rto_compliant === true) doc.setTextColor(4, 120, 87);
     doc.text(
-      r.rto_compliant == null
-        ? "—"
-        : r.rto_compliant
-          ? L({ pt: "Conforme", en: "Compliant" })
-          : L({ pt: "Não conforme", en: "Non-compliant" }),
-      x,
+      `${g.name}  (${g.items.length} ${g.items.length === 1 ? L({ pt: "contrato", en: "contract" }) : L({ pt: "contratos", en: "contracts" })})`,
+      margin + 2,
       y
     );
-    doc.setTextColor(51, 65, 85);
-    x += COLS[4].w;
-    doc.text(L(ESS[r.essentiality] ?? { pt: "—", en: "—" }), x, y);
-    x += COLS[5].w;
-    doc.text(altLines, x, y);
-    x += COLS[6].w;
-    doc.text(L(SUB[r.substitution_time] ?? { pt: "—", en: "—" }), x, y);
-    x += COLS[7].w;
-    doc.text(L(EXIT[r.exit_strategy] ?? { pt: "—", en: "—" }), x, y);
-    x += COLS[8].w;
-    doc.text(r.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" }), x, y);
     doc.setTextColor(0, 0, 0);
-    y += rowH;
+    y += 8;
+
+    g.items.forEach((r, idx) => {
+      const nameLines = doc.splitTextToSize(
+        `${r.contract_name}${r.subcontractors ? ` (${r.subcontractors})` : ""}`,
+        COLS[0].w - 6
+      );
+      const typeLines = doc.splitTextToSize(r.supplier_type || "—", COLS[1].w - 4);
+      const funcLines = doc.splitTextToSize(r.funcoes.join(", ") || "—", COLS[2].w - 4);
+      const altLines = doc.splitTextToSize(L(ALT[r.alternatives] ?? { pt: "—", en: "—" }), COLS[7].w - 4);
+      const rowH = Math.max(
+        8,
+        Math.max(nameLines.length, typeLines.length, funcLines.length, altLines.length) * 3.4 + 4
+      );
+      ensure(rowH + 2);
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin, y - 4, contentW, rowH, "F");
+      }
+      let x = margin + 4;
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(15, 23, 42);
+      doc.text(nameLines, x, y);
+      x = margin + 2 + COLS[0].w;
+      doc.setTextColor(51, 65, 85);
+      doc.text(typeLines, x, y);
+      x += COLS[1].w;
+      doc.text(funcLines, x, y);
+      x += COLS[2].w;
+      doc.text(r.dr_label || "—", x, y);
+      x += COLS[3].w;
+      if (r.rto_compliant === false) doc.setTextColor(185, 28, 28);
+      else if (r.rto_compliant === true) doc.setTextColor(4, 120, 87);
+      doc.text(
+        r.rto_compliant == null
+          ? "—"
+          : r.rto_compliant
+            ? L({ pt: "Conforme", en: "Compliant" })
+            : L({ pt: "Não conforme", en: "Non-compliant" }),
+        x,
+        y
+      );
+      doc.setTextColor(51, 65, 85);
+      x += COLS[4].w;
+      doc.text(r.service_type ? L(SVC[r.service_type] ?? { pt: "—", en: "—" }) : "—", x, y);
+      x += COLS[5].w;
+      doc.text(L(ESS[r.essentiality] ?? { pt: "—", en: "—" }), x, y);
+      x += COLS[6].w;
+      doc.text(altLines, x, y);
+      x += COLS[7].w;
+      doc.text(L(SUB[r.substitution_time] ?? { pt: "—", en: "—" }), x, y);
+      x += COLS[8].w;
+      doc.text(L(EXIT[r.exit_strategy] ?? { pt: "—", en: "—" }), x, y);
+      x += COLS[9].w;
+      doc.text(r.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" }), x, y);
+      doc.setTextColor(0, 0, 0);
+      y += rowH;
+    });
+    y += 3;
   });
+
   y += 6;
 
   /* ── 3. Detalhe por Fornecedor ── */
