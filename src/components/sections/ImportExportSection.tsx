@@ -408,9 +408,11 @@ const ImportExportSection: React.FC = () => {
 
   const supplierRow = (s: any) => ({
     Nome: s.name,
+    Contrato: s.contract_name || s.name,
     Subcontratados: s.subcontractors || "",
-    Area_Critica: s.critical_area || "",
+    Processo_Critico: s.critical_area || "",
     Tipo_Fornecedor: s.supplier_type || "",
+    Tipo_Servico: s.service_type === "core" ? "CORE" : s.service_type === "especifico" ? "ESPECIFICO" : "",
     RTO_Fornecedor_Conformidade: s.supplier_rto_compliant == null ? "" : s.supplier_rto_compliant ? "Conforme" : "Nao conforme",
     Tipo_DR_Processo: drTypes.find(d => d.id === s.dr_type_id)?.code ?? "",
 
@@ -434,7 +436,7 @@ const ImportExportSection: React.FC = () => {
 
   const exportTemplateSuppliers = () => {
     const ws = XLSX.utils.json_to_sheet([{
-      Nome: "", Subcontratados: "", Area_Critica: "", Tipo_Fornecedor: "",
+      Nome: "", Contrato: "", Subcontratados: "", Processo_Critico: "", Tipo_Fornecedor: "", Tipo_Servico: "CORE",
       RTO_Fornecedor_Conformidade: "Conforme", Tipo_DR_Processo: "",
       Essencialidade: "medium", Alternativas: "limited", Tempo_Substituicao: "medium",
       Estrategia_Saida: "nao_existente", Ultimo_Teste_GCN: "", Departamento_Nome: "",
@@ -445,6 +447,7 @@ const ImportExportSection: React.FC = () => {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funcoesList.map(f => ({ Funcao: f }))), "Funcoes");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(drTypes.map(d => ({ Codigo: d.code, Descricao: d.label, RTO_Horas: d.rto }))), "TiposDR");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(SUPPLIER_TYPES.map(t => ({ Tipo_Fornecedor: t }))), "TiposFornecedor");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ Tipo_Servico: "CORE" }, { Tipo_Servico: "ESPECIFICO" }]), "TiposServico");
     XLSX.writeFile(wb, "template_fornecedores_criticos.xlsx");
   };
 
@@ -479,9 +482,15 @@ const ImportExportSection: React.FC = () => {
         try {
           await createSupplier.mutateAsync({
             name,
+            contract_name: String(row.Contrato ?? "").trim() || name,
             subcontractors: String(row.Subcontratados ?? "").trim(),
-            critical_area: String(row.Area_Critica ?? "").trim(),
+            critical_area: String(row.Processo_Critico ?? row.Area_Critica ?? "").trim(),
             supplier_type: String(row.Tipo_Fornecedor ?? "").trim() || null,
+            service_type: (() => {
+              const v = String(row.Tipo_Servico ?? "").trim().toLowerCase();
+              if (!v) return null;
+              return v.startsWith("core") ? "core" : "especifico";
+            })(),
             supplier_rto_compliant: compliant,
             dr_type_id: drId,
 
