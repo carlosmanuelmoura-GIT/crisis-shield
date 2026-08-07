@@ -393,11 +393,22 @@ const SuppliersSection: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="w-48">
+                <Label className="text-xs">{L({ pt: "Tipo de Serviço", en: "Service type" })}</Label>
+                <Select value={fSvc} onValueChange={setFSvc}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
+                    {SERVICE_TYPES.map((t) => <SelectItem key={t} value={t}>{L(SERVICE_TYPE_LABEL[t])}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="w-56">
                 <Label className="text-xs">{L({ pt: "Pesquisar", en: "Search" })}</Label>
                 <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={L({ pt: "Fornecedor…", en: "Supplier…" })} />
               </div>
-              {(fArea !== ALL || fType !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+              {(fArea !== ALL || fType !== ALL || fSvc !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+
 
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   <X className="h-4 w-4 mr-1" /> {L({ pt: "Limpar", en: "Clear" })}
