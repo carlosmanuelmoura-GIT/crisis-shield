@@ -95,12 +95,18 @@ export function useCreateSupplierCatalogEntry() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (name: string) => {
-      const { error } = await supabase.from("supplier_catalog").insert({ name, owner_id: user?.id });
+      const { data, error } = await supabase
+        .from("supplier_catalog")
+        .insert({ name, owner_id: user?.id })
+        .select("id,name")
+        .single();
       if (error) throw error;
+      return data as SupplierCatalogEntry;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["supplier_catalog"] }),
   });
 }
+
 
 export function useDeleteSupplierCatalogEntry() {
   const qc = useQueryClient();
