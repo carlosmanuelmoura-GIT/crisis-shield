@@ -708,7 +708,7 @@ const SuppliersSection: React.FC = () => {
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-2xl w-[calc(100%-2rem)] max-h-[90dvh] flex flex-col">
           <DialogHeader className="shrink-0">
-            <DialogTitle>{detail?.name}</DialogTitle>
+            <DialogTitle>{detail ? `${detail.name}${detail.contract_name && detail.contract_name !== detail.name ? ` · ${detail.contract_name}` : ""}` : ""}</DialogTitle>
           </DialogHeader>
           {detail && (
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3 text-sm pr-2">
@@ -718,13 +718,16 @@ const SuppliersSection: React.FC = () => {
                 {isGcnExpired(detail) && <Badge variant="secondary">{L({ pt: "GCN expirado", en: "BCM expired" })}</Badge>}
               </div>
               {[
+                [L({ pt: "Contrato", en: "Contract" }), detail.contract_name || "—"],
                 [L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" }), detail.subcontractors || "—"],
-                [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
+                [L({ pt: "Processo Crítico", en: "Critical Process" }), detail.critical_area || "—"],
                 [L({ pt: "Tipo de Fornecedor", en: "Supplier type" }), detail.supplier_type || "—"],
+                [L({ pt: "Tipo de Serviço", en: "Service type" }), detail.service_type ? L(SERVICE_TYPE_LABEL[detail.service_type]) : "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
                 
                 [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), detail.supplier_rto_compliant == null ? "—" : detail.supplier_rto_compliant ? L({ pt: "Conforme", en: "Compliant" }) : L({ pt: "Não conforme", en: "Non-compliant" })],
                 [L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" }), drOf(detail.dr_type_id) ? `${drOf(detail.dr_type_id)!.code} — ${drOf(detail.dr_type_id)!.label} (${drOf(detail.dr_type_id)!.rto}h)` : "—"],
+
 
                 [L({ pt: "Essencialidade", en: "Essentiality" }), L(ESS_LABEL[detail.essentiality])],
                 [L({ pt: "Alternativas Viáveis", en: "Viable alternatives" }), L(ALT_LABEL[detail.alternatives])],
