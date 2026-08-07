@@ -1271,6 +1271,7 @@ export type Database = {
         Row: {
           alternatives: string
           catalog_id: string | null
+          contract_name: string
           created_at: string
           critical_area: string
           department_id: string | null
@@ -1284,6 +1285,7 @@ export type Database = {
           owner_id: string | null
           rto_process_hours: number | null
           rto_supplier_hours: number | null
+          service_type: string | null
           subcontractors: string
           substitution_time: string
           supplier_rto_compliant: boolean | null
@@ -1293,6 +1295,7 @@ export type Database = {
         Insert: {
           alternatives?: string
           catalog_id?: string | null
+          contract_name?: string
           created_at?: string
           critical_area?: string
           department_id?: string | null
@@ -1306,6 +1309,7 @@ export type Database = {
           owner_id?: string | null
           rto_process_hours?: number | null
           rto_supplier_hours?: number | null
+          service_type?: string | null
           subcontractors?: string
           substitution_time?: string
           supplier_rto_compliant?: boolean | null
@@ -1315,6 +1319,7 @@ export type Database = {
         Update: {
           alternatives?: string
           catalog_id?: string | null
+          contract_name?: string
           created_at?: string
           critical_area?: string
           department_id?: string | null
@@ -1328,6 +1333,7 @@ export type Database = {
           owner_id?: string | null
           rto_process_hours?: number | null
           rto_supplier_hours?: number | null
+          service_type?: string | null
           subcontractors?: string
           substitution_time?: string
           supplier_rto_compliant?: boolean | null
