@@ -339,7 +339,7 @@ const SuppliersSection: React.FC = () => {
           <Card>
             <CardContent className="flex flex-wrap items-end gap-3 p-4">
               <div className="w-56">
-                <Label className="text-xs">{L({ pt: "Área Crítica", en: "Critical Area" })}</Label>
+                <Label className="text-xs">{L({ pt: "Processo Crítico", en: "Critical Process" })}</Label>
                 <Select value={fArea} onValueChange={setFArea}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
