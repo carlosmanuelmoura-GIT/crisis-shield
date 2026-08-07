@@ -80,10 +80,13 @@ const EXIT_LABEL: Record<string, { pt: string; en: string }> = {
 
 const emptyForm = (): SupplierInput => ({
   name: "",
+  contract_name: "",
   subcontractors: "",
   critical_area: "",
   supplier_type: null,
+  service_type: null,
   dr_type_id: null,
+
   supplier_rto_compliant: null,
 
   essentiality: "medium",
