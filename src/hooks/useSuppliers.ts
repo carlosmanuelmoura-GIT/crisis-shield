@@ -20,13 +20,22 @@ export const SUPPLIER_TYPES = [
 ] as const;
 export type SupplierType = (typeof SUPPLIER_TYPES)[number];
 
+export const SERVICE_TYPES = ["core", "especifico"] as const;
+export type ServiceType = (typeof SERVICE_TYPES)[number];
+export const SERVICE_TYPE_LABEL: Record<string, { pt: string; en: string }> = {
+  core: { pt: "CORE", en: "CORE" },
+  especifico: { pt: "ESPECÍFICO", en: "SPECIFIC" },
+};
+
 export interface Supplier {
   id: string;
   catalog_id: string | null;
   name: string;
+  contract_name: string;
   subcontractors: string;
   critical_area: string;
   supplier_type: string | null;
+  service_type: string | null;
   rto_supplier_hours: number | null;
   rto_process_hours: number | null;
   dr_type_id: string | null;
@@ -46,9 +55,11 @@ export interface Supplier {
 export interface SupplierInput {
   catalog_id?: string | null;
   name: string;
+  contract_name?: string;
   subcontractors?: string;
   critical_area?: string;
   supplier_type?: string | null;
+  service_type?: string | null;
   dr_type_id?: string | null;
   supplier_rto_compliant?: boolean | null;
   essentiality?: Essentiality;
@@ -60,6 +71,7 @@ export interface SupplierInput {
   notes?: string;
   funcoes?: string[];
 }
+
 
 
 export interface SupplierCatalogEntry {
