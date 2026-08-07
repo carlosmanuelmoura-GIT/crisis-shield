@@ -577,14 +577,26 @@ const SuppliersSection: React.FC = () => {
                     </SelectContent>
                   </Select>
                 )}
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value, catalog_id: null })}
+                  placeholder={L({ pt: "Nome do fornecedor", en: "Supplier name" })}
+                />
+              </div>
+              <div>
+                <Label>{L({ pt: "Nome do Contrato", en: "Contract name" })}</Label>
+                <Input
+                  value={form.contract_name ?? ""}
+                  onChange={(e) => setForm({ ...form, contract_name: e.target.value })}
+                  placeholder={L({ pt: "Ex.: Contrato 1", en: "e.g. Contract 1" })}
+                />
               </div>
               <div>
                 <Label>{L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" })}</Label>
                 <Input value={form.subcontractors ?? ""} onChange={(e) => setForm({ ...form, subcontractors: e.target.value })} />
               </div>
               <div>
-                <Label>{L({ pt: "Área Crítica", en: "Critical Area" })}</Label>
+                <Label>{L({ pt: "Processo Crítico", en: "Critical Process" })}</Label>
                 <Input value={form.critical_area ?? ""} onChange={(e) => setForm({ ...form, critical_area: e.target.value })} />
               </div>
               <div>
@@ -596,6 +608,16 @@ const SuppliersSection: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>{L({ pt: "Tipo de Serviço", en: "Service type" })}</Label>
+                <Select value={form.service_type ?? ""} onValueChange={(v) => setForm({ ...form, service_type: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_TYPES.map((t) => <SelectItem key={t} value={t}>{L(SERVICE_TYPE_LABEL[t])}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <Label>{L({ pt: "Departamento responsável", en: "Responsible department" })}</Label>
                 <Select value={form.department_id ?? ""} onValueChange={(v) => setForm({ ...form, department_id: v })}>
