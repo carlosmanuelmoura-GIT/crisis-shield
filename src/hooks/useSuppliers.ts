@@ -217,3 +217,20 @@ export const isGcnExpired = (s: Supplier) => {
   limit.setFullYear(limit.getFullYear() - 1);
   return d < limit;
 };
+
+export interface SupplierGroup {
+  key: string;
+  name: string;
+  contracts: Supplier[];
+}
+
+export function groupBySupplier(rows: Supplier[]): SupplierGroup[] {
+  const map = new Map<string, SupplierGroup>();
+  for (const r of rows) {
+    const key = r.catalog_id ?? `name:${r.name}`;
+    const g = map.get(key) ?? { key, name: r.name, contracts: [] };
+    g.contracts.push(r);
+    map.set(key, g);
+  }
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+}
