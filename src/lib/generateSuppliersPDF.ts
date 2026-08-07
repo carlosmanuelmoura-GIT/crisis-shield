@@ -173,7 +173,7 @@ export function generateSuppliersPDF({ lang, rows, kpis }: SuppliersPDFInput) {
 
   quadrants.forEach((q) => {
     const items = quad(q.essHigh, q.subHigh);
-    const names = items.map((s) => s.name).join(", ") || "—";
+    const names = items.map((s) => (s.contract_name && s.contract_name !== s.name ? `${s.name} · ${s.contract_name}` : s.name)).join(", ") || "—";
     const nameLines = doc.splitTextToSize(names, MCOLS[3] - 4);
     const titleLines = doc.splitTextToSize(L(q.title), MCOLS[0] - 4);
     const rowH = Math.max(9, Math.max(nameLines.length, titleLines.length) * 3.8 + 4);
@@ -364,7 +364,7 @@ export function generateSuppliersPDF({ lang, rows, kpis }: SuppliersPDFInput) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(...BRAND_BLUE);
-    doc.text(r.name, margin + 2, y + 4.5);
+    doc.text(r.contract_name && r.contract_name !== r.name ? `${r.name} · ${r.contract_name}` : r.name, margin + 2, y + 4.5);
     doc.setTextColor(0, 0, 0);
     y += 9;
 
