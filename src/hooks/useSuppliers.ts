@@ -20,13 +20,22 @@ export const SUPPLIER_TYPES = [
 ] as const;
 export type SupplierType = (typeof SUPPLIER_TYPES)[number];
 
+export const SERVICE_TYPES = ["core", "especifico"] as const;
+export type ServiceType = (typeof SERVICE_TYPES)[number];
+export const SERVICE_TYPE_LABEL: Record<string, { pt: string; en: string }> = {
+  core: { pt: "CORE", en: "CORE" },
+  especifico: { pt: "ESPECÍFICO", en: "SPECIFIC" },
+};
+
 export interface Supplier {
   id: string;
   catalog_id: string | null;
   name: string;
+  contract_name: string;
   subcontractors: string;
   critical_area: string;
   supplier_type: string | null;
+  service_type: string | null;
   rto_supplier_hours: number | null;
   rto_process_hours: number | null;
   dr_type_id: string | null;
@@ -46,9 +55,11 @@ export interface Supplier {
 export interface SupplierInput {
   catalog_id?: string | null;
   name: string;
+  contract_name?: string;
   subcontractors?: string;
   critical_area?: string;
   supplier_type?: string | null;
+  service_type?: string | null;
   dr_type_id?: string | null;
   supplier_rto_compliant?: boolean | null;
   essentiality?: Essentiality;
@@ -60,6 +71,7 @@ export interface SupplierInput {
   notes?: string;
   funcoes?: string[];
 }
+
 
 
 export interface SupplierCatalogEntry {
@@ -83,12 +95,18 @@ export function useCreateSupplierCatalogEntry() {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (name: string) => {
-      const { error } = await supabase.from("supplier_catalog").insert({ name, owner_id: user?.id });
+      const { data, error } = await supabase
+        .from("supplier_catalog")
+        .insert({ name, owner_id: user?.id })
+        .select("id,name")
+        .single();
       if (error) throw error;
+      return data as SupplierCatalogEntry;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["supplier_catalog"] }),
   });
 }
+
 
 export function useDeleteSupplierCatalogEntry() {
   const qc = useQueryClient();
@@ -199,3 +217,20 @@ export const isGcnExpired = (s: Supplier) => {
   limit.setFullYear(limit.getFullYear() - 1);
   return d < limit;
 };
+
+export interface SupplierGroup {
+  key: string;
+  name: string;
+  contracts: Supplier[];
+}
+
+export function groupBySupplier(rows: Supplier[]): SupplierGroup[] {
+  const map = new Map<string, SupplierGroup>();
+  for (const r of rows) {
+    const key = r.catalog_id ?? `name:${r.name}`;
+    const g = map.get(key) ?? { key, name: r.name, contracts: [] };
+    g.contracts.push(r);
+    map.set(key, g);
+  }
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+}

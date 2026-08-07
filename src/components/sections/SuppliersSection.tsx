@@ -12,22 +12,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Pencil, Eye, Trash2, AlertTriangle, ShieldAlert, Truck, CalendarClock, X, FileDown } from "lucide-react";
+import { Plus, Pencil, Eye, Trash2, AlertTriangle, ShieldAlert, Truck, CalendarClock, X, FileDown, ChevronRight, ChevronDown } from "lucide-react";
 import { generateSuppliersPDF } from "@/lib/generateSuppliersPDF";
 import {
   useSuppliers,
   useSupplierRelations,
   useSupplierCatalog,
+  useCreateSupplierCatalogEntry,
   useCreateSupplier,
   useUpdateSupplier,
   useDeleteSupplier,
   hasRtoMismatch,
   isLockIn,
   isGcnExpired,
+  groupBySupplier,
   type Supplier,
   type SupplierInput,
   SUPPLIER_TYPES,
+  SERVICE_TYPES,
+  SERVICE_TYPE_LABEL,
 } from "@/hooks/useSuppliers";
+
 import { useDepartments } from "@/hooks/useDepartments";
 import { useDRTypes } from "@/hooks/useCMDBPlatforms";
 
@@ -75,10 +80,13 @@ const EXIT_LABEL: Record<string, { pt: string; en: string }> = {
 
 const emptyForm = (): SupplierInput => ({
   name: "",
+  contract_name: "",
   subcontractors: "",
   critical_area: "",
   supplier_type: null,
+  service_type: null,
   dr_type_id: null,
+
   supplier_rto_compliant: null,
 
   essentiality: "medium",
@@ -107,16 +115,19 @@ const SuppliersSection: React.FC = () => {
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplier = useDeleteSupplier();
+  const createCatalogEntry = useCreateSupplierCatalogEntry();
 
   const [tab, setTab] = useState("list");
   const [fArea, setFArea] = useState(ALL);
   const [fType, setFType] = useState(ALL);
+  const [fSvc, setFSvc] = useState(ALL);
   const [fEss, setFEss] = useState(ALL);
   const [fRto, setFRto] = useState(ALL);
   const [fDr, setFDr] = useState(ALL);
 
   const [fLockIn, setFLockIn] = useState(false);
   const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -145,22 +156,23 @@ const SuppliersSection: React.FC = () => {
       suppliers.filter((s) => {
         if (fArea !== ALL && s.critical_area !== fArea) return false;
         if (fType !== ALL && s.supplier_type !== fType) return false;
+        if (fSvc !== ALL && s.service_type !== fSvc) return false;
         if (fEss !== ALL && s.essentiality !== fEss) return false;
         if (fRto === "mismatch" && s.supplier_rto_compliant !== false) return false;
         if (fRto === "ok" && s.supplier_rto_compliant !== true) return false;
         if (fDr !== ALL && s.dr_type_id !== fDr) return false;
         if (fLockIn && !(isLockIn(s) && s.substitution_time === "high")) return false;
-        if (search && !`${s.name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
+        if (search && !`${s.name} ${s.contract_name} ${s.subcontractors}`.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
       }),
-    [suppliers, fArea, fType, fEss, fRto, fDr, fLockIn, search]
+    [suppliers, fArea, fType, fSvc, fEss, fRto, fDr, fLockIn, search]
   );
 
-
+  const grouped = useMemo(() => groupBySupplier(filtered), [filtered]);
 
   const kpis = useMemo(
     () => ({
-      total: suppliers.length,
+      total: groupBySupplier(suppliers).length,
       lockIn: suppliers.filter(isLockIn).length,
       mismatch: suppliers.filter(hasRtoMismatch).length,
       gcn: suppliers.filter(isGcnExpired).length,
@@ -171,6 +183,7 @@ const SuppliersSection: React.FC = () => {
   const resetFilters = () => {
     setFArea(ALL);
     setFType(ALL);
+    setFSvc(ALL);
     setFEss(ALL);
     setFRto(ALL);
     setFDr(ALL);
@@ -186,9 +199,11 @@ const SuppliersSection: React.FC = () => {
       rows: filtered.map((s) => ({
         id: s.id,
         name: s.name,
+        contract_name: s.contract_name || s.name,
         subcontractors: s.subcontractors ?? "",
         critical_area: s.critical_area ?? "",
         supplier_type: s.supplier_type,
+        service_type: s.service_type,
         dr_label: drLabel(s.dr_type_id),
         rto_compliant: s.supplier_rto_compliant,
         essentiality: s.essentiality,
@@ -205,6 +220,7 @@ const SuppliersSection: React.FC = () => {
 
 
 
+
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
@@ -216,9 +232,11 @@ const SuppliersSection: React.FC = () => {
     setForm({
       catalog_id: s.catalog_id,
       name: s.name,
+      contract_name: s.contract_name,
       subcontractors: s.subcontractors,
       critical_area: s.critical_area,
       supplier_type: s.supplier_type,
+      service_type: s.service_type,
       dr_type_id: s.dr_type_id,
       supplier_rto_compliant: s.supplier_rto_compliant,
 
@@ -238,14 +256,21 @@ const SuppliersSection: React.FC = () => {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     try {
-      if (editingId) await updateSupplier.mutateAsync({ id: editingId, ...form });
-      else await createSupplier.mutateAsync(form);
+      let payload = { ...form, contract_name: form.contract_name?.trim() || form.name.trim() };
+      if (!payload.catalog_id) {
+        const existing = catalog.find((c) => c.name.toLowerCase() === payload.name.trim().toLowerCase());
+        const entry = existing ?? (await createCatalogEntry.mutateAsync(payload.name.trim()));
+        payload = { ...payload, catalog_id: entry.id, name: entry.name };
+      }
+      if (editingId) await updateSupplier.mutateAsync({ id: editingId, ...payload });
+      else await createSupplier.mutateAsync(payload);
       setDialogOpen(false);
       toast({ title: lang === "pt" ? "Guardado" : "Saved" });
     } catch (e: any) {
       toast({ title: lang === "pt" ? "Erro ao guardar" : "Save error", description: e.message, variant: "destructive" });
     }
   };
+
 
   const handleDelete = async (id: string) => {
     await deleteSupplier.mutateAsync(id);
@@ -334,7 +359,7 @@ const SuppliersSection: React.FC = () => {
           <Card>
             <CardContent className="flex flex-wrap items-end gap-3 p-4">
               <div className="w-56">
-                <Label className="text-xs">{L({ pt: "Área Crítica", en: "Critical Area" })}</Label>
+                <Label className="text-xs">{L({ pt: "Processo Crítico", en: "Critical Process" })}</Label>
                 <Select value={fArea} onValueChange={setFArea}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -388,11 +413,22 @@ const SuppliersSection: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="w-48">
+                <Label className="text-xs">{L({ pt: "Tipo de Serviço", en: "Service type" })}</Label>
+                <Select value={fSvc} onValueChange={setFSvc}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL}>{L({ pt: "Todos", en: "All" })}</SelectItem>
+                    {SERVICE_TYPES.map((t) => <SelectItem key={t} value={t}>{L(SERVICE_TYPE_LABEL[t])}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="w-56">
                 <Label className="text-xs">{L({ pt: "Pesquisar", en: "Search" })}</Label>
                 <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={L({ pt: "Fornecedor…", en: "Supplier…" })} />
               </div>
-              {(fArea !== ALL || fType !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+              {(fArea !== ALL || fType !== ALL || fSvc !== ALL || fEss !== ALL || fRto !== ALL || fDr !== ALL || fLockIn || search) && (
+
 
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   <X className="h-4 w-4 mr-1" /> {L({ pt: "Limpar", en: "Clear" })}
@@ -410,10 +446,11 @@ const SuppliersSection: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{L({ pt: "Fornecedor & Subcontratados", en: "Supplier & subcontractors" })}</TableHead>
-                      <TableHead>{L({ pt: "Função", en: "Function" })}</TableHead>
-                      
+                      <TableHead className="min-w-[220px]">{L({ pt: "Fornecedor & Contratos", en: "Supplier & contracts" })}</TableHead>
+                      <TableHead>{L({ pt: "Tipo de Fornecedor", en: "Supplier type" })}</TableHead>
+                      <TableHead>{L({ pt: "Funções", en: "Functions" })}</TableHead>
                       <TableHead>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</TableHead>
+                      <TableHead>{L({ pt: "Tipo de Serviço", en: "Service type" })}</TableHead>
                       <TableHead>{L({ pt: "Essencialidade", en: "Essentiality" })}</TableHead>
                       <TableHead>{L({ pt: "Alternativas Viáveis", en: "Viable alternatives" })}</TableHead>
                       <TableHead>{L({ pt: "Tempo de Substituição", en: "Substitution time" })}</TableHead>
@@ -424,63 +461,90 @@ const SuppliersSection: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {isLoading && (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">…</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">…</TableCell></TableRow>
                     )}
-                    {!isLoading && filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {!isLoading && grouped.length === 0 && (
+                      <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                         {L({ pt: "Sem fornecedores.", en: "No suppliers." })}
                       </TableCell></TableRow>
                     )}
-                    {filtered.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell>
-                          <p className="font-medium">{s.name}</p>
-                          {s.subcontractors && <p className="text-xs text-muted-foreground">{s.subcontractors}</p>}
-                          {s.supplier_type && <p className="text-xs text-muted-foreground">{s.supplier_type}</p>}
-                          {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
-                        </TableCell>
-                        <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
-                        
-                        <TableCell>
-                          <Badge className={cn(s.supplier_rto_compliant === false ? "bg-destructive text-destructive-foreground" : s.supplier_rto_compliant === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
-                            {s.supplier_rto_compliant == null
-                              ? "—"
-                              : s.supplier_rto_compliant
-                                ? L({ pt: "Conforme", en: "Compliant" })
-                                : `${L({ pt: "Não conforme", en: "Non-compliant" })} ⚠`}
-                          </Badge>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            {L({ pt: "Processo", en: "Process" })}: {drLabel(s.dr_type_id)}
-                          </p>
-                        </TableCell>
-
-                        <TableCell>
-                          <DepBadge risk={ESS_RISK[s.essentiality]}>{L(ESS_LABEL[s.essentiality])}</DepBadge>
-                        </TableCell>
-                        <TableCell>
-                          <DepBadge risk={ALT_RISK[s.alternatives]}>{L(ALT_LABEL[s.alternatives])}</DepBadge>
-                        </TableCell>
-                        <TableCell>
-                          <DepBadge risk={SUB_RISK[s.substitution_time]}>{L(SUB_LABEL[s.substitution_time])}</DepBadge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={s.exit_strategy === "validado" ? "default" : s.exit_strategy === "nao_testado" ? "secondary" : "destructive"}>
-                            {L(EXIT_LABEL[s.exit_strategy])}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          <span className={cn(isGcnExpired(s) && "text-destructive font-medium")}>
-                            {s.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" })}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <Button variant="ghost" size="icon" onClick={() => setDetail(s)}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {grouped.map((g) => {
+                      const open = expanded[g.key] ?? true;
+                      const types = Array.from(new Set(g.contracts.map((c) => c.supplier_type).filter(Boolean)));
+                      return (
+                        <React.Fragment key={g.key}>
+                          <TableRow className="bg-muted/40 hover:bg-muted/60 cursor-pointer" onClick={() => setExpanded((p) => ({ ...p, [g.key]: !open }))}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                                <div>
+                                  <p className="font-semibold">{g.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {g.contracts.length} {g.contracts.length === 1 ? L({ pt: "contrato", en: "contract" }) : L({ pt: "contratos", en: "contracts" })}
+                                  </p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{types.join(", ") || "—"}</TableCell>
+                            <TableCell colSpan={9} />
+                          </TableRow>
+                          {open && g.contracts.map((s) => (
+                            <TableRow key={s.id}>
+                              <TableCell className="pl-10">
+                                <p className="font-medium text-sm">↳ {s.contract_name || s.name}</p>
+                                {s.subcontractors && <p className="text-xs text-muted-foreground">{s.subcontractors}</p>}
+                                {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
+                              </TableCell>
+                              <TableCell className="text-xs">{s.supplier_type || "—"}</TableCell>
+                              <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
+                              <TableCell>
+                                <Badge className={cn(s.supplier_rto_compliant === false ? "bg-destructive text-destructive-foreground" : s.supplier_rto_compliant === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
+                                  {s.supplier_rto_compliant == null
+                                    ? "—"
+                                    : s.supplier_rto_compliant
+                                      ? L({ pt: "Conforme", en: "Compliant" })
+                                      : `${L({ pt: "Não conforme", en: "Non-compliant" })} ⚠`}
+                                </Badge>
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  {L({ pt: "Processo", en: "Process" })}: {drLabel(s.dr_type_id)}
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                {s.service_type
+                                  ? <Badge variant={s.service_type === "core" ? "default" : "secondary"}>{L(SERVICE_TYPE_LABEL[s.service_type])}</Badge>
+                                  : <span className="text-xs text-muted-foreground">—</span>}
+                              </TableCell>
+                              <TableCell>
+                                <DepBadge risk={ESS_RISK[s.essentiality]}>{L(ESS_LABEL[s.essentiality])}</DepBadge>
+                              </TableCell>
+                              <TableCell>
+                                <DepBadge risk={ALT_RISK[s.alternatives]}>{L(ALT_LABEL[s.alternatives])}</DepBadge>
+                              </TableCell>
+                              <TableCell>
+                                <DepBadge risk={SUB_RISK[s.substitution_time]}>{L(SUB_LABEL[s.substitution_time])}</DepBadge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={s.exit_strategy === "validado" ? "default" : s.exit_strategy === "nao_testado" ? "secondary" : "destructive"}>
+                                  {L(EXIT_LABEL[s.exit_strategy])}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <span className={cn(isGcnExpired(s) && "text-destructive font-medium")}>
+                                  {s.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" })}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right whitespace-nowrap">
+                                <Button variant="ghost" size="icon" onClick={() => setDetail(s)}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
                   </TableBody>
                 </Table>
+
               </div>
             </CardContent>
           </Card>
@@ -572,14 +636,26 @@ const SuppliersSection: React.FC = () => {
                     </SelectContent>
                   </Select>
                 )}
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value, catalog_id: null })}
+                  placeholder={L({ pt: "Nome do fornecedor", en: "Supplier name" })}
+                />
+              </div>
+              <div>
+                <Label>{L({ pt: "Nome do Contrato", en: "Contract name" })}</Label>
+                <Input
+                  value={form.contract_name ?? ""}
+                  onChange={(e) => setForm({ ...form, contract_name: e.target.value })}
+                  placeholder={L({ pt: "Ex.: Contrato 1", en: "e.g. Contract 1" })}
+                />
               </div>
               <div>
                 <Label>{L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" })}</Label>
                 <Input value={form.subcontractors ?? ""} onChange={(e) => setForm({ ...form, subcontractors: e.target.value })} />
               </div>
               <div>
-                <Label>{L({ pt: "Área Crítica", en: "Critical Area" })}</Label>
+                <Label>{L({ pt: "Processo Crítico", en: "Critical Process" })}</Label>
                 <Input value={form.critical_area ?? ""} onChange={(e) => setForm({ ...form, critical_area: e.target.value })} />
               </div>
               <div>
@@ -591,6 +667,16 @@ const SuppliersSection: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>{L({ pt: "Tipo de Serviço", en: "Service type" })}</Label>
+                <Select value={form.service_type ?? ""} onValueChange={(v) => setForm({ ...form, service_type: v })}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_TYPES.map((t) => <SelectItem key={t} value={t}>{L(SERVICE_TYPE_LABEL[t])}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div>
                 <Label>{L({ pt: "Departamento responsável", en: "Responsible department" })}</Label>
                 <Select value={form.department_id ?? ""} onValueChange={(v) => setForm({ ...form, department_id: v })}>
@@ -703,7 +789,7 @@ const SuppliersSection: React.FC = () => {
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-2xl w-[calc(100%-2rem)] max-h-[90dvh] flex flex-col">
           <DialogHeader className="shrink-0">
-            <DialogTitle>{detail?.name}</DialogTitle>
+            <DialogTitle>{detail ? `${detail.name}${detail.contract_name && detail.contract_name !== detail.name ? ` · ${detail.contract_name}` : ""}` : ""}</DialogTitle>
           </DialogHeader>
           {detail && (
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3 text-sm pr-2">
@@ -713,13 +799,16 @@ const SuppliersSection: React.FC = () => {
                 {isGcnExpired(detail) && <Badge variant="secondary">{L({ pt: "GCN expirado", en: "BCM expired" })}</Badge>}
               </div>
               {[
+                [L({ pt: "Contrato", en: "Contract" }), detail.contract_name || "—"],
                 [L({ pt: "Subcontratados (4ª parte)", en: "Subcontractors (4th party)" }), detail.subcontractors || "—"],
-                [L({ pt: "Área Crítica", en: "Critical Area" }), detail.critical_area || "—"],
+                [L({ pt: "Processo Crítico", en: "Critical Process" }), detail.critical_area || "—"],
                 [L({ pt: "Tipo de Fornecedor", en: "Supplier type" }), detail.supplier_type || "—"],
+                [L({ pt: "Tipo de Serviço", en: "Service type" }), detail.service_type ? L(SERVICE_TYPE_LABEL[detail.service_type]) : "—"],
                 [L({ pt: "Funções", en: "Functions" }), funcoesOf(detail.id).join(", ") || "—"],
                 
                 [L({ pt: "RTO Fornecedor", en: "Supplier RTO" }), detail.supplier_rto_compliant == null ? "—" : detail.supplier_rto_compliant ? L({ pt: "Conforme", en: "Compliant" }) : L({ pt: "Não conforme", en: "Non-compliant" })],
                 [L({ pt: "RTO Processo (Tipo de DR)", en: "Process RTO (DR type)" }), drOf(detail.dr_type_id) ? `${drOf(detail.dr_type_id)!.code} — ${drOf(detail.dr_type_id)!.label} (${drOf(detail.dr_type_id)!.rto}h)` : "—"],
+
 
                 [L({ pt: "Essencialidade", en: "Essentiality" }), L(ESS_LABEL[detail.essentiality])],
                 [L({ pt: "Alternativas Viáveis", en: "Viable alternatives" }), L(ALT_LABEL[detail.alternatives])],
