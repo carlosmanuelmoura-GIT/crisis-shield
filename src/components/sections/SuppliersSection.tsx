@@ -415,10 +415,11 @@ const SuppliersSection: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{L({ pt: "Fornecedor & Subcontratados", en: "Supplier & subcontractors" })}</TableHead>
-                      <TableHead>{L({ pt: "Função", en: "Function" })}</TableHead>
-                      
+                      <TableHead className="min-w-[220px]">{L({ pt: "Fornecedor & Contratos", en: "Supplier & contracts" })}</TableHead>
+                      <TableHead>{L({ pt: "Tipo de Fornecedor", en: "Supplier type" })}</TableHead>
+                      <TableHead>{L({ pt: "Funções", en: "Functions" })}</TableHead>
                       <TableHead>{L({ pt: "RTO Fornecedor", en: "Supplier RTO" })}</TableHead>
+                      <TableHead>{L({ pt: "Tipo de Serviço", en: "Service type" })}</TableHead>
                       <TableHead>{L({ pt: "Essencialidade", en: "Essentiality" })}</TableHead>
                       <TableHead>{L({ pt: "Alternativas Viáveis", en: "Viable alternatives" })}</TableHead>
                       <TableHead>{L({ pt: "Tempo de Substituição", en: "Substitution time" })}</TableHead>
@@ -429,63 +430,90 @@ const SuppliersSection: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {isLoading && (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">…</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">…</TableCell></TableRow>
                     )}
-                    {!isLoading && filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    {!isLoading && grouped.length === 0 && (
+                      <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                         {L({ pt: "Sem fornecedores.", en: "No suppliers." })}
                       </TableCell></TableRow>
                     )}
-                    {filtered.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell>
-                          <p className="font-medium">{s.name}</p>
-                          {s.subcontractors && <p className="text-xs text-muted-foreground">{s.subcontractors}</p>}
-                          {s.supplier_type && <p className="text-xs text-muted-foreground">{s.supplier_type}</p>}
-                          {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
-                        </TableCell>
-                        <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
-                        
-                        <TableCell>
-                          <Badge className={cn(s.supplier_rto_compliant === false ? "bg-destructive text-destructive-foreground" : s.supplier_rto_compliant === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
-                            {s.supplier_rto_compliant == null
-                              ? "—"
-                              : s.supplier_rto_compliant
-                                ? L({ pt: "Conforme", en: "Compliant" })
-                                : `${L({ pt: "Não conforme", en: "Non-compliant" })} ⚠`}
-                          </Badge>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            {L({ pt: "Processo", en: "Process" })}: {drLabel(s.dr_type_id)}
-                          </p>
-                        </TableCell>
-
-                        <TableCell>
-                          <DepBadge risk={ESS_RISK[s.essentiality]}>{L(ESS_LABEL[s.essentiality])}</DepBadge>
-                        </TableCell>
-                        <TableCell>
-                          <DepBadge risk={ALT_RISK[s.alternatives]}>{L(ALT_LABEL[s.alternatives])}</DepBadge>
-                        </TableCell>
-                        <TableCell>
-                          <DepBadge risk={SUB_RISK[s.substitution_time]}>{L(SUB_LABEL[s.substitution_time])}</DepBadge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={s.exit_strategy === "validado" ? "default" : s.exit_strategy === "nao_testado" ? "secondary" : "destructive"}>
-                            {L(EXIT_LABEL[s.exit_strategy])}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-xs">
-                          <span className={cn(isGcnExpired(s) && "text-destructive font-medium")}>
-                            {s.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" })}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <Button variant="ghost" size="icon" onClick={() => setDetail(s)}><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {grouped.map((g) => {
+                      const open = expanded[g.key] ?? true;
+                      const types = Array.from(new Set(g.contracts.map((c) => c.supplier_type).filter(Boolean)));
+                      return (
+                        <React.Fragment key={g.key}>
+                          <TableRow className="bg-muted/40 hover:bg-muted/60 cursor-pointer" onClick={() => setExpanded((p) => ({ ...p, [g.key]: !open }))}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                                <div>
+                                  <p className="font-semibold">{g.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {g.contracts.length} {g.contracts.length === 1 ? L({ pt: "contrato", en: "contract" }) : L({ pt: "contratos", en: "contracts" })}
+                                  </p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{types.join(", ") || "—"}</TableCell>
+                            <TableCell colSpan={9} />
+                          </TableRow>
+                          {open && g.contracts.map((s) => (
+                            <TableRow key={s.id}>
+                              <TableCell className="pl-10">
+                                <p className="font-medium text-sm">↳ {s.contract_name || s.name}</p>
+                                {s.subcontractors && <p className="text-xs text-muted-foreground">{s.subcontractors}</p>}
+                                {s.critical_area && <p className="text-xs text-muted-foreground italic">{s.critical_area}</p>}
+                              </TableCell>
+                              <TableCell className="text-xs">{s.supplier_type || "—"}</TableCell>
+                              <TableCell className="text-xs">{funcoesOf(s.id).join(", ") || "—"}</TableCell>
+                              <TableCell>
+                                <Badge className={cn(s.supplier_rto_compliant === false ? "bg-destructive text-destructive-foreground" : s.supplier_rto_compliant === true ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground")}>
+                                  {s.supplier_rto_compliant == null
+                                    ? "—"
+                                    : s.supplier_rto_compliant
+                                      ? L({ pt: "Conforme", en: "Compliant" })
+                                      : `${L({ pt: "Não conforme", en: "Non-compliant" })} ⚠`}
+                                </Badge>
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  {L({ pt: "Processo", en: "Process" })}: {drLabel(s.dr_type_id)}
+                                </p>
+                              </TableCell>
+                              <TableCell>
+                                {s.service_type
+                                  ? <Badge variant={s.service_type === "core" ? "default" : "secondary"}>{L(SERVICE_TYPE_LABEL[s.service_type])}</Badge>
+                                  : <span className="text-xs text-muted-foreground">—</span>}
+                              </TableCell>
+                              <TableCell>
+                                <DepBadge risk={ESS_RISK[s.essentiality]}>{L(ESS_LABEL[s.essentiality])}</DepBadge>
+                              </TableCell>
+                              <TableCell>
+                                <DepBadge risk={ALT_RISK[s.alternatives]}>{L(ALT_LABEL[s.alternatives])}</DepBadge>
+                              </TableCell>
+                              <TableCell>
+                                <DepBadge risk={SUB_RISK[s.substitution_time]}>{L(SUB_LABEL[s.substitution_time])}</DepBadge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={s.exit_strategy === "validado" ? "default" : s.exit_strategy === "nao_testado" ? "secondary" : "destructive"}>
+                                  {L(EXIT_LABEL[s.exit_strategy])}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                <span className={cn(isGcnExpired(s) && "text-destructive font-medium")}>
+                                  {s.last_gcn_test ?? L({ pt: "Sem teste", en: "No test" })}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right whitespace-nowrap">
+                                <Button variant="ghost" size="icon" onClick={() => setDetail(s)}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => openEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
                   </TableBody>
                 </Table>
+
               </div>
             </CardContent>
           </Card>
