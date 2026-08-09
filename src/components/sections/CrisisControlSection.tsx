@@ -1066,6 +1066,47 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                     </div>
                   )}
 
+                  {isDeclarationPhase && isRealCrisis && isSteering && (
+                    <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex-1 text-xs text-muted-foreground">
+                        {lang === "pt"
+                          ? "Pausa Estratégica: suspende temporariamente as operações durante a crise."
+                          : "Strategic Pause: temporarily suspends operations during the crisis."}
+                      </div>
+                      <Button
+                        variant={pauseActive ? "outline" : "default"}
+                        className={pauseActive ? "" : "bg-amber-500 hover:bg-amber-600 text-white"}
+                        onClick={() => handleToggleStrategicPause(true)}
+                        disabled={pauseActive || updateCrisis.isPending}
+                      >
+                        <PauseCircle className="h-4 w-4 mr-2" />
+                        {pauseActive
+                          ? (lang === "pt" ? "PAUSA ESTRATÉGICA ATIVA" : "STRATEGIC PAUSE ACTIVE")
+                          : (lang === "pt" ? "ATIVAR PAUSA ESTRATÉGICA" : "ACTIVATE STRATEGIC PAUSE")}
+                      </Button>
+                    </div>
+                  )}
+
+                  {phase.id === "retorno-fim" && isRealCrisis && isSteering && (
+                    <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                      <div className="flex-1 text-xs text-muted-foreground">
+                        {pauseActive
+                          ? (lang === "pt" ? "Pausa Estratégica ativa — pode ser desligada no fim do retorno." : "Strategic Pause active — can be turned off at the end of the return.")
+                          : (lang === "pt" ? "Sem Pausa Estratégica ativa." : "No active Strategic Pause.")}
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => handleToggleStrategicPause(false)}
+                        disabled={!pauseActive || updateCrisis.isPending}
+                      >
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        {lang === "pt" ? "DESLIGAR PAUSA ESTRATÉGICA" : "TURN OFF STRATEGIC PAUSE"}
+                      </Button>
+                    </div>
+                  )}
+
+
+
                   {isEndPhase && (
                     <div className="border-t border-border pt-4 flex flex-col sm:flex-row sm:items-end gap-3">
                       <div className="flex-1">
