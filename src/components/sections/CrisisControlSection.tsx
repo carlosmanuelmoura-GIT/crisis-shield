@@ -24,6 +24,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle, Plus, Trash2, Shield, Loader2,
   CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter, ChevronDown, ChevronUp,
+  PauseCircle, PlayCircle,
 } from "lucide-react";
 
 
