@@ -469,7 +469,7 @@ const SuppliersSection: React.FC = () => {
                       </TableCell></TableRow>
                     )}
                     {grouped.map((g) => {
-                      const open = expanded[g.key] ?? true;
+                      const open = expanded[g.key] ?? false;
                       const types = Array.from(new Set(g.contracts.map((c) => c.supplier_type).filter(Boolean)));
                       return (
                         <React.Fragment key={g.key}>
