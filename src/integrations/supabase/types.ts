@@ -553,6 +553,9 @@ export type Database = {
           id: string
           owner_id: string | null
           status: Database["public"]["Enums"]["crisis_status"]
+          strategic_pause: boolean
+          strategic_pause_at: string | null
+          strategic_pause_by: string
           title: string
           updated_at: string
         }
@@ -566,6 +569,9 @@ export type Database = {
           id?: string
           owner_id?: string | null
           status?: Database["public"]["Enums"]["crisis_status"]
+          strategic_pause?: boolean
+          strategic_pause_at?: string | null
+          strategic_pause_by?: string
           title: string
           updated_at?: string
         }
@@ -579,6 +585,9 @@ export type Database = {
           id?: string
           owner_id?: string | null
           status?: Database["public"]["Enums"]["crisis_status"]
+          strategic_pause?: boolean
+          strategic_pause_at?: string | null
+          strategic_pause_by?: string
           title?: string
           updated_at?: string
         }
