@@ -906,6 +906,23 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
         </>
       )}
 
+      {isRealCrisis && pauseActive && (
+        <div className="flex items-center gap-2 rounded-md border-2 border-amber-500 bg-amber-500/10 px-3 py-2 text-sm">
+          <PauseCircle className="h-5 w-5 text-amber-600 shrink-0" />
+          <span className="font-bold tracking-wide text-amber-700">
+            {lang === "pt" ? "PAUSA ESTRATÉGICA ATIVA" : "STRATEGIC PAUSE ACTIVE"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {(crisis as any).strategic_pause_by ? `· ${(crisis as any).strategic_pause_by}` : ""}
+            {(crisis as any).strategic_pause_at
+              ? ` · ${new Date((crisis as any).strategic_pause_at).toLocaleString(lang === "pt" ? "pt-PT" : "en-GB")}`
+              : ""}
+          </span>
+        </div>
+      )}
+
+
+
       {/* Status control */}
       {isSteering && (
         <div className="flex items-center gap-2 flex-wrap">
