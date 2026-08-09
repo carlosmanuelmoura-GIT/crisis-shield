@@ -760,6 +760,34 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     }
   };
 
+  const isRealCrisis = crisis.crisis_type !== "template";
+  const pauseActive = !!(crisis as any).strategic_pause;
+
+  const handleToggleStrategicPause = async (activate: boolean) => {
+    const by = (activate ? declaredBy.trim() : endedBy.trim()) || "Sistema";
+    const at = new Date().toISOString();
+    try {
+      await updateCrisis.mutateAsync({
+        id: crisis.id,
+        strategic_pause: activate,
+        strategic_pause_by: activate ? by : "",
+        strategic_pause_at: activate ? at : null,
+      });
+      await qc.refetchQueries({ queryKey: ["crises"] });
+      logDecision.mutate({
+        title: activate ? "⏸️ Pausa Estratégica ativada" : "▶️ Pausa Estratégica desligada",
+        text: activate
+          ? `⏸️ Pausa Estratégica ativada por ${by}: ${crisis.title}`
+          : `▶️ Pausa Estratégica desligada por ${by}: ${crisis.title}`,
+        author: by,
+        crisis_id: crisis.id,
+      });
+      toast.success(activate ? "Pausa Estratégica ativada" : "Pausa Estratégica desligada");
+    } catch (e: any) {
+      toast.error(`Erro na Pausa Estratégica: ${e?.message ?? e}`);
+    }
+  };
+
 
   const getPhaseProgress = (phaseId: string) => {
     const list = phaseActions.filter((a) => a.phase_id === phaseId);
