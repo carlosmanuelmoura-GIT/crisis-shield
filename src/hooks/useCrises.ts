@@ -13,6 +13,9 @@ export interface DBCrisis {
   cloned_from_id: string | null;
   declared_by: string;
   ended_by: string;
+  strategic_pause: boolean;
+  strategic_pause_by: string;
+  strategic_pause_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -148,6 +151,9 @@ export function useUpdateCrisis() {
       crisis_date?: string;
       declared_by?: string;
       ended_by?: string;
+      strategic_pause?: boolean;
+      strategic_pause_by?: string;
+      strategic_pause_at?: string | null;
     }) => {
       const { error } = await supabase.from("crises").update(data as any).eq("id", id);
       if (error) throw error;
