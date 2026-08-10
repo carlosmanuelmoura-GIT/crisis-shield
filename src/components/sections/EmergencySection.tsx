@@ -114,8 +114,9 @@ const EmergencySection: React.FC = () => {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
   const [filterDR, setFilterDR] = useState<string>("all");
+  const [filterPause, setFilterPause] = useState<string>("all");
 
-  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all";
+  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all" || filterPause !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
@@ -125,9 +126,11 @@ const EmergencySection: React.FC = () => {
       if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
       if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
       if (filterDR !== "all" && ((c as any).dr_type_id || "__none") !== filterDR) return false;
+      if (filterPause === "yes" && !(c as any).strategic_pause) return false;
+      if (filterPause === "no" && !!(c as any).strategic_pause) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR]);
+  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR, filterPause]);
 
   // Group cards: primary by Cenário, secondary by Recurso (used by both views)
   const groupedByCenario = useMemo(() => {
