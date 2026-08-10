@@ -15,6 +15,9 @@ export interface DBActionCard {
   cenario_id: string | null;
   department_id: string | null;
   dr_type_id: string | null;
+  strategic_pause: boolean;
+  golden_rule: string;
+  activation_authority: string;
   created_at: string;
   updated_at: string;
 }
@@ -122,7 +125,7 @@ export function useCreateActionCard() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string }) => {
+    mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string; strategic_pause?: boolean; golden_rule?: string; activation_authority?: string }) => {
       const { error } = await supabase.from("action_cards").insert({
         title_pt: data.title_pt,
         title_en: data.title_en,
@@ -134,6 +137,9 @@ export function useCreateActionCard() {
         cenario_id: data.cenario_id || null,
         department_id: data.department_id || null,
         dr_type_id: data.dr_type_id || null,
+        strategic_pause: data.strategic_pause ?? false,
+        golden_rule: data.golden_rule || '',
+        activation_authority: data.activation_authority || '',
         owner_id: user?.id,
       } as any);
       if (error) throw error;
@@ -146,19 +152,22 @@ export function useUpdateActionCard() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string }) => {
-      const { error } = await supabase.from("action_cards").update({
-        title_pt: data.title_pt,
-        title_en: data.title_en,
-        severity: data.severity,
-        capability: data.capability || null,
-        funcao: data.funcao || '',
-        macro_processo: data.macro_processo || '',
-        recurso_id: data.recurso_id || null,
-        cenario_id: data.cenario_id || null,
-        department_id: data.department_id || null,
-        dr_type_id: data.dr_type_id || null,
-      } as any).eq("id", id);
+    mutationFn: async ({ id, ...data }: { id: string; title_pt?: string; title_en?: string; severity?: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string; strategic_pause?: boolean; golden_rule?: string; activation_authority?: string }) => {
+      const payload: Record<string, any> = {};
+      if (data.title_pt !== undefined) payload.title_pt = data.title_pt;
+      if (data.title_en !== undefined) payload.title_en = data.title_en;
+      if (data.severity !== undefined) payload.severity = data.severity;
+      if ("capability" in data) payload.capability = data.capability || null;
+      if (data.funcao !== undefined) payload.funcao = data.funcao;
+      if (data.macro_processo !== undefined) payload.macro_processo = data.macro_processo;
+      if ("recurso_id" in data) payload.recurso_id = data.recurso_id || null;
+      if ("cenario_id" in data) payload.cenario_id = data.cenario_id || null;
+      if ("department_id" in data) payload.department_id = data.department_id || null;
+      if ("dr_type_id" in data) payload.dr_type_id = data.dr_type_id || null;
+      if (data.strategic_pause !== undefined) payload.strategic_pause = data.strategic_pause;
+      if (data.golden_rule !== undefined) payload.golden_rule = data.golden_rule;
+      if (data.activation_authority !== undefined) payload.activation_authority = data.activation_authority;
+      const { error } = await supabase.from("action_cards").update(payload as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["action_cards"] }),

@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
-  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown,
+  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown, PauseCircle, PlayCircle,
 } from "lucide-react";
 import { generateDeptActionCardsPDF } from "@/lib/generateDeptActionCardsPDF";
 
@@ -90,7 +90,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState<string>("");
@@ -114,8 +114,9 @@ const EmergencySection: React.FC = () => {
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
   const [filterRecurso, setFilterRecurso] = useState<string>("all");
   const [filterDR, setFilterDR] = useState<string>("all");
+  const [filterPause, setFilterPause] = useState<string>("all");
 
-  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all";
+  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all" || filterPause !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
@@ -125,9 +126,11 @@ const EmergencySection: React.FC = () => {
       if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
       if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
       if (filterDR !== "all" && ((c as any).dr_type_id || "__none") !== filterDR) return false;
+      if (filterPause === "yes" && !(c as any).strategic_pause) return false;
+      if (filterPause === "no" && !!(c as any).strategic_pause) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR]);
+  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR, filterPause]);
 
   // Group cards: primary by Cenário, secondary by Recurso (used by both views)
   const groupedByCenario = useMemo(() => {
@@ -213,7 +216,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
     setDialogOpen(true);
   };
 
@@ -226,6 +229,8 @@ const EmergencySection: React.FC = () => {
       cenario_id: card.cenario_id || "",
       department_id: card.department_id || "",
       dr_type_id: (card as any).dr_type_id || "",
+      golden_rule: (card as any).golden_rule || "",
+      activation_authority: (card as any).activation_authority || "",
     });
     setDialogOpen(true);
   };
@@ -391,7 +396,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all");
+    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all"); setFilterPause("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
@@ -477,10 +482,12 @@ const EmergencySection: React.FC = () => {
               const deptCards = cards.filter(c => (c as any).department_id === filterDepartment);
               generateDeptActionCardsPDF({
                 departmentName: dept.name,
+                departmentCode: (dept as any).code || undefined,
                 cards: deptCards as any,
                 items: allItems as any,
                 cenarios: cenarios as any,
                 recursos: recursos as any,
+                drTypes: drTypes as any,
               });
             }}
           >
@@ -517,7 +524,7 @@ const EmergencySection: React.FC = () => {
               <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={resetFilters}>{lang === "pt" ? "Limpar" : "Clear"}</Button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
               <Select value={filterCenario} onValueChange={setFilterCenario}>
@@ -556,6 +563,17 @@ const EmergencySection: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
                   {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}</Label>
+              <Select value={filterPause} onValueChange={setFilterPause}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  <SelectItem value="yes">{lang === "pt" ? "Com Pausa Estratégica" : "With Strategic Pause"}</SelectItem>
+                  <SelectItem value="no">{lang === "pt" ? "Sem Pausa Estratégica" : "Without Strategic Pause"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -686,6 +704,11 @@ const EmergencySection: React.FC = () => {
                                     {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
                                   </Badge>
                                 )}
+                                {(card as any).strategic_pause && (
+                                  <Badge variant="outline" className="text-[10px] font-normal bg-amber-400/20 text-amber-700 border-amber-400">
+                                    <PauseCircle className="h-2.5 w-2.5 mr-1" />{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1 bg-secondary rounded-full">
@@ -814,6 +837,11 @@ const EmergencySection: React.FC = () => {
                                           {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
                                         </Badge>
                                       )}
+                                      {(card as any).strategic_pause && (
+                                        <Badge variant="outline" className="text-[10px] font-normal bg-amber-400/20 text-amber-700 border-amber-400">
+                                          <PauseCircle className="h-2.5 w-2.5 mr-1" />{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}
+                                        </Badge>
+                                      )}
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <div className="flex-1 h-1 bg-secondary rounded-full">
@@ -841,7 +869,7 @@ const EmergencySection: React.FC = () => {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingCard ? (lang === "pt" ? "Editar Action Card" : "Edit Action Card") : (lang === "pt" ? "Novo Action Card" : "New Action Card")}
@@ -914,6 +942,25 @@ const EmergencySection: React.FC = () => {
                   {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Regra de Ouro / Heurística" : "Golden Rule / Heuristic"}</Label>
+              <Textarea
+                rows={3}
+                value={form.golden_rule}
+                onChange={(e) => setForm(f => ({ ...f, golden_rule: e.target.value }))}
+                className="bg-secondary border-border"
+                placeholder={lang === "pt" ? "Ex.: Na dúvida sobre a integridade dos dados, travar a replicação automática..." : "e.g. When in doubt about data integrity, stop automatic replication..."}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Identificação da Autoridade de Ativação" : "Activation Authority"}</Label>
+              <Input
+                value={form.activation_authority}
+                onChange={(e) => setForm(f => ({ ...f, activation_authority: e.target.value }))}
+                className="bg-secondary border-border"
+                placeholder={lang === "pt" ? "Ex.: Coordenador DPG / Turno" : "e.g. DPG Coordinator / Shift"}
+              />
             </div>
             <Button onClick={handleSave} disabled={!form.title_pt || createCard.isPending || updateCard.isPending} className="w-full">
               {(createCard.isPending || updateCard.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -1135,6 +1182,11 @@ const EmergencySection: React.FC = () => {
                       <Badge className={`text-[10px] uppercase tracking-wide ${sevChip} hover:${sevChip}`}>
                         {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                       </Badge>
+                      {(card as any).strategic_pause && (
+                        <Badge className="text-[10px] uppercase tracking-wide bg-amber-400 text-slate-900 hover:bg-amber-400">
+                          <PauseCircle className="h-3 w-3 mr-1" />{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
@@ -1153,6 +1205,27 @@ const EmergencySection: React.FC = () => {
                     </Button>
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
                       <Plus className="h-3 w-3 mr-1" />BIA
+                    </Button>
+                    <Button
+                      size="sm"
+                      className={`h-7 text-xs ${(card as any).strategic_pause ? "bg-amber-400 text-slate-900 hover:bg-amber-500" : "bg-white/10 text-slate-100 hover:bg-white/20"}`}
+                      disabled={updateCard.isPending}
+                      onClick={async () => {
+                        const next = !(card as any).strategic_pause;
+                        try {
+                          await updateCard.mutateAsync({ id: card.id, strategic_pause: next });
+                          toast({ title: next
+                            ? (lang === "pt" ? "Cartão associado a Pausa Estratégica" : "Card linked to Strategic Pause")
+                            : (lang === "pt" ? "Associação removida" : "Association removed") });
+                        } catch (err: any) {
+                          toast({ title: "Erro", description: err.message, variant: "destructive" });
+                        }
+                      }}
+                    >
+                      {(card as any).strategic_pause ? <PauseCircle className="h-3 w-3 mr-1" /> : <PlayCircle className="h-3 w-3 mr-1" />}
+                      {(card as any).strategic_pause
+                        ? (lang === "pt" ? "Com Pausa Estratégica" : "With Strategic Pause")
+                        : (lang === "pt" ? "Sem Pausa Estratégica" : "No Strategic Pause")}
                     </Button>
                     <Button size="sm" variant="destructive" className="h-7 text-xs ml-auto" onClick={() => { handleDelete(card.id); setSelectedCardId(null); }}>
                       <Trash2 className="h-3 w-3 mr-1" />{lang === "pt" ? "Eliminar" : "Delete"}
@@ -1215,6 +1288,26 @@ const EmergencySection: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    {/* Regra de Ouro / Autoridade de Ativação */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">
+                          {lang === "pt" ? "Regra de Ouro / Heurística" : "Golden Rule / Heuristic"}
+                        </p>
+                        <p className="text-sm text-amber-900 whitespace-pre-wrap">
+                          {(card as any).golden_rule?.trim() || (lang === "pt" ? "— Não definida —" : "— Not defined —")}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 bg-white p-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                          {lang === "pt" ? "Autoridade de Ativação" : "Activation Authority"}
+                        </p>
+                        <p className="text-sm font-bold text-slate-900 uppercase">
+                          {(card as any).activation_authority?.trim() || "—"}
+                        </p>
+                      </div>
+                    </div>
 
                     {/* Checklist */}
                     <div>
