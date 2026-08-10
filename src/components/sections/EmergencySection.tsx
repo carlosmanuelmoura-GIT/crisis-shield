@@ -1172,6 +1172,11 @@ const EmergencySection: React.FC = () => {
                       <Badge className={`text-[10px] uppercase tracking-wide ${sevChip} hover:${sevChip}`}>
                         {severity ? (lang === "pt" ? severity.pt : severity.en) : card.severity}
                       </Badge>
+                      {(card as any).strategic_pause && (
+                        <Badge className="text-[10px] uppercase tracking-wide bg-amber-400 text-slate-900 hover:bg-amber-400">
+                          <PauseCircle className="h-3 w-3 mr-1" />{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
