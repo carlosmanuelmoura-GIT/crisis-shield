@@ -704,6 +704,11 @@ const EmergencySection: React.FC = () => {
                                     {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
                                   </Badge>
                                 )}
+                                {(card as any).strategic_pause && (
+                                  <Badge variant="outline" className="text-[10px] font-normal bg-amber-400/20 text-amber-700 border-amber-400">
+                                    <PauseCircle className="h-2.5 w-2.5 mr-1" />{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}
+                                  </Badge>
+                                )}
                               </div>
                               <div className="flex items-center gap-2 mt-2">
                                 <div className="flex-1 h-1 bg-secondary rounded-full">
