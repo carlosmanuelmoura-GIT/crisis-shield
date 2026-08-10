@@ -1,5 +1,5 @@
 import fs from "fs";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 (jsPDF as any).prototype.save = function (name: string) {
   const buf = Buffer.from(this.output("arraybuffer"));
   fs.writeFileSync("/tmp/pdfqa/out.pdf", buf);
