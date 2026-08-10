@@ -933,6 +933,25 @@ const EmergencySection: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Regra de Ouro / Heurística" : "Golden Rule / Heuristic"}</Label>
+              <Textarea
+                rows={3}
+                value={form.golden_rule}
+                onChange={(e) => setForm(f => ({ ...f, golden_rule: e.target.value }))}
+                className="bg-secondary border-border"
+                placeholder={lang === "pt" ? "Ex.: Na dúvida sobre a integridade dos dados, travar a replicação automática..." : "e.g. When in doubt about data integrity, stop automatic replication..."}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">{lang === "pt" ? "Identificação da Autoridade de Ativação" : "Activation Authority"}</Label>
+              <Input
+                value={form.activation_authority}
+                onChange={(e) => setForm(f => ({ ...f, activation_authority: e.target.value }))}
+                className="bg-secondary border-border"
+                placeholder={lang === "pt" ? "Ex.: Coordenador DPG / Turno" : "e.g. DPG Coordinator / Shift"}
+              />
+            </div>
             <Button onClick={handleSave} disabled={!form.title_pt || createCard.isPending || updateCard.isPending} className="w-full">
               {(createCard.isPending || updateCard.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {lang === "pt" ? "Guardar" : "Save"}
