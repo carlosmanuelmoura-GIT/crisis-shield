@@ -1196,6 +1196,27 @@ const EmergencySection: React.FC = () => {
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => { setLinkBiaDialogCard(card.id); setBiaToLink(""); }}>
                       <Plus className="h-3 w-3 mr-1" />BIA
                     </Button>
+                    <Button
+                      size="sm"
+                      className={`h-7 text-xs ${(card as any).strategic_pause ? "bg-amber-400 text-slate-900 hover:bg-amber-500" : "bg-white/10 text-slate-100 hover:bg-white/20"}`}
+                      disabled={updateCard.isPending}
+                      onClick={async () => {
+                        const next = !(card as any).strategic_pause;
+                        try {
+                          await updateCard.mutateAsync({ id: card.id, strategic_pause: next });
+                          toast({ title: next
+                            ? (lang === "pt" ? "Cartão associado a Pausa Estratégica" : "Card linked to Strategic Pause")
+                            : (lang === "pt" ? "Associação removida" : "Association removed") });
+                        } catch (err: any) {
+                          toast({ title: "Erro", description: err.message, variant: "destructive" });
+                        }
+                      }}
+                    >
+                      {(card as any).strategic_pause ? <PauseCircle className="h-3 w-3 mr-1" /> : <PlayCircle className="h-3 w-3 mr-1" />}
+                      {(card as any).strategic_pause
+                        ? (lang === "pt" ? "Com Pausa Estratégica" : "With Strategic Pause")
+                        : (lang === "pt" ? "Sem Pausa Estratégica" : "No Strategic Pause")}
+                    </Button>
                     <Button size="sm" variant="destructive" className="h-7 text-xs ml-auto" onClick={() => { handleDelete(card.id); setSelectedCardId(null); }}>
                       <Trash2 className="h-3 w-3 mr-1" />{lang === "pt" ? "Eliminar" : "Delete"}
                     </Button>
