@@ -1279,6 +1279,26 @@ const EmergencySection: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Regra de Ouro / Autoridade de Ativação */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 mb-1">
+                          {lang === "pt" ? "Regra de Ouro / Heurística" : "Golden Rule / Heuristic"}
+                        </p>
+                        <p className="text-sm text-amber-900 whitespace-pre-wrap">
+                          {(card as any).golden_rule?.trim() || (lang === "pt" ? "— Não definida —" : "— Not defined —")}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 bg-white p-3">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1">
+                          {lang === "pt" ? "Autoridade de Ativação" : "Activation Authority"}
+                        </p>
+                        <p className="text-sm font-bold text-slate-900 uppercase">
+                          {(card as any).activation_authority?.trim() || "—"}
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Checklist */}
                     <div>
                       <p className="text-xs font-black uppercase tracking-wider text-slate-900 mb-3">
