@@ -16,49 +16,58 @@ export type Database = {
     Tables: {
       action_cards: {
         Row: {
+          activation_authority: string
           capability: string | null
           cenario_id: string | null
           created_at: string
           department_id: string | null
           dr_type_id: string | null
           funcao: string
+          golden_rule: string
           id: string
           macro_processo: string
           owner_id: string | null
           recurso_id: string | null
           severity: string
+          strategic_pause: boolean
           title_en: string
           title_pt: string
           updated_at: string
         }
         Insert: {
+          activation_authority?: string
           capability?: string | null
           cenario_id?: string | null
           created_at?: string
           department_id?: string | null
           dr_type_id?: string | null
           funcao?: string
+          golden_rule?: string
           id?: string
           macro_processo?: string
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
+          strategic_pause?: boolean
           title_en?: string
           title_pt: string
           updated_at?: string
         }
         Update: {
+          activation_authority?: string
           capability?: string | null
           cenario_id?: string | null
           created_at?: string
           department_id?: string | null
           dr_type_id?: string | null
           funcao?: string
+          golden_rule?: string
           id?: string
           macro_processo?: string
           owner_id?: string | null
           recurso_id?: string | null
           severity?: string
+          strategic_pause?: boolean
           title_en?: string
           title_pt?: string
           updated_at?: string
