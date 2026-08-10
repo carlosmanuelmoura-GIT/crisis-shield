@@ -482,10 +482,12 @@ const EmergencySection: React.FC = () => {
               const deptCards = cards.filter(c => (c as any).department_id === filterDepartment);
               generateDeptActionCardsPDF({
                 departmentName: dept.name,
+                departmentCode: (dept as any).code || undefined,
                 cards: deptCards as any,
                 items: allItems as any,
                 cenarios: cenarios as any,
                 recursos: recursos as any,
+                drTypes: drTypes as any,
               });
             }}
           >
