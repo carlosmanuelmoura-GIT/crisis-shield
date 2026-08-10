@@ -1,3 +1,4 @@
+console.log("t start");
 import { generateDeptActionCardsPDF } from "./src/lib/generateDeptActionCardsPDF";
 const cards = [1,2,3,4].map(i => ({
   id: `abcd${i}0000-0000-0000-0000-000000000000`,
