@@ -5,4 +5,4 @@ import { jsPDF } from "jspdf";
   fs.writeFileSync("/tmp/pdfqa/out.pdf", buf);
   console.log("saved", name, buf.length);
 };
-import("./pdfqa_t.ts");
+await import("./pdfqa_t.ts");
