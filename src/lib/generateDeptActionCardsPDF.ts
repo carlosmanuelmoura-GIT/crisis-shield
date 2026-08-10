@@ -356,8 +356,6 @@ export function generateDeptActionCardsPDF(opts: {
     doc.setTextColor(...NAVY);
     doc.text((card.activation_authority || "—").toUpperCase(), x + 5 + doc.getTextWidth("AUTORIDADE:") + 2, fy);
     doc.setTextColor(...GREY);
-    const regLabel = "REGISTO: ";
-    doc.text(regLabel, pageW - 0, fy); // placeholder replaced below
     doc.setTextColor(...GREY);
     doc.text("REGISTO:", x + CARD_W - 5 - doc.getTextWidth("LOG DA CRISE") - 2, fy, { align: "right" });
     doc.setTextColor(...NAVY);
