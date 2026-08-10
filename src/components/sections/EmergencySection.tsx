@@ -564,6 +564,17 @@ const EmergencySection: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Pausa Estratégica" : "Strategic Pause"}</Label>
+              <Select value={filterPause} onValueChange={setFilterPause}>
+                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
+                  <SelectItem value="yes">{lang === "pt" ? "Com Pausa Estratégica" : "With Strategic Pause"}</SelectItem>
+                  <SelectItem value="no">{lang === "pt" ? "Sem Pausa Estratégica" : "Without Strategic Pause"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
