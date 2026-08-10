@@ -90,7 +90,7 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "" });
+  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState<string>("");
