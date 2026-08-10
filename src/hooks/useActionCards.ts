@@ -15,6 +15,9 @@ export interface DBActionCard {
   cenario_id: string | null;
   department_id: string | null;
   dr_type_id: string | null;
+  strategic_pause: boolean;
+  golden_rule: string;
+  activation_authority: string;
   created_at: string;
   updated_at: string;
 }
