@@ -213,7 +213,7 @@ const EmergencySection: React.FC = () => {
 
   const openCreate = (recursoId?: string) => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "" });
+    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
     setDialogOpen(true);
   };
 
@@ -226,6 +226,8 @@ const EmergencySection: React.FC = () => {
       cenario_id: card.cenario_id || "",
       department_id: card.department_id || "",
       dr_type_id: (card as any).dr_type_id || "",
+      golden_rule: (card as any).golden_rule || "",
+      activation_authority: (card as any).activation_authority || "",
     });
     setDialogOpen(true);
   };
