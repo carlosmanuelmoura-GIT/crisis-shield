@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, Filter, AlertTriangle,
   Plus, Pencil, Trash2, Copy, Loader2,
   Monitor, Home, UserCheck, Network, Zap, Package,
-  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown,
+  LayoutList, Columns3, GripVertical, ArrowUp, ArrowDown, FileDown, PauseCircle, PlayCircle,
 } from "lucide-react";
 import { generateDeptActionCardsPDF } from "@/lib/generateDeptActionCardsPDF";
 
