@@ -396,7 +396,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all");
+    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all"); setFilterPause("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
