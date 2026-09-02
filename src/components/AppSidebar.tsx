@@ -46,7 +46,7 @@ const operationalItems = [
 /* ── Operações GCN ── */
 const warRoomItems = [
 { id: "crisis-control", icon: Shield, label: { pt: "Controlo da Gestão de Crise", en: "Crisis Management Control" } },
-{ id: "procedures", icon: FileText, label: { pt: "Action Cards Gestão de Crise", en: "Crisis Action Cards" } },
+{ id: "procedures", icon: FileText, label: { pt: "Manual da Gestão de Crise", en: "Crisis Action Cards" } },
 { id: "emergency", icon: AlertTriangle, label: { pt: "Action Cards Departamentos", en: "Departmental Action Cards" } },
 { id: "autonomia-energetica", icon: Zap, label: { pt: "Autonomia Energética Edifícios", en: "Building Power Autonomy" } },
 { id: "log", icon: ClipboardList, label: { pt: "Log das Acções Gestão Crise", en: "Action Log" } },
