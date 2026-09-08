@@ -11,14 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, Pencil, Trash2, Copy, GripVertical,
+  Plus, Pencil, Trash2, Copy, GripVertical, Download,
   Wrench, AlertTriangle, CheckCircle2, User, Settings, ArrowRight,
 } from "lucide-react";
 import { useProcedures, useCreateProcedure, useUpdateProcedure, useDeleteProcedure, DBProcedure, ProcedurePhase } from "@/hooks/useProcedures";
 import {
-  useProcedureSteps, useAllProcedureStepCounts, useCreateProcedureStep,
+  useProcedureSteps, useAllProcedureSteps, useAllProcedureStepCounts, useCreateProcedureStep,
   useUpdateProcedureStep, useDeleteProcedureStep, useToggleProcedureStep,
 } from "@/hooks/useProcedureSteps";
+import { generateCrisisManualPDF } from "@/lib/generateCrisisManualPDF";
 import { toast } from "sonner";
 
 const PHASES: { key: ProcedurePhase; label_pt: string; label_en: string; tint: string; ring: string; icon: React.FC<{ className?: string }> }[] = [
