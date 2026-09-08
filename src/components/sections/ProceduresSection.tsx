@@ -243,9 +243,14 @@ const ProceduresSection: React.FC = () => {
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {lang === "pt" ? "MANUAL GESTÃO DE CRISE (ACTION CARDS NA GESTÃO DE CRISE)" : "Crisis Action Cards"}
         </h2>
-        <Button size="sm" variant="outline" onClick={() => openNew(selectedPhase)}>
-          <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Novo" : "New"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={procedures.length === 0}>
+            <Download className="h-4 w-4 mr-1" /> {lang === "pt" ? "Report PDF" : "PDF Report"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => openNew(selectedPhase)}>
+            <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Novo" : "New"}
+          </Button>
+        </div>
       </div>
 
       {/* Top phase tabs */}
