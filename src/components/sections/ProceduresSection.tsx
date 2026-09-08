@@ -11,14 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, Pencil, Trash2, Copy, GripVertical,
+  Plus, Pencil, Trash2, Copy, GripVertical, Download,
   Wrench, AlertTriangle, CheckCircle2, User, Settings, ArrowRight,
 } from "lucide-react";
 import { useProcedures, useCreateProcedure, useUpdateProcedure, useDeleteProcedure, DBProcedure, ProcedurePhase } from "@/hooks/useProcedures";
 import {
-  useProcedureSteps, useAllProcedureStepCounts, useCreateProcedureStep,
+  useProcedureSteps, useAllProcedureSteps, useAllProcedureStepCounts, useCreateProcedureStep,
   useUpdateProcedureStep, useDeleteProcedureStep, useToggleProcedureStep,
 } from "@/hooks/useProcedureSteps";
+import { generateCrisisManualPDF } from "@/lib/generateCrisisManualPDF";
 import { toast } from "sonner";
 
 const PHASES: { key: ProcedurePhase; label_pt: string; label_en: string; tint: string; ring: string; icon: React.FC<{ className?: string }> }[] = [
@@ -82,6 +83,7 @@ const ProceduresSection: React.FC = () => {
   const [newStepText, setNewStepText] = useState("");
 
   const { data: stepCounts = {} } = useAllProcedureStepCounts();
+  const { data: allSteps = [] } = useAllProcedureSteps();
   const { data: detailSteps = [] } = useProcedureSteps(detailId ?? undefined);
   const createStep = useCreateProcedureStep();
   const updateStep = useUpdateProcedureStep();
@@ -204,6 +206,33 @@ const ProceduresSection: React.FC = () => {
   const detailPhase = detail ? (detail.phase ?? "gestao") : "gestao";
   const detailIdx = detail ? itemsByPhase[detailPhase].findIndex(p => p.id === detail.id) : -1;
 
+  const handleExportPDF = () => {
+    const byPhase: Record<ProcedurePhase, DBProcedure[]> = { preparacao: [], gestao: [], fim: [] };
+    procedures.forEach(p => { byPhase[p.phase ?? "gestao"].push(p); });
+
+    const phases = PHASES.map((ph, i) => ({
+      key: ph.key,
+      label: t(ph.label_pt, ph.label_en),
+      index: i,
+      cards: byPhase[ph.key].map((p, idx) => ({
+        id: p.id,
+        code: codeFor(ph.key, idx),
+        title: t(p.title_pt, p.title_en),
+        category: t(p.category_pt, p.category_en),
+        goldenRule: parseProcedure(lang === "pt" ? p.content_pt : p.content_en).goldenRule,
+      })),
+    }));
+
+    const steps = allSteps.map(s => ({
+      procedure_id: s.procedure_id,
+      text: lang === "pt" ? s.text_pt : s.text_en,
+      sort_order: s.sort_order,
+    }));
+
+    generateCrisisManualPDF({ phases, steps, lang });
+    toast.success(lang === "pt" ? "Relatório PDF gerado" : "PDF report generated");
+  };
+
   if (isLoading) return <div className="text-sm text-muted-foreground">{lang === "pt" ? "A carregar..." : "Loading..."}</div>;
 
   const currentPhaseItems = itemsByPhase[selectedPhase];
@@ -214,9 +243,14 @@ const ProceduresSection: React.FC = () => {
         <h2 className="text-lg font-bold uppercase tracking-wider">
           {lang === "pt" ? "MANUAL GESTÃO DE CRISE (ACTION CARDS NA GESTÃO DE CRISE)" : "Crisis Action Cards"}
         </h2>
-        <Button size="sm" variant="outline" onClick={() => openNew(selectedPhase)}>
-          <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Novo" : "New"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleExportPDF} disabled={procedures.length === 0}>
+            <Download className="h-4 w-4 mr-1" /> {lang === "pt" ? "Report PDF" : "PDF Report"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => openNew(selectedPhase)}>
+            <Plus className="h-4 w-4 mr-1" /> {lang === "pt" ? "Novo" : "New"}
+          </Button>
+        </div>
       </div>
 
       {/* Top phase tabs */}
