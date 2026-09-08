@@ -83,6 +83,7 @@ const ProceduresSection: React.FC = () => {
   const [newStepText, setNewStepText] = useState("");
 
   const { data: stepCounts = {} } = useAllProcedureStepCounts();
+  const { data: allSteps = [] } = useAllProcedureSteps();
   const { data: detailSteps = [] } = useProcedureSteps(detailId ?? undefined);
   const createStep = useCreateProcedureStep();
   const updateStep = useUpdateProcedureStep();
