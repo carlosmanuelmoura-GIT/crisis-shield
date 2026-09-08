@@ -206,6 +206,33 @@ const ProceduresSection: React.FC = () => {
   const detailPhase = detail ? (detail.phase ?? "gestao") : "gestao";
   const detailIdx = detail ? itemsByPhase[detailPhase].findIndex(p => p.id === detail.id) : -1;
 
+  const handleExportPDF = () => {
+    const byPhase: Record<ProcedurePhase, DBProcedure[]> = { preparacao: [], gestao: [], fim: [] };
+    procedures.forEach(p => { byPhase[p.phase ?? "gestao"].push(p); });
+
+    const phases = PHASES.map((ph, i) => ({
+      key: ph.key,
+      label: t(ph.label_pt, ph.label_en),
+      index: i,
+      cards: byPhase[ph.key].map((p, idx) => ({
+        id: p.id,
+        code: codeFor(ph.key, idx),
+        title: t(p.title_pt, p.title_en),
+        category: t(p.category_pt, p.category_en),
+        goldenRule: parseProcedure(lang === "pt" ? p.content_pt : p.content_en).goldenRule,
+      })),
+    }));
+
+    const steps = allSteps.map(s => ({
+      procedure_id: s.procedure_id,
+      text: lang === "pt" ? s.text_pt : s.text_en,
+      sort_order: s.sort_order,
+    }));
+
+    generateCrisisManualPDF({ phases, steps, lang });
+    toast.success(lang === "pt" ? "Relatório PDF gerado" : "PDF report generated");
+  };
+
   if (isLoading) return <div className="text-sm text-muted-foreground">{lang === "pt" ? "A carregar..." : "Loading..."}</div>;
 
   const currentPhaseItems = itemsByPhase[selectedPhase];
