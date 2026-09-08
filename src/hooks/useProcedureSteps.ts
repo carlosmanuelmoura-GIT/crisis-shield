@@ -29,6 +29,22 @@ export function useProcedureSteps(procedureId?: string) {
   });
 }
 
+export function useAllProcedureSteps() {
+  return useQuery({
+    queryKey: ["procedure_steps", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("procedure_steps" as any)
+        .select("*")
+        .order("procedure_id")
+        .order("sort_order");
+      if (error) throw error;
+      return (data || []) as unknown as DBProcedureStep[];
+    },
+  });
+}
+
+
 export function useAllProcedureStepCounts() {
   return useQuery({
     queryKey: ["procedure_steps", "counts"],
