@@ -117,7 +117,7 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
     ["AUTONOMIA ATUAL < 30%", `${critical}`],
     ["EQUIPAMENTO", `${totalGens} geradores · ${totalUps} UPS`],
   ];
-  const cw = (contentW - 9) / 4;
+  const cw = (contentW - 3 * (cards.length - 1)) / cards.length;
   cards.forEach(([label, value], i) => {
     const x = margin + i * (cw + 3);
     doc.setFillColor(241, 245, 249);
@@ -139,8 +139,9 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
     { key: "name", label: "EDIFÍCIO / INSTALAÇÃO", w: contentW * 0.3 },
     { key: "gen", label: "GERADORES & UPS", w: contentW * 0.15 },
     { key: "fuel", label: "COMBUSTÍVEL (L)", w: contentW * 0.13 },
-    { key: "aut", label: "AUTONOMIA", w: contentW * 0.13 },
-    { key: "obs", label: "OBSERVAÇÕES", w: contentW * 0.29 },
+    { key: "aut", label: "AUTONOMIA ESTIMADA", w: contentW * 0.13 },
+    { key: "cur", label: "AUTONOMIA NO MOMENTO", w: contentW * 0.16 },
+    { key: "obs", label: "OBSERVAÇÕES", w: contentW * 0.13 },
   ];
 
   const drawTableHead = () => {
@@ -177,7 +178,7 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
       .slice()
       .sort((a, b) => (b.autonomia_horas_contingencia ?? 0) - (a.autonomia_horas_contingencia ?? 0))
       .forEach((b, idx) => {
-        const obsLines = doc.splitTextToSize(b.observacoes || b.depositos || "—", COLS[4].w - 4);
+        const obsLines = doc.splitTextToSize(b.observacoes || b.depositos || "—", COLS[5].w - 4);
         const rowH = Math.max(8, obsLines.length * 3.6 + 4);
         ensure(rowH + 2);
         if (idx % 2 === 1) {
@@ -199,6 +200,20 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
         const h = b.autonomia_horas_contingencia;
         doc.text(h == null ? "—" : `${h}h (${(h / 24).toFixed(1)} d)`, x, y);
         x += COLS[3].w;
+        const cur = b.autonomia_atual_horas;
+        const pct = cur != null && h ? (cur / h) * 100 : null;
+        if (cur == null) {
+          doc.text("—", x, y);
+        } else {
+          if (pct != null) {
+            const c: [number, number, number] =
+              pct < 30 ? [220, 38, 38] : pct <= 80 ? [217, 119, 6] : [5, 150, 105];
+            doc.setTextColor(c[0], c[1], c[2]);
+          }
+          doc.text(`${cur}h${pct != null ? ` (${Math.round(pct)}%)` : ""}`, x, y);
+          doc.setTextColor(51, 65, 85);
+        }
+        x += COLS[4].w;
         doc.setFontSize(7);
         doc.setTextColor(100, 116, 139);
         doc.text(obsLines, x, y);
