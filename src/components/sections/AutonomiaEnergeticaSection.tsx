@@ -64,12 +64,32 @@ const emptyForm = {
   name: "",
   tier: "na" as TierKey,
   autonomia_horas_contingencia: "",
+  autonomia_atual_horas: "",
+  autonomia_atual_medida_em: "",
   combustivel_litros: "",
   num_geradores: "",
   num_ups: "",
   depositos: "",
   observacoes: "",
 };
+
+/** Semáforo da autonomia atual face à estimada. */
+const currentRatio = (atual: number | null, estimada: number | null) => {
+  if (atual == null || !estimada) return null;
+  const pct = (atual / estimada) * 100;
+  const cls =
+    pct < 30
+      ? "bg-destructive/10 text-destructive border-destructive/30"
+      : pct <= 80
+      ? "bg-amber-500/10 text-amber-600 border-amber-500/30"
+      : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
+  return { pct, cls };
+};
+
+const toLocalInput = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleString("sv-SE").slice(0, 16).replace(" ", "T") : "";
+
+const fromLocalInput = (v: string) => (v.trim() === "" ? null : new Date(v).toISOString());
 
 
 const AutonomiaEnergeticaSection: React.FC = () => {
@@ -126,6 +146,8 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       name: b.name,
       tier: computeTier(b),
       autonomia_horas_contingencia: b.autonomia_horas_contingencia?.toString() ?? "",
+      autonomia_atual_horas: b.autonomia_atual_horas?.toString() ?? "",
+      autonomia_atual_medida_em: toLocalInput(b.autonomia_atual_medida_em),
       combustivel_litros: b.combustivel_litros?.toString() ?? "",
       num_geradores: b.num_geradores?.toString() ?? "",
       num_ups: b.num_ups?.toString() ?? "",
@@ -161,6 +183,8 @@ const AutonomiaEnergeticaSection: React.FC = () => {
       name: form.name.trim(),
       tier: form.tier,
       autonomia_horas_contingencia: num(form.autonomia_horas_contingencia),
+      autonomia_atual_horas: num(form.autonomia_atual_horas),
+      autonomia_atual_medida_em: fromLocalInput(form.autonomia_atual_medida_em),
       combustivel_litros: num(form.combustivel_litros),
       num_geradores: num(form.num_geradores),
       num_ups: num(form.num_ups),
@@ -351,6 +375,9 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                 <TableHead className="text-[11px] uppercase tracking-wider w-40">
                   {pt ? "Autonomia estimada" : "Estimated autonomy"}
                 </TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider w-44">
+                  {pt ? "Autonomia no momento" : "Current autonomy"}
+                </TableHead>
                 <TableHead className="text-[11px] uppercase tracking-wider w-20 text-right">
                   {pt ? "Ações" : "Actions"}
                 </TableHead>
@@ -412,6 +439,41 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                           {(h / 24).toFixed(1)} {pt ? "dias de autonomia" : "days of autonomy"}
                         </p>
                       )}
+                    </TableCell>
+                    <TableCell className="align-top">
+                      {(() => {
+                        const cur = b.autonomia_atual_horas;
+                        if (cur == null)
+                          return <span className="text-sm text-muted-foreground">—</span>;
+                        const r = currentRatio(cur, h);
+                        return (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-sm font-semibold">{cur}h</span>
+                              {r && (
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-semibold ${r.cls}`}
+                                >
+                                  {Math.round(r.pct)}%
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {(cur / 24).toFixed(1)} {pt ? "dias" : "days"}
+                            </p>
+                            {b.autonomia_atual_medida_em && (
+                              <p className="text-[11px] text-muted-foreground">
+                                {pt ? "Leitura: " : "Reading: "}
+                                {new Date(b.autonomia_atual_medida_em).toLocaleString(
+                                  pt ? "pt-PT" : "en-GB",
+                                  { dateStyle: "short", timeStyle: "short" }
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="align-top text-right">
                       <div className="flex justify-end gap-1">
@@ -533,6 +595,42 @@ const AutonomiaEnergeticaSection: React.FC = () => {
                   step="1"
                   value={form.num_ups}
                   onChange={e => setForm(f => ({ ...f, num_ups: e.target.value }))}
+                  className="bg-secondary border-border"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">
+                  {pt ? "Autonomia no momento (h)" : "Current autonomy (h)"}
+                </Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={form.autonomia_atual_horas}
+                  onChange={e =>
+                    setForm(f => ({
+                      ...f,
+                      autonomia_atual_horas: e.target.value,
+                      autonomia_atual_medida_em:
+                        e.target.value.trim() === ""
+                          ? ""
+                          : toLocalInput(new Date().toISOString()),
+                    }))
+                  }
+                  className="bg-secondary border-border"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">
+                  {pt ? "Data da leitura" : "Reading date"}
+                </Label>
+                <Input
+                  type="datetime-local"
+                  value={form.autonomia_atual_medida_em}
+                  onChange={e =>
+                    setForm(f => ({ ...f, autonomia_atual_medida_em: e.target.value }))
+                  }
                   className="bg-secondary border-border"
                 />
               </div>

@@ -250,6 +250,8 @@ export type Database = {
       }
       buildings: {
         Row: {
+          autonomia_atual_horas: number | null
+          autonomia_atual_medida_em: string | null
           autonomia_horas_contingencia: number | null
           combustivel_litros: number | null
           created_at: string
@@ -264,6 +266,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          autonomia_atual_horas?: number | null
+          autonomia_atual_medida_em?: string | null
           autonomia_horas_contingencia?: number | null
           combustivel_litros?: number | null
           created_at?: string
@@ -278,6 +282,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          autonomia_atual_horas?: number | null
+          autonomia_atual_medida_em?: string | null
           autonomia_horas_contingencia?: number | null
           combustivel_litros?: number | null
           created_at?: string
