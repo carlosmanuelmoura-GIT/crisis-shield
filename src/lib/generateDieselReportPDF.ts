@@ -5,6 +5,8 @@ export interface DieselBuilding {
   name: string;
   tier?: string | null;
   autonomia_horas_contingencia: number | null;
+  autonomia_atual_horas?: number | null;
+  autonomia_atual_medida_em?: string | null;
   combustivel_litros: number | null;
   num_geradores: number | null;
   num_ups: number | null;
@@ -102,12 +104,17 @@ export function generateDieselReportPDF(buildings: DieselBuilding[]) {
     null
   );
   const fragile = buildings.filter(b => computeTier(b) === "tier4").length;
+  const critical = buildings.filter(b => {
+    const est = b.autonomia_horas_contingencia;
+    const cur = b.autonomia_atual_horas;
+    return cur != null && est ? (cur / est) * 100 < 30 : false;
+  }).length;
 
   const cards: [string, string][] = [
     ["RESERVA TOTAL DIESEL", `${totalFuel.toLocaleString("pt-PT")} L`],
     ["NÓ CORE", core ? `${core.autonomia_horas_contingencia ?? 0}h — ${core.name}` : "—"],
     ["TIER 4 — AGÊNCIAS", `${fragile}`],
-
+    ["AUTONOMIA ATUAL < 30%", `${critical}`],
     ["EQUIPAMENTO", `${totalGens} geradores · ${totalUps} UPS`],
   ];
   const cw = (contentW - 9) / 4;
