@@ -7,6 +7,8 @@ export interface Building {
   name: string;
   tier: string | null;
   autonomia_horas_contingencia: number | null;
+  autonomia_atual_horas: number | null;
+  autonomia_atual_medida_em: string | null;
   depositos: string | null;
   combustivel_litros: number | null;
   num_geradores: number | null;
@@ -21,6 +23,8 @@ export type BuildingInput = {
   name: string;
   tier?: string | null;
   autonomia_horas_contingencia?: number | null;
+  autonomia_atual_horas?: number | null;
+  autonomia_atual_medida_em?: string | null;
   depositos?: string | null;
   combustivel_litros?: number | null;
   num_geradores?: number | null;
