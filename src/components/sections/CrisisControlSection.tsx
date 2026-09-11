@@ -667,9 +667,14 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
   const handleToggle = (actionId: string, checked: boolean, actionText: string, phaseId: string, phaseLabel: string) => {
     if (checked) {
-      // Opening confirmation dialog
+      // Opening confirmation dialog — pre-fill with existing metadata so confirming doesn't erase it
+      const existing = phaseActions.find((a) => a.id === actionId);
       setPendingToggle({ actionId, checked, actionText, phaseId, phaseLabel });
-      setConfirmForm({ info_department: "", info_person: "", notes: "" });
+      setConfirmForm({
+        info_department: (existing as any)?.info_department || "",
+        info_person: (existing as any)?.info_person || "",
+        notes: (existing as any)?.notes || "",
+      });
       setConfirmDialogOpen(true);
     } else {
       // Unchecking directly
