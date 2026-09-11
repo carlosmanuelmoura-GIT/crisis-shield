@@ -15,6 +15,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -667,9 +668,14 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
   const handleToggle = (actionId: string, checked: boolean, actionText: string, phaseId: string, phaseLabel: string) => {
     if (checked) {
-      // Opening confirmation dialog
+      // Opening confirmation dialog — pre-fill with existing metadata so confirming doesn't erase it
+      const existing = phaseActions.find((a) => a.id === actionId);
       setPendingToggle({ actionId, checked, actionText, phaseId, phaseLabel });
-      setConfirmForm({ info_department: "", info_person: "", notes: "" });
+      setConfirmForm({
+        info_department: (existing as any)?.info_department || "",
+        info_person: (existing as any)?.info_person || "",
+        notes: (existing as any)?.notes || "",
+      });
       setConfirmDialogOpen(true);
     } else {
       // Unchecking directly
@@ -1206,7 +1212,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
       {/* Confirmation dialog for checking tasks */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {lang === "pt" ? "Confirmar acção" : "Confirm action"}
@@ -1221,7 +1227,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">
-                {lang === "pt" ? "DEP Origem da Informação" : "Info Source Department"}
+                {lang === "pt" ? "Dep Origem" : "Source Dept"}
               </Label>
               <Input
                 value={confirmForm.info_department}
@@ -1245,10 +1251,11 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
               <Label className="text-sm font-medium">
                 {lang === "pt" ? "Notas" : "Notes"}
               </Label>
-              <Input
+              <Textarea
                 value={confirmForm.notes}
                 onChange={(e) => setConfirmForm(f => ({ ...f, notes: e.target.value }))}
                 placeholder={lang === "pt" ? "Observações..." : "Observations..."}
+                rows={4}
                 className="bg-secondary border-border"
               />
             </div>
