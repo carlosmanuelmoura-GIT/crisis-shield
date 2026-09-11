@@ -1227,7 +1227,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">
-                {lang === "pt" ? "DEP Origem da Informação" : "Info Source Department"}
+                {lang === "pt" ? "Dep Origem" : "Source Dept"}
               </Label>
               <Input
                 value={confirmForm.info_department}
@@ -1251,10 +1251,11 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
               <Label className="text-sm font-medium">
                 {lang === "pt" ? "Notas" : "Notes"}
               </Label>
-              <Input
+              <Textarea
                 value={confirmForm.notes}
                 onChange={(e) => setConfirmForm(f => ({ ...f, notes: e.target.value }))}
                 placeholder={lang === "pt" ? "Observações..." : "Observations..."}
+                rows={4}
                 className="bg-secondary border-border"
               />
             </div>
