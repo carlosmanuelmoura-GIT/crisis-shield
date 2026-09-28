@@ -1253,6 +1253,76 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
 
 
+      {/* Edit action details dialog */}
+      <Dialog open={editActionOpen} onOpenChange={setEditActionOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {lang === "pt" ? "Editar ação" : "Edit action"}
+            </DialogTitle>
+          </DialogHeader>
+          {editActionTarget && (
+            <p className="text-xs text-muted-foreground mb-2">{editActionTarget.phaseLabel}</p>
+          )}
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "Texto da ação" : "Action text"}
+              </Label>
+              <Textarea
+                value={editActionForm.text}
+                onChange={(e) => setEditActionForm(f => ({ ...f, text: e.target.value }))}
+                rows={3}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "Dep Origem" : "Source Dept"}
+              </Label>
+              <Input
+                value={editActionForm.info_department}
+                onChange={(e) => setEditActionForm(f => ({ ...f, info_department: e.target.value }))}
+                placeholder={lang === "pt" ? "Departamento..." : "Department..."}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "Quem deu a informação" : "Who provided the information"}
+              </Label>
+              <Input
+                value={editActionForm.info_person}
+                onChange={(e) => setEditActionForm(f => ({ ...f, info_person: e.target.value }))}
+                placeholder={lang === "pt" ? "Nome da pessoa..." : "Person name..."}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">
+                {lang === "pt" ? "Notas" : "Notes"}
+              </Label>
+              <Textarea
+                value={editActionForm.notes}
+                onChange={(e) => setEditActionForm(f => ({ ...f, notes: e.target.value }))}
+                placeholder={lang === "pt" ? "Observações..." : "Observations..."}
+                rows={4}
+                className="bg-secondary border-border"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditActionOpen(false)}>
+              {lang === "pt" ? "Cancelar" : "Cancel"}
+            </Button>
+            <Button onClick={handleSaveEditAction} disabled={!editActionForm.text.trim()}>
+              <Pencil className="h-4 w-4 mr-2" />
+              {lang === "pt" ? "Guardar" : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Confirmation dialog for checking tasks */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent className="max-w-2xl">
