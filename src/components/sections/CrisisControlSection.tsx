@@ -632,6 +632,11 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const [pendingToggle, setPendingToggle] = useState<{ actionId: string; checked: boolean; actionText: string; phaseId: string; phaseLabel: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ info_department: "", info_person: "", notes: "" });
 
+  // Edit action details dialog state
+  const [editActionOpen, setEditActionOpen] = useState(false);
+  const [editActionTarget, setEditActionTarget] = useState<{ actionId: string; phaseLabel: string } | null>(null);
+  const [editActionForm, setEditActionForm] = useState({ text: "", info_department: "", info_person: "", notes: "" });
+
   useEffect(() => {
     setDeclaredBy(crisis.declared_by || "");
   }, [crisis.declared_by]);
