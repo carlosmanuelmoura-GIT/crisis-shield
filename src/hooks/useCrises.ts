@@ -269,6 +269,18 @@ export function useTogglePhaseAction() {
   });
 }
 
+export function useUpdatePhaseAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, crisis_id, ...data }: { id: string; crisis_id: string; text?: string; info_department?: string; info_person?: string; notes?: string }) => {
+      const { error } = await supabase.from("crisis_phase_actions").update(data as any).eq("id", id);
+      if (error) throw error;
+      return crisis_id;
+    },
+    onSuccess: (crisis_id) => qc.invalidateQueries({ queryKey: ["crisis_phase_actions", crisis_id] }),
+  });
+}
+
 export function useDeletePhaseAction() {
   const qc = useQueryClient();
   return useMutation({
