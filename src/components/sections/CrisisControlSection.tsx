@@ -734,7 +734,37 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     setPendingToggle(null);
   };
 
-  const handleDeclareCrisis = async () => {
+  const openEditAction = (action: DBCrisisPhaseAction, phaseLabel: string) => {
+    setEditActionTarget({ actionId: action.id, phaseLabel });
+    setEditActionForm({
+      text: action.text,
+      info_department: (action as any).info_department || "",
+      info_person: (action as any).info_person || "",
+      notes: (action as any).notes || "",
+    });
+    setEditActionOpen(true);
+  };
+
+  const handleSaveEditAction = async () => {
+    if (!editActionTarget) return;
+    const { actionId, phaseLabel } = editActionTarget;
+    if (!editActionForm.text.trim()) return;
+    await updateAction.mutateAsync({
+      id: actionId,
+      crisis_id: crisis.id,
+      text: editActionForm.text.trim(),
+      info_department: editActionForm.info_department,
+      info_person: editActionForm.info_person,
+      notes: editActionForm.notes,
+    });
+    logDecision.mutate({
+      title: "📝 Detalhes da ação atualizados",
+      text: `📝 ${phaseLabel} — ${editActionForm.text.trim()}`,
+      crisis_id: crisis.id,
+    });
+    setEditActionOpen(false);
+    setEditActionTarget(null);
+  };
     if (!declaredBy.trim()) return;
     await updateCrisis.mutateAsync({
       id: crisis.id,
