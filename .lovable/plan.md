@@ -1,22 +1,23 @@
-# Renomear Relatório Diesel para Relatório de Autonomia Energética
+# Botão de Edição nas Ações das Fases da Gestão de Crise
 
-A coluna "Autonomia no momento" já existe no relatório PDF (coluna `AUTONOMIA NO MOMENTO` em `generateDieselReportPDF.ts`, linha 143). Resta apenas renomear o relatório.
+Separar a conclusão (checkbox) da edição de detalhes (botão lápis) nas ações das fases, em `src/components/sections/CrisisControlSection.tsx`.
 
 ## Alterações
 
-1. **Botão no ecrã** (`src/components/sections/AutonomiaEnergeticaSection.tsx`, linha 284):
-   - PT: "Relatório Diesel" → "Relatório de Autonomia Energética"
-   - EN: "Diesel Report" → "Energy Autonomy Report"
+1. **Checkbox (concluir)**: mantém o comportamento atual — abre o diálogo de conclusão (Dep Origem, Quem reportou, Notas) com os valores existentes pré-preenchidos.
 
-2. **Título no PDF** (`src/lib/generateDieselReportPDF.ts`, linha 74):
-   - "RELATÓRIO DIESEL — AUTONOMIA ENERGÉTICA DOS EDIFÍCIOS" → "RELATÓRIO DE AUTONOMIA ENERGÉTICA DOS EDIFÍCIOS"
+2. **Novo botão de edição (ícone lápis)** junto a cada ação, visível quer esteja pendente quer concluída:
+   - Abre o mesmo diálogo (max-w-2xl) em modo de edição: Dep Origem, Quem reportou, Notas (Textarea 4 linhas) e o próprio texto da ação.
+   - Guarda sem alterar o estado checked; regista no log de decisões: `📝 Detalhes da ação atualizados` (ligado à crise ativa, como no toggle atual).
 
-3. **Nome do ficheiro descarregado** (linha 231):
-   - `Relatorio_Diesel_YYYY-MM-DD.pdf` → `Relatorio_Autonomia_Energetica_YYYY-MM-DD.pdf`
+3. **Desmarcar o checkbox**: mantém a reversão atual, sem apagar os metadados.
 
-4. Verificar no cabeçalho do ecrã e noutros pontos se existe alguma outra referência a "Relatório Diesel" (rótulos de cartões/indicadores como "RESERVA TOTAL DIESEL" mantêm-se, pois referem o combustível, não o nome do relatório).
+## Detalhes técnicos
+
+- Reutilizar o diálogo existente com um modo (`complete` vs `edit`); no modo `edit` o botão de guardar chama um update de `crisis_phase_actions` (text, info_department, info_person, notes) via mutação existente/nova em `useCrises.ts`, seguido de insert em `decision_log`.
+- Ícone `Pencil` (lucide), botão ghost pequeno alinhado à direita de cada linha de ação.
 
 ## Verificação
 
-- Confirmar na tabela do PDF que a coluna "Autonomia no momento" continua presente com horas e percentagem face à estimada.
-- Validar o TypeScript e gerar o PDF a partir do botão renomeado.
+- Validar TypeScript.
+- Testar no preview: editar ação pendente e concluída, confirmar gravação e entrada no log; concluir e reverter via checkbox sem perder dados.
