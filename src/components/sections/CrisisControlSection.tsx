@@ -765,6 +765,8 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
     setEditActionOpen(false);
     setEditActionTarget(null);
   };
+
+  const handleDeclareCrisis = async () => {
     if (!declaredBy.trim()) return;
     await updateCrisis.mutateAsync({
       id: crisis.id,
