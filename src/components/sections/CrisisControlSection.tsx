@@ -864,6 +864,11 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
               </div>
             )}
           </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
+            title={lang === "pt" ? "Editar detalhes" : "Edit details"}
+            onClick={() => openEditAction(action, phaseLabel)}>
+            <Pencil className="h-3 w-3" />
+          </Button>
           {isSteering && (
             <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 shrink-0"
               onClick={() => deleteAction.mutate({ id: action.id, crisis_id: crisis.id })}>
