@@ -6,7 +6,7 @@ import { useCurrentUserRoles } from "@/hooks/useUserRoles";
 import {
   useCrises, useCreateCrisis, useUpdateCrisis, useDeleteCrisis,
   useCrisisCabinetMembers, useCrisisPhaseActions,
-  useCreatePhaseAction, useTogglePhaseAction, useDeletePhaseAction,
+  useCreatePhaseAction, useTogglePhaseAction, useDeletePhaseAction, useUpdatePhaseAction,
   useUpdateCabinetMembers, useLogDecisionFromCrisis,
   type DBCrisis,
 } from "@/hooks/useCrises";
@@ -584,6 +584,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const createAction = useCreatePhaseAction();
   const toggleAction = useTogglePhaseAction();
   const deleteAction = useDeletePhaseAction();
+  const updateAction = useUpdatePhaseAction();
   const updateCrisis = useUpdateCrisis();
   const logDecision = useLogDecisionFromCrisis();
 
