@@ -6,7 +6,7 @@ import { useCurrentUserRoles } from "@/hooks/useUserRoles";
 import {
   useCrises, useCreateCrisis, useUpdateCrisis, useDeleteCrisis,
   useCrisisCabinetMembers, useCrisisPhaseActions,
-  useCreatePhaseAction, useTogglePhaseAction, useDeletePhaseAction, useUpdatePhaseAction,
+  useCreatePhaseAction, useTogglePhaseAction, useDeletePhaseAction, useUpdatePhaseAction, DBCrisisPhaseAction,
   useUpdateCabinetMembers, useLogDecisionFromCrisis,
   type DBCrisis,
 } from "@/hooks/useCrises";
