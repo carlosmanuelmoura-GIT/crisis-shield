@@ -16,6 +16,9 @@ export interface DBCrisis {
   strategic_pause: boolean;
   strategic_pause_by: string;
   strategic_pause_at: string | null;
+  support_file_name: string;
+  support_file_path: string;
+  support_agent_url: string;
   created_at: string;
   updated_at: string;
 }
@@ -96,6 +99,13 @@ export function useCreateCrisis() {
       }
 
       if (data.clone_from_id) {
+        const { data: sourceCrisis, error: sourceCrisisError } = await supabase
+          .from("crises")
+          .select("support_file_name, support_file_path, support_agent_url")
+          .eq("id", data.clone_from_id)
+          .single();
+        if (sourceCrisisError) throw sourceCrisisError;
+
         const { data: sourceActions } = await supabase
           .from("crisis_phase_actions")
           .select("*")
@@ -115,6 +125,26 @@ export function useCreateCrisis() {
             );
           if (cloneErr) throw cloneErr;
         }
+
+        let copiedFilePath = "";
+        if (sourceCrisis.support_file_path) {
+          const extension = sourceCrisis.support_file_name.includes(".")
+            ? `.${sourceCrisis.support_file_name.split(".").pop()}`
+            : "";
+          copiedFilePath = `crisis-support/${(crisis as DBCrisis).id}/${crypto.randomUUID()}${extension}`;
+          const { error: copyError } = await supabase.storage
+            .from("documents")
+            .copy(sourceCrisis.support_file_path, copiedFilePath);
+          if (copyError) throw copyError;
+        }
+
+        const { error: supportError } = await supabase.rpc("update_crisis_support", {
+          p_crisis_id: (crisis as DBCrisis).id,
+          p_support_file_name: copiedFilePath ? sourceCrisis.support_file_name : "",
+          p_support_file_path: copiedFilePath,
+          p_support_agent_url: sourceCrisis.support_agent_url,
+        });
+        if (supportError) throw supportError;
       }
 
       // Seed default 6 phases for the new crisis
@@ -136,6 +166,33 @@ export function useCreateCrisis() {
       qc.invalidateQueries({ queryKey: ["crisis_cabinet_members"] });
       qc.invalidateQueries({ queryKey: ["crisis_phase_actions"] });
       qc.invalidateQueries({ queryKey: ["decision_log"] });
+    },
+  });
+}
+
+export function useUpdateCrisisSupport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, support_file_name, support_file_path, support_agent_url }: {
+      id: string;
+      support_file_name: string;
+      support_file_path: string;
+      support_agent_url: string;
+    }) => {
+      const { error } = await supabase.rpc("update_crisis_support", {
+        p_crisis_id: id,
+        p_support_file_name: support_file_name,
+        p_support_file_path: support_file_path,
+        p_support_agent_url: support_agent_url,
+      });
+      if (error) throw error;
+      return { id, support_file_name, support_file_path, support_agent_url };
+    },
+    onSuccess: (updated) => {
+      qc.setQueryData<DBCrisis[]>(["crises"], (old) =>
+        old?.map((crisis) => crisis.id === updated.id ? { ...crisis, ...updated } : crisis)
+      );
+      qc.invalidateQueries({ queryKey: ["crises"] });
     },
   });
 }

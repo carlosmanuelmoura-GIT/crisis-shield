@@ -7,9 +7,10 @@ import {
   useCrises, useCreateCrisis, useUpdateCrisis, useDeleteCrisis,
   useCrisisCabinetMembers, useCrisisPhaseActions,
   useCreatePhaseAction, useTogglePhaseAction, useDeletePhaseAction, useUpdatePhaseAction, DBCrisisPhaseAction,
-  useUpdateCabinetMembers, useLogDecisionFromCrisis,
+  useUpdateCabinetMembers, useLogDecisionFromCrisis, useUpdateCrisisSupport,
   type DBCrisis,
 } from "@/hooks/useCrises";
+import { supabase } from "@/integrations/supabase/client";
 import { useCrisisPhases, useUpdateCrisisPhase, seedPhasesForCrisis, DEFAULT_PHASES, type DBCrisisPhase } from "@/hooks/useCrisisPhases";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertTriangle, Plus, Trash2, Shield, Loader2,
   CheckCircle2, ArrowDown, Eye, Copy, X, Pencil, Filter, ChevronDown, ChevronUp,
-  PauseCircle, PlayCircle,
+  PauseCircle, PlayCircle, Upload, FileText, ExternalLink, Link2, Save,
 } from "lucide-react";
 
 
@@ -42,6 +43,8 @@ const TYPE_LABELS: Record<string, { pt: string; en: string }> = {
   simulated: { pt: "SIMULADA", en: "SIMULATED" },
   template: { pt: "TEMPLATE", en: "TEMPLATE" },
 };
+
+const CRISIS_SUPPORT_ACCEPTED = ".html,.htm,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx";
 
 /* ──────────────────────────────────────────────
    Main Component
@@ -586,7 +589,11 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const deleteAction = useDeletePhaseAction();
   const updateAction = useUpdatePhaseAction();
   const updateCrisis = useUpdateCrisis();
+  const updateCrisisSupport = useUpdateCrisisSupport();
   const logDecision = useLogDecisionFromCrisis();
+  const supportFileInputRef = useRef<HTMLInputElement>(null);
+  const [supportUploading, setSupportUploading] = useState(false);
+  const [supportAgentUrl, setSupportAgentUrl] = useState(crisis.support_agent_url || "");
 
   // Fallback to DEFAULT_PHASES until DB seeds load
   const PHASES = React.useMemo(() => {
@@ -644,6 +651,80 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   useEffect(() => {
     setEndedBy(crisis.ended_by || "");
   }, [crisis.ended_by]);
+
+  useEffect(() => {
+    setSupportAgentUrl(crisis.support_agent_url || "");
+  }, [crisis.support_agent_url]);
+
+  const saveSupport = async (values: Partial<Pick<DBCrisis, "support_file_name" | "support_file_path" | "support_agent_url">>) => {
+    await updateCrisisSupport.mutateAsync({
+      id: crisis.id,
+      support_file_name: values.support_file_name ?? crisis.support_file_name,
+      support_file_path: values.support_file_path ?? crisis.support_file_path,
+      support_agent_url: values.support_agent_url ?? crisis.support_agent_url,
+    });
+  };
+
+  const handleSupportUpload = async (file: File) => {
+    setSupportUploading(true);
+    const extension = file.name.includes(".") ? `.${file.name.split(".").pop()}` : "";
+    const nextPath = `crisis-support/${crisis.id}/${crypto.randomUUID()}${extension}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from("documents").upload(nextPath, file);
+      if (uploadError) throw uploadError;
+      await saveSupport({ support_file_name: file.name, support_file_path: nextPath });
+      if (crisis.support_file_path) {
+        await supabase.storage.from("documents").remove([crisis.support_file_path]);
+      }
+      toast.success(lang === "pt" ? "Ficheiro guardado" : "File saved");
+    } catch (error: any) {
+      await supabase.storage.from("documents").remove([nextPath]);
+      toast.error(error?.message || (lang === "pt" ? "Erro no carregamento" : "Upload failed"));
+    } finally {
+      setSupportUploading(false);
+    }
+  };
+
+  const openSupportFile = async () => {
+    if (!crisis.support_file_path) return;
+    const { data, error } = await supabase.storage.from("documents").createSignedUrl(crisis.support_file_path, 3600);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const removeSupportFile = async () => {
+    if (!crisis.support_file_path) return;
+    try {
+      const { error } = await supabase.storage.from("documents").remove([crisis.support_file_path]);
+      if (error) throw error;
+      await saveSupport({ support_file_name: "", support_file_path: "" });
+      toast.success(lang === "pt" ? "Ficheiro removido" : "File removed");
+    } catch (error: any) {
+      toast.error(error?.message || (lang === "pt" ? "Erro ao remover" : "Removal failed"));
+    }
+  };
+
+  const saveAgentUrl = async () => {
+    const value = supportAgentUrl.trim();
+    if (value) {
+      try {
+        const parsed = new URL(value);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error();
+      } catch {
+        toast.error(lang === "pt" ? "Introduza uma URL válida (http ou https)" : "Enter a valid URL (http or https)");
+        return;
+      }
+    }
+    try {
+      await saveSupport({ support_agent_url: value });
+      toast.success(lang === "pt" ? "URL guardada" : "URL saved");
+    } catch (error: any) {
+      toast.error(error?.message || (lang === "pt" ? "Erro ao guardar" : "Save failed"));
+    }
+  };
 
   const openPhaseEdit = (phase: typeof PHASES[number]) => {
     setPhaseEditForm({
@@ -898,7 +979,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start">
         <Button variant="ghost" size="sm" onClick={onBack}>
           ← {lang === "pt" ? "Voltar" : "Back"}
         </Button>
@@ -916,7 +997,74 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
             {" · "}{typeLabel[lang]}
           </p>
         </div>
-        <Badge className={`${st.variant}`}>{st[lang]}</Badge>
+        <div className="flex flex-col gap-2 sm:flex-row xl:ml-auto">
+          <div className="flex items-start gap-2">
+            <Badge className={`${st.variant} mt-1`}>{st[lang]}</Badge>
+          </div>
+
+          <div className="min-w-0 rounded-md border bg-card p-2 sm:w-72">
+            <input
+              ref={supportFileInputRef}
+              type="file"
+              accept={CRISIS_SUPPORT_ACCEPTED}
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void handleSupportUpload(file);
+                event.target.value = "";
+              }}
+            />
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold">
+              <FileText className="h-3.5 w-3.5 text-primary" />
+              Situações Report Template
+            </div>
+            <div className="flex min-h-8 items-center gap-1">
+              {crisis.support_file_path ? (
+                <>
+                  <Button variant="ghost" size="sm" className="h-7 min-w-0 flex-1 justify-start px-2" onClick={openSupportFile} title={crisis.support_file_name}>
+                    <span className="truncate text-xs">{crisis.support_file_name}</span>
+                  </Button>
+                  <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => supportFileInputRef.current?.click()} disabled={supportUploading} title={lang === "pt" ? "Substituir ficheiro" : "Replace file"}>
+                    {supportUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={removeSupportFile} title={lang === "pt" ? "Remover ficheiro" : "Remove file"}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" className="h-7 w-full text-xs" onClick={() => supportFileInputRef.current?.click()} disabled={supportUploading}>
+                  {supportUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-1 h-3.5 w-3.5" />}
+                  {lang === "pt" ? "Carregar ficheiro" : "Upload file"}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="min-w-0 rounded-md border bg-card p-2 sm:w-80">
+            <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold">
+              <Link2 className="h-3.5 w-3.5 text-primary" />
+              {lang === "pt" ? "Agente AI de suporte" : "AI support agent"}
+            </div>
+            <div className="flex items-center gap-1">
+              <Input
+                type="url"
+                value={supportAgentUrl}
+                onChange={(event) => setSupportAgentUrl(event.target.value)}
+                onKeyDown={(event) => event.key === "Enter" && void saveAgentUrl()}
+                placeholder="https://..."
+                className="h-7 min-w-0 text-xs"
+              />
+              <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={saveAgentUrl} disabled={updateCrisisSupport.isPending} title={lang === "pt" ? "Guardar URL" : "Save URL"}>
+                {updateCrisisSupport.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              </Button>
+              {crisis.support_agent_url && (
+                <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => window.open(crisis.support_agent_url, "_blank", "noopener,noreferrer")} title={lang === "pt" ? "Abrir Agente AI" : "Open AI agent"}>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Cabinet members */}

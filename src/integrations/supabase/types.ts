@@ -571,6 +571,9 @@ export type Database = {
           strategic_pause: boolean
           strategic_pause_at: string | null
           strategic_pause_by: string
+          support_agent_url: string
+          support_file_name: string
+          support_file_path: string
           title: string
           updated_at: string
         }
@@ -587,6 +590,9 @@ export type Database = {
           strategic_pause?: boolean
           strategic_pause_at?: string | null
           strategic_pause_by?: string
+          support_agent_url?: string
+          support_file_name?: string
+          support_file_path?: string
           title: string
           updated_at?: string
         }
@@ -603,6 +609,9 @@ export type Database = {
           strategic_pause?: boolean
           strategic_pause_at?: string | null
           strategic_pause_by?: string
+          support_agent_url?: string
+          support_file_name?: string
+          support_file_path?: string
           title?: string
           updated_at?: string
         }
@@ -1546,7 +1555,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_crisis_support: {
+        Args: {
+          p_crisis_id: string
+          p_support_agent_url: string
+          p_support_file_name: string
+          p_support_file_path: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "steering_gcn" | "tecnico_departamento" | "especialista_gcn"
