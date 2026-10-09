@@ -78,7 +78,7 @@ const ProceduresSection: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DBProcedure | null>(null);
   const [form, setForm] = useState<{ title_pt: string; title_en: string; category_pt: string; category_en: string; phase: ProcedurePhase }>({ title_pt: "", title_en: "", category_pt: "", category_en: "", phase: "gestao" });
-  const [selectedPhase, setSelectedPhase] = useState<ProcedurePhase>("gestao");
+  const [selectedPhase, setSelectedPhase] = useState<ProcedurePhase>("preparacao");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [newStepText, setNewStepText] = useState("");
 
