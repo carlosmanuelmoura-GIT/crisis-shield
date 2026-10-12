@@ -687,12 +687,26 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
   const openSupportFile = async () => {
     if (!crisis.support_file_path) return;
-    const { data, error } = await supabase.storage.from("documents").createSignedUrl(crisis.support_file_path, 3600);
-    if (error) {
-      toast.error(error.message);
-      return;
+    setSupportDownloading(true);
+    try {
+      const { data, error } = await supabase.storage.from("documents").createSignedUrl(crisis.support_file_path, 3600);
+      if (error) throw error;
+      const response = await fetch(data.signedUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = crisis.support_file_name || "template-ponto-de-situacao";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error: any) {
+      toast.error(error?.message || (lang === "pt" ? "Erro no download" : "Download failed"));
+    } finally {
+      setSupportDownloading(false);
     }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   const removeSupportFile = async () => {
