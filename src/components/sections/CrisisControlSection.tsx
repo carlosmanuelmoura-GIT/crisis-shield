@@ -593,6 +593,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const logDecision = useLogDecisionFromCrisis();
   const supportFileInputRef = useRef<HTMLInputElement>(null);
   const [supportUploading, setSupportUploading] = useState(false);
+  const [supportDownloading, setSupportDownloading] = useState(false);
   const [supportAgentUrl, setSupportAgentUrl] = useState(crisis.support_agent_url || "");
 
   // Fallback to DEFAULT_PHASES until DB seeds load
