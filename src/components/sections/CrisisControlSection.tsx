@@ -1042,8 +1042,8 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                   <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => supportFileInputRef.current?.click()} disabled={supportUploading} title={lang === "pt" ? "Upload / substituir ficheiro" : "Upload / replace file"}>
                     {supportUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                   </Button>
-                  <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={openSupportFile} title={lang === "pt" ? "Download do ficheiro" : "Download file"}>
-                    <Download className="h-3.5 w-3.5" />
+                  <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={openSupportFile} disabled={supportDownloading} title={lang === "pt" ? "Download do ficheiro" : "Download file"}>
+                    {supportDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={removeSupportFile} title={lang === "pt" ? "Remover ficheiro" : "Remove file"}>
                     <Trash2 className="h-3.5 w-3.5" />
