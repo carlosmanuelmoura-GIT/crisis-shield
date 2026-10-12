@@ -11,6 +11,7 @@ import {
   type DBCrisis,
 } from "@/hooks/useCrises";
 import { supabase } from "@/integrations/supabase/client";
+import { generateCrisisTemplatePDF } from "@/lib/generateCrisisTemplatePDF";
 import { useCrisisPhases, useUpdateCrisisPhase, seedPhasesForCrisis, DEFAULT_PHASES, type DBCrisisPhase } from "@/hooks/useCrisisPhases";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,7 @@ const CrisisControlSection: React.FC = () => {
 
   // Tab: separate templates from real/simulated crises
   const [activeTab, setActiveTab] = useState<"real" | "template">("real");
+  const [pdfBusyId, setPdfBusyId] = useState<string | null>(null);
 
   // Filters
   const [filterType, setFilterType] = useState("all");
@@ -340,6 +342,21 @@ const CrisisControlSection: React.FC = () => {
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedCrisisId(crisis.id)}>
                             <Eye className="h-3.5 w-3.5" />
                           </Button>
+                          {crisis.crisis_type === "template" && (
+                            <Button
+                              variant="ghost" size="icon" className="h-7 w-7"
+                              title={lang === "pt" ? "Report PDF (fases e checklists)" : "PDF report (phases & checklists)"}
+                              disabled={pdfBusyId === crisis.id}
+                              onClick={async () => {
+                                setPdfBusyId(crisis.id);
+                                try { await generateCrisisTemplatePDF(crisis, lang); }
+                                catch { toast.error(lang === "pt" ? "Erro ao gerar PDF" : "Failed to generate PDF"); }
+                                finally { setPdfBusyId(null); }
+                              }}
+                            >
+                              {pdfBusyId === crisis.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                            </Button>
+                          )}
                           {isSteering && (
                             <>
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(crisis.id)}>
