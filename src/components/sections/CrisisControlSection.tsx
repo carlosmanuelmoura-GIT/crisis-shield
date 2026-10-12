@@ -593,6 +593,7 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
   const logDecision = useLogDecisionFromCrisis();
   const supportFileInputRef = useRef<HTMLInputElement>(null);
   const [supportUploading, setSupportUploading] = useState(false);
+  const [supportDownloading, setSupportDownloading] = useState(false);
   const [supportAgentUrl, setSupportAgentUrl] = useState(crisis.support_agent_url || "");
 
   // Fallback to DEFAULT_PHASES until DB seeds load
@@ -687,12 +688,26 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
 
   const openSupportFile = async () => {
     if (!crisis.support_file_path) return;
-    const { data, error } = await supabase.storage.from("documents").createSignedUrl(crisis.support_file_path, 3600);
-    if (error) {
-      toast.error(error.message);
-      return;
+    setSupportDownloading(true);
+    try {
+      const { data, error } = await supabase.storage.from("documents").createSignedUrl(crisis.support_file_path, 3600);
+      if (error) throw error;
+      const response = await fetch(data.signedUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = crisis.support_file_name || "template-ponto-de-situacao";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error: any) {
+      toast.error(error?.message || (lang === "pt" ? "Erro no download" : "Download failed"));
+    } finally {
+      setSupportDownloading(false);
     }
-    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   const removeSupportFile = async () => {
@@ -1027,8 +1042,8 @@ const CrisisKanbanView: React.FC<KanbanProps> = ({ crisis, lang, isSteering, onB
                   <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={() => supportFileInputRef.current?.click()} disabled={supportUploading} title={lang === "pt" ? "Upload / substituir ficheiro" : "Upload / replace file"}>
                     {supportUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
                   </Button>
-                  <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={openSupportFile} title={lang === "pt" ? "Download do ficheiro" : "Download file"}>
-                    <Download className="h-3.5 w-3.5" />
+                  <Button variant="outline" size="icon" className="h-7 w-7 shrink-0" onClick={openSupportFile} disabled={supportDownloading} title={lang === "pt" ? "Download do ficheiro" : "Download file"}>
+                    {supportDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                   </Button>
                   <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive hover:text-destructive" onClick={removeSupportFile} title={lang === "pt" ? "Remover ficheiro" : "Remove file"}>
                     <Trash2 className="h-3.5 w-3.5" />
