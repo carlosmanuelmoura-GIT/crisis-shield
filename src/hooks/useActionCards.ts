@@ -53,6 +53,37 @@ export function useActionCards() {
   });
 }
 
+export function useActionCardCenarios() {
+  return useQuery({
+    queryKey: ["action_card_cenarios"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("action_card_cenarios").select("action_card_id, cenario_id");
+      if (error) throw error;
+      return data as { action_card_id: string; cenario_id: string }[];
+    },
+  });
+}
+
+export function useSetActionCardCenarios() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ cardId, cenarioIds }: { cardId: string; cenarioIds: string[] }) => {
+      const { error: dErr } = await supabase.from("action_card_cenarios").delete().eq("action_card_id", cardId);
+      if (dErr) throw dErr;
+      if (cenarioIds.length) {
+        const { error } = await supabase.from("action_card_cenarios").insert(cenarioIds.map(c => ({ action_card_id: cardId, cenario_id: c })));
+        if (error) throw error;
+      }
+      // keep legacy column in sync with the first scenario
+      await supabase.from("action_cards").update({ cenario_id: cenarioIds[0] ?? null } as any).eq("id", cardId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["action_card_cenarios"] });
+      qc.invalidateQueries({ queryKey: ["action_cards"] });
+    },
+  });
+}
+
 export function useChecklistItems(cardId?: string) {
   return useQuery({
     queryKey: ["checklist_items", cardId],
