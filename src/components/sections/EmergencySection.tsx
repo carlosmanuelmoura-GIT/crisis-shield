@@ -479,15 +479,15 @@ const EmergencySection: React.FC = () => {
             onClick={() => {
               const dept = departments.find(d => d.id === filterDepartment);
               if (!dept) return;
-              const deptCards = cards.filter(c => (c as any).department_id === filterDepartment);
+              const deptCards = cards
+                .filter(c => (c as any).department_id === filterDepartment)
+                .map(c => ({ ...c, cenario_ids: cardCenMap.get(c.id) || [] }));
               generateDeptActionCardsPDF({
                 departmentName: dept.name,
                 departmentCode: (dept as any).code || undefined,
                 cards: deptCards as any,
                 items: allItems as any,
                 cenarios: cenarios as any,
-                recursos: recursos as any,
-                drTypes: drTypes as any,
               });
             }}
           >
