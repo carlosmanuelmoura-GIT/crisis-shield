@@ -157,7 +157,7 @@ export function useCreateActionCard() {
 
   return useMutation({
     mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string; strategic_pause?: boolean; golden_rule?: string; activation_authority?: string }) => {
-      const { error } = await supabase.from("action_cards").insert({
+      const { data: created, error } = await supabase.from("action_cards").insert({
         title_pt: data.title_pt,
         title_en: data.title_en,
         severity: data.severity,
@@ -172,8 +172,9 @@ export function useCreateActionCard() {
         golden_rule: data.golden_rule || '',
         activation_authority: data.activation_authority || '',
         owner_id: user?.id,
-      } as any);
+      } as any).select("id").single();
       if (error) throw error;
+      return created as { id: string };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["action_cards"] }),
   });
