@@ -214,9 +214,9 @@ const EmergencySection: React.FC = () => {
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const openCreate = (recursoId?: string) => {
+  const openCreate = () => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
+    setForm({ ...emptyForm });
     setDialogOpen(true);
   };
 
@@ -225,10 +225,8 @@ const EmergencySection: React.FC = () => {
     setForm({
       title_pt: card.title_pt, title_en: card.title_en, severity: card.severity,
       capability: card.capability || "",
-      recurso_id: card.recurso_id || "",
-      cenario_id: card.cenario_id || "",
+      cenario_ids: cardCenMap.get(card.id) || [],
       department_id: card.department_id || "",
-      dr_type_id: (card as any).dr_type_id || "",
       golden_rule: (card as any).golden_rule || "",
       activation_authority: (card as any).activation_authority || "",
     });
@@ -237,21 +235,21 @@ const EmergencySection: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      const { cenario_ids, ...rest } = form;
       const payload = {
-        ...form,
-        recurso_id: form.recurso_id || undefined,
+        ...rest,
         capability: form.capability || undefined,
-        cenario_id: form.cenario_id || undefined,
         department_id: form.department_id || undefined,
-        dr_type_id: form.dr_type_id || undefined,
       };
+      let cardId = editingCard;
       if (editingCard) {
         await updateCard.mutateAsync({ id: editingCard, ...payload });
-        toast({ title: lang === "pt" ? "Atualizado" : "Updated" });
       } else {
-        await createCard.mutateAsync(payload);
-        toast({ title: lang === "pt" ? "Criado" : "Created" });
+        const created = await createCard.mutateAsync(payload);
+        cardId = created?.id ?? null;
       }
+      if (cardId) await setCardCenarios.mutateAsync({ cardId, cenarioIds: cenario_ids });
+      toast({ title: editingCard ? (lang === "pt" ? "Atualizado" : "Updated") : (lang === "pt" ? "Criado" : "Created") });
       setDialogOpen(false);
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -272,10 +270,10 @@ const EmergencySection: React.FC = () => {
         capability: card.capability,
         funcao: card.funcao,
         macro_processo: card.macro_processo,
-        recurso_id: card.recurso_id,
-        cenario_id: (card as any).cenario_id,
         department_id: (card as any).department_id,
-        dr_type_id: (card as any).dr_type_id,
+        strategic_pause: (card as any).strategic_pause,
+        golden_rule: (card as any).golden_rule,
+        activation_authority: (card as any).activation_authority,
         owner_id: card.owner_id,
       } as any).select("id").single();
       if (error) throw error;
@@ -287,6 +285,7 @@ const EmergencySection: React.FC = () => {
         );
         if (itemsErr) throw itemsErr;
       }
+      if (newCard) await setCardCenarios.mutateAsync({ cardId: newCard.id, cenarioIds: cardCenMap.get(card.id) || [] });
 
       queryClient.invalidateQueries({ queryKey: ["action_cards"] });
       queryClient.invalidateQueries({ queryKey: ["checklist_items"] });
