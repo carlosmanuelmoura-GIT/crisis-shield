@@ -896,40 +896,24 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
-              <Select value={form.cenario_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, cenario_id: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {cenarios.map(c => <SelectItem key={c.id} value={c.id}>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
-              <Select value={form.dr_type_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, dr_type_id: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Sem DR —" : "— No DR —"}</SelectItem>
-                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label} (RTO {d.rto}h / RPO {d.rpo}h)</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de Falha que se perde" : "Failure Type lost"}</Label>
-              <Select value={form.recurso_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, recurso_id: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label className="text-sm font-medium">{lang === "pt" ? "Cenários aplicáveis" : "Applicable scenarios"}</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 rounded-md border border-border bg-secondary">
+                {cenarios.map(c => {
+                  const checked = form.cenario_ids.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => setForm(f => ({
+                          ...f,
+                          cenario_ids: v ? [...f.cenario_ids, c.id] : f.cenario_ids.filter(x => x !== c.id),
+                        }))}
+                      />
+                      <span>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Departamento" : "Department"}</Label>
