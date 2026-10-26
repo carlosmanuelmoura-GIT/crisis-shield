@@ -732,10 +732,10 @@ const EmergencySection: React.FC = () => {
         );
       })}
 
-      {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
+      {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Criticidade */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4 px-3 scroll-px-3" style={{ minHeight: 400 }}>
-          {groupedByCenario.map(({ cenario, drGroups, total: colCount }) => {
+          {groupedByCenario.map(({ cenario, sevGroups, total: colCount }) => {
             const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
             const colTitle = cenario
@@ -752,17 +752,11 @@ const EmergencySection: React.FC = () => {
                   e.preventDefault();
                   setDragOverCol(null);
                   if (!dragCardId) return;
-                  const card = cards.find(c => c.id === dragCardId);
                   const targetCenId = cenario?.id || null;
-                  if (!card || (card as any).cenario_id === targetCenId) { setDragCardId(null); return; }
-                  updateCard.mutateAsync({
-                    id: card.id, title_pt: card.title_pt, title_en: card.title_en,
-                    severity: card.severity, capability: card.capability || undefined,
-                    recurso_id: card.recurso_id || undefined,
-                    cenario_id: targetCenId || undefined,
-                    department_id: card.department_id || undefined,
-                    dr_type_id: (card as any).dr_type_id || undefined,
-                  }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
+                  const current = cardCenMap.get(dragCardId) || [];
+                  if (!targetCenId || current.includes(targetCenId)) { setDragCardId(null); return; }
+                  setCardCenarios.mutateAsync({ cardId: dragCardId, cenarioIds: [...current, targetCenId] })
+                    .then(() => toast({ title: lang === "pt" ? "Cenário adicionado ao card" : "Scenario added to card" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
                 }}
@@ -777,26 +771,15 @@ const EmergencySection: React.FC = () => {
 
                 <div className="flex-1 min-w-0 overflow-y-auto">
                   <div className="box-border w-full space-y-3 p-2 pr-4">
-                    {drGroups.map(({ drType, recursoGroups, total: drTotal }) => (
-                    <div key={`${colId}:dr:${drType?.id || "__no_dr"}`} className="space-y-2">
-                      <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-blue-500/10 border border-blue-500/20">
-                        <Network className="h-3 w-3 text-blue-600 shrink-0" />
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700 truncate">
-                          {drType ? `${drType.code} — ${drType.label}` : (lang === "pt" ? "Sem tipo de DR" : "No DR type")}
+                    {sevGroups.map(({ severity: sevKey, cards: subCards }) => (
+                    <div key={`${colId}:sev:${sevKey}`} className="space-y-2">
+                      <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-secondary border border-border/60">
+                        <span className={`inline-block h-2.5 w-2.5 rounded-sm border-l-4 ${severityColors[sevKey] || ""}`} />
+                        <span className="text-[10px] font-bold uppercase tracking-wide truncate">
+                          {severityLabels[sevKey] ? (lang === "pt" ? severityLabels[sevKey].pt : severityLabels[sevKey].en) : sevKey}
                         </span>
-                        <Badge variant="outline" className="text-[9px] ml-auto">{drTotal}</Badge>
+                        <Badge variant="outline" className="text-[9px] ml-auto">{subCards.length}</Badge>
                       </div>
-                    {recursoGroups.map(({ recurso, cards: subCards }) => {
-                      const subLabel = recurso
-                        ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-                        : (lang === "pt" ? "Sem tipo de falha" : "No failure type");
-                      return (
-                        <div key={`${colId}:${recurso?.id || "__unassigned"}`} className="space-y-1.5">
-                          <div className="flex items-center gap-1.5 px-1 py-0.5 border-b border-border/40">
-                            <Package className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground truncate">{subLabel}</span>
-                            <Badge variant="outline" className="text-[9px] ml-auto">{subCards.length}</Badge>
-                          </div>
                           <div className="space-y-2">
                             {subCards.map(card => {
                               const items = allItems.filter(i => i.action_card_id === card.id);
@@ -805,9 +788,9 @@ const EmergencySection: React.FC = () => {
                               const title = lang === "pt" ? card.title_pt : card.title_en;
                               const severity = severityLabels[card.severity];
                               const isDragging = dragCardId === card.id;
-                              const isCardExpanded = expandedKanban[card.id];
                               const deptLabel = getDeptLabel(card);
                               const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
+                              const nCen = (cardCenMap.get(card.id) || []).length;
 
                               return (
                                 <Card
@@ -831,7 +814,7 @@ const EmergencySection: React.FC = () => {
                                     <p className="text-sm font-bold uppercase leading-tight">{title}</p>
                                     <div className="flex flex-wrap gap-1">
                                       {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
-                                      {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
+                                      {nCen > 1 && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{nCen} {lang === "pt" ? "cenários" : "scenarios"}</Badge>}
                                       {linkedBias.length > 0 && (
                                         <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
                                           {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
@@ -854,9 +837,6 @@ const EmergencySection: React.FC = () => {
                               );
                             })}
                           </div>
-                        </div>
-                      );
-                    })}
                     </div>
                     ))}
                   </div>
