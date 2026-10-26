@@ -214,9 +214,9 @@ const EmergencySection: React.FC = () => {
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleGroup = (id: string) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const openCreate = (recursoId?: string) => {
+  const openCreate = () => {
     setEditingCard(null);
-    setForm({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: recursoId || "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
+    setForm({ ...emptyForm });
     setDialogOpen(true);
   };
 
@@ -225,10 +225,8 @@ const EmergencySection: React.FC = () => {
     setForm({
       title_pt: card.title_pt, title_en: card.title_en, severity: card.severity,
       capability: card.capability || "",
-      recurso_id: card.recurso_id || "",
-      cenario_id: card.cenario_id || "",
+      cenario_ids: cardCenMap.get(card.id) || [],
       department_id: card.department_id || "",
-      dr_type_id: (card as any).dr_type_id || "",
       golden_rule: (card as any).golden_rule || "",
       activation_authority: (card as any).activation_authority || "",
     });
@@ -237,21 +235,21 @@ const EmergencySection: React.FC = () => {
 
   const handleSave = async () => {
     try {
+      const { cenario_ids, ...rest } = form;
       const payload = {
-        ...form,
-        recurso_id: form.recurso_id || undefined,
+        ...rest,
         capability: form.capability || undefined,
-        cenario_id: form.cenario_id || undefined,
         department_id: form.department_id || undefined,
-        dr_type_id: form.dr_type_id || undefined,
       };
+      let cardId = editingCard;
       if (editingCard) {
         await updateCard.mutateAsync({ id: editingCard, ...payload });
-        toast({ title: lang === "pt" ? "Atualizado" : "Updated" });
       } else {
-        await createCard.mutateAsync(payload);
-        toast({ title: lang === "pt" ? "Criado" : "Created" });
+        const created = await createCard.mutateAsync(payload);
+        cardId = created?.id ?? null;
       }
+      if (cardId) await setCardCenarios.mutateAsync({ cardId, cenarioIds: cenario_ids });
+      toast({ title: editingCard ? (lang === "pt" ? "Atualizado" : "Updated") : (lang === "pt" ? "Criado" : "Created") });
       setDialogOpen(false);
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -272,10 +270,10 @@ const EmergencySection: React.FC = () => {
         capability: card.capability,
         funcao: card.funcao,
         macro_processo: card.macro_processo,
-        recurso_id: card.recurso_id,
-        cenario_id: (card as any).cenario_id,
         department_id: (card as any).department_id,
-        dr_type_id: (card as any).dr_type_id,
+        strategic_pause: (card as any).strategic_pause,
+        golden_rule: (card as any).golden_rule,
+        activation_authority: (card as any).activation_authority,
         owner_id: card.owner_id,
       } as any).select("id").single();
       if (error) throw error;
@@ -287,6 +285,7 @@ const EmergencySection: React.FC = () => {
         );
         if (itemsErr) throw itemsErr;
       }
+      if (newCard) await setCardCenarios.mutateAsync({ cardId: newCard.id, cenarioIds: cardCenMap.get(card.id) || [] });
 
       queryClient.invalidateQueries({ queryKey: ["action_cards"] });
       queryClient.invalidateQueries({ queryKey: ["checklist_items"] });
@@ -479,15 +478,15 @@ const EmergencySection: React.FC = () => {
             onClick={() => {
               const dept = departments.find(d => d.id === filterDepartment);
               if (!dept) return;
-              const deptCards = cards.filter(c => (c as any).department_id === filterDepartment);
+              const deptCards = cards
+                .filter(c => (c as any).department_id === filterDepartment)
+                .map(c => ({ ...c, cenario_ids: cardCenMap.get(c.id) || [] }));
               generateDeptActionCardsPDF({
                 departmentName: dept.name,
                 departmentCode: (dept as any).code || undefined,
                 cards: deptCards as any,
                 items: allItems as any,
                 cenarios: cenarios as any,
-                recursos: recursos as any,
-                drTypes: drTypes as any,
               });
             }}
           >
@@ -536,13 +535,12 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
-              <Select value={filterDR} onValueChange={setFilterDR}>
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Criticidade" : "Criticality"}</Label>
+              <Select value={filterSeverity} onValueChange={setFilterSeverity}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label}</SelectItem>)}
-                  <SelectItem value="__none">{lang === "pt" ? "Sem tipo de DR" : "No DR type"}</SelectItem>
+                  <SelectItem value="all">{lang === "pt" ? "Todas" : "All"}</SelectItem>
+                  {SEVERITY_ORDER.map(s => <SelectItem key={s} value={s}>{lang === "pt" ? severityLabels[s].pt : severityLabels[s].en}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -553,16 +551,6 @@ const EmergencySection: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
                   {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de Falha" : "Failure Type"}</Label>
-              <Select value={filterRecurso} onValueChange={setFilterRecurso}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -587,8 +575,8 @@ const EmergencySection: React.FC = () => {
       )}
 
       {/* Reusable card renderer (list variant) */}
-      {/* LIST VIEW - grouped by Cenário > Recurso */}
-      {viewMode === "list" && groupedByCenario.map(({ cenario, drGroups, total: cenTotal }) => {
+      {/* LIST VIEW - grouped by Cenário > Criticidade */}
+      {viewMode === "list" && groupedByCenario.map(({ cenario, sevGroups, total: cenTotal }) => {
         const cenId = cenario?.id || "__no_cenario";
         const isCenCollapsed = collapsedGroups[`cen:${cenId}`];
         const cenLabel = cenario
@@ -611,42 +599,15 @@ const EmergencySection: React.FC = () => {
               </div>
             </div>
 
-            {!isCenCollapsed && drGroups.map(({ drType, recursoGroups, total: drTotal }) => {
-            const drId = drType?.id || "__no_dr";
-            const drGroupKey = `${cenId}:dr:${drId}`;
-            const isDrCollapsed = collapsedGroups[drGroupKey];
-            const drLabel = drType
-              ? `${drType.code} — ${drType.label}`
-              : (lang === "pt" ? "Sem tipo de DR" : "No DR type");
-            return (
-            <div key={drGroupKey} className="space-y-2 ml-3">
-              <div
-                className="flex items-center gap-3 px-3 py-1.5 bg-blue-500/10 rounded-lg cursor-pointer border border-blue-500/30"
-                onClick={() => toggleGroup(drGroupKey)}
-              >
-                <Network className="h-4 w-4 text-blue-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-bold uppercase tracking-wide">{lang === "pt" ? "Tipo de DR" : "DR Type"}: {drLabel}</h4>
-                  {drType && (
-                    <span className="text-[10px] text-muted-foreground">RTO {drType.rto}h · RPO {drType.rpo}h</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="secondary" className="text-[10px]">{drTotal} cards</Badge>
-                  {isDrCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </div>
-              </div>
-              {!isDrCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
-              const groupId = `${drGroupKey}:${recurso?.id || "__unassigned"}`;
+            {!isCenCollapsed && sevGroups.map(({ severity: sevKey, cards: groupCards }) => {
+              const groupId = `${cenId}:sev:${sevKey}`;
               const isGroupCollapsed = collapsedGroups[groupId];
               const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
               const groupDone = groupCards.reduce((sum, card) => {
                 const items = allItems.filter(i => i.action_card_id === card.id);
                 return sum + items.filter(i => statesMap[i.id]).length;
               }, 0);
-              const groupLabel = recurso
-                ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-                : (lang === "pt" ? "Sem tipo de falha associado" : "No failure type assigned");
+              const groupLabel = severityLabels[sevKey] ? (lang === "pt" ? severityLabels[sevKey].pt : severityLabels[sevKey].en) : sevKey;
 
               return (
                 <div key={groupId} className="space-y-2 ml-4">
@@ -654,9 +615,9 @@ const EmergencySection: React.FC = () => {
                     className="flex items-center gap-3 px-3 py-1.5 bg-secondary/50 rounded-lg cursor-pointer border border-border/50"
                     onClick={() => toggleGroup(groupId)}
                   >
-                    <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className={`inline-block h-3 w-3 rounded-sm border-l-4 ${severityColors[sevKey] || ""}`} />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold">{lang === "pt" ? "Tipo de Falha" : "Failure Type"}: {groupLabel}</h4>
+                      <h4 className="text-xs font-bold uppercase">{lang === "pt" ? "Criticidade" : "Criticality"}: {groupLabel}</h4>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="secondary" className="text-[10px]">{groupCards.length} cards</Badge>
@@ -668,13 +629,12 @@ const EmergencySection: React.FC = () => {
                   {!isGroupCollapsed && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 border-l-2 border-border/50 ml-3">
                       {groupCards.map(card => {
-                        const isOpen = expanded[card.id];
                         const items = allItems.filter(i => i.action_card_id === card.id);
                         const done = items.filter(i => statesMap[i.id]).length;
                         const total = items.length;
                         const title = lang === "pt" ? card.title_pt : card.title_en;
                         const severity = severityLabels[card.severity];
-                        const cLabel = getCenarioLabel(card);
+                        const cLabels = getCenarioLabels(card);
                         const deptLabel = getDeptLabel(card);
                         const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
 
@@ -696,8 +656,7 @@ const EmergencySection: React.FC = () => {
                               </div>
                               <CardTitle className="text-sm font-bold uppercase leading-tight">{title}</CardTitle>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {cLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cLabel}</Badge>}
-                                {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
+                                {cLabels.map(l => <Badge key={l} variant="outline" className="text-[10px] font-normal bg-accent/30">{l}</Badge>)}
                                 {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                                 {linkedBias.length > 0 && (
                                   <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
@@ -725,17 +684,14 @@ const EmergencySection: React.FC = () => {
                 </div>
               );
             })}
-            </div>
-            );
-            })}
           </div>
         );
       })}
 
-      {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Recurso */}
+      {/* KANBAN VIEW - columns by Cenário, inner sub-groups by Criticidade */}
       {viewMode === "kanban" && filtered.length > 0 && (
         <div className="flex gap-3 overflow-x-auto pb-4 px-3 scroll-px-3" style={{ minHeight: 400 }}>
-          {groupedByCenario.map(({ cenario, drGroups, total: colCount }) => {
+          {groupedByCenario.map(({ cenario, sevGroups, total: colCount }) => {
             const colId = cenario?.id || "__no_cenario";
             const isDragOver = dragOverCol === colId;
             const colTitle = cenario
@@ -752,17 +708,11 @@ const EmergencySection: React.FC = () => {
                   e.preventDefault();
                   setDragOverCol(null);
                   if (!dragCardId) return;
-                  const card = cards.find(c => c.id === dragCardId);
                   const targetCenId = cenario?.id || null;
-                  if (!card || (card as any).cenario_id === targetCenId) { setDragCardId(null); return; }
-                  updateCard.mutateAsync({
-                    id: card.id, title_pt: card.title_pt, title_en: card.title_en,
-                    severity: card.severity, capability: card.capability || undefined,
-                    recurso_id: card.recurso_id || undefined,
-                    cenario_id: targetCenId || undefined,
-                    department_id: card.department_id || undefined,
-                    dr_type_id: (card as any).dr_type_id || undefined,
-                  }).then(() => toast({ title: lang === "pt" ? "Card movido" : "Card moved" }))
+                  const current = cardCenMap.get(dragCardId) || [];
+                  if (!targetCenId || current.includes(targetCenId)) { setDragCardId(null); return; }
+                  setCardCenarios.mutateAsync({ cardId: dragCardId, cenarioIds: [...current, targetCenId] })
+                    .then(() => toast({ title: lang === "pt" ? "Cenário adicionado ao card" : "Scenario added to card" }))
                     .catch((err: any) => toast({ title: "Erro", description: err.message, variant: "destructive" }));
                   setDragCardId(null);
                 }}
@@ -777,26 +727,15 @@ const EmergencySection: React.FC = () => {
 
                 <div className="flex-1 min-w-0 overflow-y-auto">
                   <div className="box-border w-full space-y-3 p-2 pr-4">
-                    {drGroups.map(({ drType, recursoGroups, total: drTotal }) => (
-                    <div key={`${colId}:dr:${drType?.id || "__no_dr"}`} className="space-y-2">
-                      <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-blue-500/10 border border-blue-500/20">
-                        <Network className="h-3 w-3 text-blue-600 shrink-0" />
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700 truncate">
-                          {drType ? `${drType.code} — ${drType.label}` : (lang === "pt" ? "Sem tipo de DR" : "No DR type")}
+                    {sevGroups.map(({ severity: sevKey, cards: subCards }) => (
+                    <div key={`${colId}:sev:${sevKey}`} className="space-y-2">
+                      <div className="flex items-center gap-1.5 px-1.5 py-1 rounded bg-secondary border border-border/60">
+                        <span className={`inline-block h-2.5 w-2.5 rounded-sm border-l-4 ${severityColors[sevKey] || ""}`} />
+                        <span className="text-[10px] font-bold uppercase tracking-wide truncate">
+                          {severityLabels[sevKey] ? (lang === "pt" ? severityLabels[sevKey].pt : severityLabels[sevKey].en) : sevKey}
                         </span>
-                        <Badge variant="outline" className="text-[9px] ml-auto">{drTotal}</Badge>
+                        <Badge variant="outline" className="text-[9px] ml-auto">{subCards.length}</Badge>
                       </div>
-                    {recursoGroups.map(({ recurso, cards: subCards }) => {
-                      const subLabel = recurso
-                        ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-                        : (lang === "pt" ? "Sem tipo de falha" : "No failure type");
-                      return (
-                        <div key={`${colId}:${recurso?.id || "__unassigned"}`} className="space-y-1.5">
-                          <div className="flex items-center gap-1.5 px-1 py-0.5 border-b border-border/40">
-                            <Package className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground truncate">{subLabel}</span>
-                            <Badge variant="outline" className="text-[9px] ml-auto">{subCards.length}</Badge>
-                          </div>
                           <div className="space-y-2">
                             {subCards.map(card => {
                               const items = allItems.filter(i => i.action_card_id === card.id);
@@ -805,9 +744,9 @@ const EmergencySection: React.FC = () => {
                               const title = lang === "pt" ? card.title_pt : card.title_en;
                               const severity = severityLabels[card.severity];
                               const isDragging = dragCardId === card.id;
-                              const isCardExpanded = expandedKanban[card.id];
                               const deptLabel = getDeptLabel(card);
                               const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
+                              const nCen = (cardCenMap.get(card.id) || []).length;
 
                               return (
                                 <Card
@@ -831,7 +770,7 @@ const EmergencySection: React.FC = () => {
                                     <p className="text-sm font-bold uppercase leading-tight">{title}</p>
                                     <div className="flex flex-wrap gap-1">
                                       {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
-                                      {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
+                                      {nCen > 1 && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{nCen} {lang === "pt" ? "cenários" : "scenarios"}</Badge>}
                                       {linkedBias.length > 0 && (
                                         <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
                                           {linkedBias.length} BIA{linkedBias.length > 1 ? "s" : ""}
@@ -854,9 +793,6 @@ const EmergencySection: React.FC = () => {
                               );
                             })}
                           </div>
-                        </div>
-                      );
-                    })}
                     </div>
                     ))}
                   </div>
@@ -896,40 +832,24 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Cenário" : "Scenario"}</Label>
-              <Select value={form.cenario_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, cenario_id: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {cenarios.map(c => <SelectItem key={c.id} value={c.id}>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
-              <Select value={form.dr_type_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, dr_type_id: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Sem DR —" : "— No DR —"}</SelectItem>
-                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label} (RTO {d.rto}h / RPO {d.rpo}h)</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">{lang === "pt" ? "Tipo de Falha que se perde" : "Failure Type lost"}</Label>
-              <Select value={form.recurso_id || "none"} onValueChange={(v) => setForm(f => ({ ...f, recurso_id: v === "none" ? "" : v }))}>
-                <SelectTrigger className="bg-secondary border-border">
-                  <SelectValue placeholder={lang === "pt" ? "Selecionar..." : "Select..."} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{lang === "pt" ? "— Nenhum —" : "— None —"}</SelectItem>
-                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label className="text-sm font-medium">{lang === "pt" ? "Cenários aplicáveis" : "Applicable scenarios"}</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-2 rounded-md border border-border bg-secondary">
+                {cenarios.map(c => {
+                  const checked = form.cenario_ids.includes(c.id);
+                  return (
+                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => setForm(f => ({
+                          ...f,
+                          cenario_ids: v ? [...f.cenario_ids, c.id] : f.cenario_ids.filter(x => x !== c.id),
+                        }))}
+                      />
+                      <span>{c.roman ? `${c.roman} — ` : ""}{lang === "pt" ? c.name_pt : c.name_en || c.name_pt}</span>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm font-medium">{lang === "pt" ? "Departamento" : "Department"}</Label>

@@ -53,6 +53,37 @@ export function useActionCards() {
   });
 }
 
+export function useActionCardCenarios() {
+  return useQuery({
+    queryKey: ["action_card_cenarios"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("action_card_cenarios").select("action_card_id, cenario_id");
+      if (error) throw error;
+      return data as { action_card_id: string; cenario_id: string }[];
+    },
+  });
+}
+
+export function useSetActionCardCenarios() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ cardId, cenarioIds }: { cardId: string; cenarioIds: string[] }) => {
+      const { error: dErr } = await supabase.from("action_card_cenarios").delete().eq("action_card_id", cardId);
+      if (dErr) throw dErr;
+      if (cenarioIds.length) {
+        const { error } = await supabase.from("action_card_cenarios").insert(cenarioIds.map(c => ({ action_card_id: cardId, cenario_id: c })));
+        if (error) throw error;
+      }
+      // keep legacy column in sync with the first scenario
+      await supabase.from("action_cards").update({ cenario_id: cenarioIds[0] ?? null } as any).eq("id", cardId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["action_card_cenarios"] });
+      qc.invalidateQueries({ queryKey: ["action_cards"] });
+    },
+  });
+}
+
 export function useChecklistItems(cardId?: string) {
   return useQuery({
     queryKey: ["checklist_items", cardId],
@@ -126,7 +157,7 @@ export function useCreateActionCard() {
 
   return useMutation({
     mutationFn: async (data: { title_pt: string; title_en: string; severity: string; capability?: string; funcao?: string; macro_processo?: string; recurso_id?: string; cenario_id?: string; department_id?: string; dr_type_id?: string; strategic_pause?: boolean; golden_rule?: string; activation_authority?: string }) => {
-      const { error } = await supabase.from("action_cards").insert({
+      const { data: created, error } = await supabase.from("action_cards").insert({
         title_pt: data.title_pt,
         title_en: data.title_en,
         severity: data.severity,
@@ -141,8 +172,9 @@ export function useCreateActionCard() {
         golden_rule: data.golden_rule || '',
         activation_authority: data.activation_authority || '',
         owner_id: user?.id,
-      } as any);
+      } as any).select("id").single();
       if (error) throw error;
+      return created as { id: string };
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["action_cards"] }),
   });

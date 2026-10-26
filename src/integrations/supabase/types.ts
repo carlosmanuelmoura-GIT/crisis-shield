@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_card_cenarios: {
+        Row: {
+          action_card_id: string
+          cenario_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          action_card_id: string
+          cenario_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          action_card_id?: string
+          cenario_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_card_cenarios_action_card_id_fkey"
+            columns: ["action_card_id"]
+            isOneToOne: false
+            referencedRelation: "action_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_card_cenarios_cenario_id_fkey"
+            columns: ["cenario_id"]
+            isOneToOne: false
+            referencedRelation: "cenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       action_cards: {
         Row: {
           activation_authority: string
