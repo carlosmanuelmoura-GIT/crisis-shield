@@ -536,13 +536,12 @@ const EmergencySection: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de DR" : "DR Type"}</Label>
-              <Select value={filterDR} onValueChange={setFilterDR}>
+              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Criticidade" : "Criticality"}</Label>
+              <Select value={filterSeverity} onValueChange={setFilterSeverity}>
                 <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {drTypes.map(d => <SelectItem key={d.id} value={d.id}>{d.code} — {d.label}</SelectItem>)}
-                  <SelectItem value="__none">{lang === "pt" ? "Sem tipo de DR" : "No DR type"}</SelectItem>
+                  <SelectItem value="all">{lang === "pt" ? "Todas" : "All"}</SelectItem>
+                  {SEVERITY_ORDER.map(s => <SelectItem key={s} value={s}>{lang === "pt" ? severityLabels[s].pt : severityLabels[s].en}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -553,16 +552,6 @@ const EmergencySection: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
                   {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{lang === "pt" ? "Tipo de Falha" : "Failure Type"}</Label>
-              <Select value={filterRecurso} onValueChange={setFilterRecurso}>
-                <SelectTrigger className="h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{lang === "pt" ? "Todos" : "All"}</SelectItem>
-                  {recursos.map(r => <SelectItem key={r.id} value={r.id}>{r.name_pt}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
