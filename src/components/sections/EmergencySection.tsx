@@ -587,8 +587,8 @@ const EmergencySection: React.FC = () => {
       )}
 
       {/* Reusable card renderer (list variant) */}
-      {/* LIST VIEW - grouped by Cenário > Recurso */}
-      {viewMode === "list" && groupedByCenario.map(({ cenario, drGroups, total: cenTotal }) => {
+      {/* LIST VIEW - grouped by Cenário > Criticidade */}
+      {viewMode === "list" && groupedByCenario.map(({ cenario, sevGroups, total: cenTotal }) => {
         const cenId = cenario?.id || "__no_cenario";
         const isCenCollapsed = collapsedGroups[`cen:${cenId}`];
         const cenLabel = cenario
@@ -611,42 +611,15 @@ const EmergencySection: React.FC = () => {
               </div>
             </div>
 
-            {!isCenCollapsed && drGroups.map(({ drType, recursoGroups, total: drTotal }) => {
-            const drId = drType?.id || "__no_dr";
-            const drGroupKey = `${cenId}:dr:${drId}`;
-            const isDrCollapsed = collapsedGroups[drGroupKey];
-            const drLabel = drType
-              ? `${drType.code} — ${drType.label}`
-              : (lang === "pt" ? "Sem tipo de DR" : "No DR type");
-            return (
-            <div key={drGroupKey} className="space-y-2 ml-3">
-              <div
-                className="flex items-center gap-3 px-3 py-1.5 bg-blue-500/10 rounded-lg cursor-pointer border border-blue-500/30"
-                onClick={() => toggleGroup(drGroupKey)}
-              >
-                <Network className="h-4 w-4 text-blue-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-xs font-bold uppercase tracking-wide">{lang === "pt" ? "Tipo de DR" : "DR Type"}: {drLabel}</h4>
-                  {drType && (
-                    <span className="text-[10px] text-muted-foreground">RTO {drType.rto}h · RPO {drType.rpo}h</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Badge variant="secondary" className="text-[10px]">{drTotal} cards</Badge>
-                  {isDrCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                </div>
-              </div>
-              {!isDrCollapsed && recursoGroups.map(({ recurso, cards: groupCards }) => {
-              const groupId = `${drGroupKey}:${recurso?.id || "__unassigned"}`;
+            {!isCenCollapsed && sevGroups.map(({ severity: sevKey, cards: groupCards }) => {
+              const groupId = `${cenId}:sev:${sevKey}`;
               const isGroupCollapsed = collapsedGroups[groupId];
               const groupTotal = groupCards.reduce((sum, card) => sum + allItems.filter(i => i.action_card_id === card.id).length, 0);
               const groupDone = groupCards.reduce((sum, card) => {
                 const items = allItems.filter(i => i.action_card_id === card.id);
                 return sum + items.filter(i => statesMap[i.id]).length;
               }, 0);
-              const groupLabel = recurso
-                ? (lang === "pt" ? recurso.name_pt : recurso.name_en || recurso.name_pt)
-                : (lang === "pt" ? "Sem tipo de falha associado" : "No failure type assigned");
+              const groupLabel = severityLabels[sevKey] ? (lang === "pt" ? severityLabels[sevKey].pt : severityLabels[sevKey].en) : sevKey;
 
               return (
                 <div key={groupId} className="space-y-2 ml-4">
@@ -654,9 +627,9 @@ const EmergencySection: React.FC = () => {
                     className="flex items-center gap-3 px-3 py-1.5 bg-secondary/50 rounded-lg cursor-pointer border border-border/50"
                     onClick={() => toggleGroup(groupId)}
                   >
-                    <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className={`inline-block h-3 w-3 rounded-sm border-l-4 ${severityColors[sevKey] || ""}`} />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold">{lang === "pt" ? "Tipo de Falha" : "Failure Type"}: {groupLabel}</h4>
+                      <h4 className="text-xs font-bold uppercase">{lang === "pt" ? "Criticidade" : "Criticality"}: {groupLabel}</h4>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="secondary" className="text-[10px]">{groupCards.length} cards</Badge>
@@ -668,13 +641,12 @@ const EmergencySection: React.FC = () => {
                   {!isGroupCollapsed && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 border-l-2 border-border/50 ml-3">
                       {groupCards.map(card => {
-                        const isOpen = expanded[card.id];
                         const items = allItems.filter(i => i.action_card_id === card.id);
                         const done = items.filter(i => statesMap[i.id]).length;
                         const total = items.length;
                         const title = lang === "pt" ? card.title_pt : card.title_en;
                         const severity = severityLabels[card.severity];
-                        const cLabel = getCenarioLabel(card);
+                        const cLabels = getCenarioLabels(card);
                         const deptLabel = getDeptLabel(card);
                         const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
 
@@ -696,8 +668,7 @@ const EmergencySection: React.FC = () => {
                               </div>
                               <CardTitle className="text-sm font-bold uppercase leading-tight">{title}</CardTitle>
                               <div className="flex flex-wrap gap-1 mt-1">
-                                {cLabel && <Badge variant="outline" className="text-[10px] font-normal bg-accent/30">{cLabel}</Badge>}
-                                {getDRLabel(card) && <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700">{getDRLabel(card)}</Badge>}
+                                {cLabels.map(l => <Badge key={l} variant="outline" className="text-[10px] font-normal bg-accent/30">{l}</Badge>)}
                                 {deptLabel && <Badge variant="outline" className="text-[10px] font-normal bg-primary/10 text-primary">{deptLabel}</Badge>}
                                 {linkedBias.length > 0 && (
                                   <Badge variant="outline" className="text-[10px] font-normal bg-blue-500/10 text-blue-700 dark:text-blue-300">
@@ -724,9 +695,6 @@ const EmergencySection: React.FC = () => {
                   )}
                 </div>
               );
-            })}
-            </div>
-            );
             })}
           </div>
         );
