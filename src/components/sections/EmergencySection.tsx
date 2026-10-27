@@ -356,7 +356,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all"); setFilterPause("all");
+    setFilterCenario("all"); setFilterDepartment("all"); setFilterSeverity("all"); setFilterPause("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
@@ -369,11 +369,11 @@ const EmergencySection: React.FC = () => {
 
   const statesMap = Object.fromEntries(allStates.map(s => [s.checklist_item_id, s.checked]));
 
-  const getCenarioLabel = (card: typeof cards[0]) => {
-    const cId = (card as any).cenario_id;
-    if (!cId) return null;
-    const c = cenarios.find(x => x.id === cId);
-    return c ? `${c.roman ? c.roman + " — " : ""}${lang === "pt" ? c.name_pt : c.name_en || c.name_pt}` : null;
+  const getCenarioLabels = (card: typeof cards[0]) => {
+    return (cardCenMap.get(card.id) || [])
+      .map(id => cenarios.find(x => x.id === id))
+      .filter(Boolean)
+      .map(c => `${c!.roman ? c!.roman + " — " : ""}${lang === "pt" ? c!.name_pt : c!.name_en || c!.name_pt}`);
   };
 
   const getDeptLabel = (card: typeof cards[0]) => {
@@ -381,19 +381,6 @@ const EmergencySection: React.FC = () => {
     if (!dId) return null;
     const d = departments.find(dep => dep.id === dId);
     return d ? d.name : null;
-  };
-
-  const getDRLabel = (card: typeof cards[0]) => {
-    const id = (card as any).dr_type_id;
-    if (!id) return null;
-    const d = drTypes.find(x => x.id === id);
-    return d ? `${d.code} — ${d.label}` : null;
-  };
-
-  const getRecursoLabel = (card: typeof cards[0]) => {
-    if (!card.recurso_id) return null;
-    const r = recursos.find(x => x.id === card.recurso_id);
-    return r ? (lang === "pt" ? r.name_pt : r.name_en || r.name_pt) : null;
   };
 
   return (
@@ -1043,8 +1030,7 @@ const EmergencySection: React.FC = () => {
             const done = items.filter(i => statesMap[i.id]).length;
             const total = items.length;
             const deptLabel = getDeptLabel(card);
-            const recLabel = getRecursoLabel(card);
-            const cLabel = getCenarioLabel(card);
+            const cLabels = getCenarioLabels(card);
             const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
             const sevChip =
               card.severity === "critical" ? "bg-red-600 text-white" :
@@ -1073,9 +1059,7 @@ const EmergencySection: React.FC = () => {
                   <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
                   <div className="flex flex-wrap gap-2 text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
                     {deptLabel && <span>{deptLabel}</span>}
-                    {recLabel && <span>· {recLabel}</span>}
-                    {cLabel && <span>· {cLabel}</span>}
-                    {getDRLabel(card) && <span>· DR: {getDRLabel(card)}</span>}
+                    {cLabels.map(l => <span key={l}>· {l}</span>)}
                   </div>
                   <div className="flex items-center gap-2 pt-1">
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => openEdit(card)}>
