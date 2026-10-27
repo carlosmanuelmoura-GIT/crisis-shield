@@ -24,6 +24,7 @@ import {
   useActionCards, useChecklistItems, useChecklistStates, useToggleChecklistState,
   useCreateActionCard, useUpdateActionCard, useDeleteActionCard,
   useCreateChecklistItem, useDeleteChecklistItem, useUpdateChecklistItem, useReorderChecklistItems,
+  useActionCardCenarios, useSetActionCardCenarios,
 } from "@/hooks/useActionCards";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
@@ -39,6 +40,7 @@ import { useCurrentUserProfile } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+const SEVERITY_ORDER = ["critical", "high", "medium"] as const;
 const severityColors: Record<string, string> = {
   critical: "border-crisis bg-crisis/10",
   high: "border-alert bg-alert/10",
@@ -53,6 +55,8 @@ const severityLabels: Record<string, { pt: string; en: string }> = {
 const EmergencySection: React.FC = () => {
   const { lang, searchQuery, crisisStartTime } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
+  const { data: cardCenLinks = [] } = useActionCardCenarios();
+  const setCardCenarios = useSetActionCardCenarios();
   const { data: allItems = [] } = useChecklistItems();
   const { data: allStates = [] } = useChecklistStates();
   const { data: businessProcesses = [] } = useBusinessProcesses();
@@ -90,7 +94,8 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
+  const emptyForm = { title_pt: "", title_en: "", severity: "medium", capability: "", cenario_ids: [] as string[], department_id: "", golden_rule: "", activation_authority: "" };
+  const [form, setForm] = useState(emptyForm);
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState<string>("");
