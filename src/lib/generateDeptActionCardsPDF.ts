@@ -74,8 +74,6 @@ export function generateDeptActionCardsPDF(opts: {
   const CARD_W = (contentW - GAP) / 2;
 
   const cenMap = new Map(cenarios.map(c => [c.id, c]));
-  const recMap = new Map(recursos.map(r => [r.id, r.name_pt]));
-  const drMap = new Map(drTypes.map(d => [d.id, d]));
 
   const itemsByCard = new Map<string, Item[]>();
   items.forEach(i => {
@@ -214,7 +212,7 @@ export function generateDeptActionCardsPDF(opts: {
 
   const drawCard = (card: Card, x: number, y: number, h: number) => {
     const sev = SEV_COLOR[card.severity] ?? [100, 100, 100];
-    const { rto, rec, shortId } = cardMeta(card);
+    const { rec, shortId } = cardMeta(card);
     const inner = CARD_W - 10;
     const cardItems = itemsByCard.get(card.id) ?? [];
 
