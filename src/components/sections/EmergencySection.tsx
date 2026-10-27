@@ -109,106 +109,62 @@ const EmergencySection: React.FC = () => {
   const [pendingCheck, setPendingCheck] = useState<{ itemId: string; checked: boolean; itemText: string; cardId: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ department: "", person: "", notes: "" });
 
-  // Filters: Cenário, Departamento, Recurso
+  // Filters: Cenário, Criticidade, Departamento, Pausa
   const [filterCenario, setFilterCenario] = useState<string>("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
-  const [filterRecurso, setFilterRecurso] = useState<string>("all");
-  const [filterDR, setFilterDR] = useState<string>("all");
+  const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [filterPause, setFilterPause] = useState<string>("all");
 
-  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all" || filterPause !== "all";
+  const cardCenMap = useMemo(() => {
+    const m = new Map<string, string[]>();
+    cardCenLinks.forEach(l => { const a = m.get(l.action_card_id) || []; a.push(l.cenario_id); m.set(l.action_card_id, a); });
+    return m;
+  }, [cardCenLinks]);
+
+  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterSeverity !== "all" || filterPause !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (filterCenario !== "all" && (c as any).cenario_id !== filterCenario) return false;
+      if (filterCenario !== "all" && !(cardCenMap.get(c.id) || []).includes(filterCenario)) return false;
       if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
-      if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
-      if (filterDR !== "all" && ((c as any).dr_type_id || "__none") !== filterDR) return false;
+      if (filterSeverity !== "all" && c.severity !== filterSeverity) return false;
       if (filterPause === "yes" && !(c as any).strategic_pause) return false;
       if (filterPause === "no" && !!(c as any).strategic_pause) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR, filterPause]);
+  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterSeverity, filterPause, cardCenMap]);
 
-  // Group cards: primary by Cenário, secondary by Recurso (used by both views)
+  // Group cards: by Cenário (a card appears in each of its scenarios), then by Criticidade
   const groupedByCenario = useMemo(() => {
     const cenMap = new Map(cenarios.map(c => [c.id, c]));
-    const recMap = new Map(recursos.map(r => [r.id, r]));
-    const drMap = new Map(drTypes.map(d => [d.id, d]));
-
     const byCen = new Map<string, typeof filtered>();
     const cenUnassigned: typeof filtered = [];
-
     filtered.forEach(card => {
-      const cId = (card as any).cenario_id;
-      if (cId && cenMap.has(cId)) {
-        const arr = byCen.get(cId) || [];
-        arr.push(card);
-        byCen.set(cId, arr);
-      } else {
-        cenUnassigned.push(card);
+      const ids = (cardCenMap.get(card.id) || []).filter(id => cenMap.has(id));
+      if (filterCenario !== "all") {
+        const arr = byCen.get(filterCenario) || []; arr.push(card); byCen.set(filterCenario, arr);
+        return;
       }
+      if (!ids.length) { cenUnassigned.push(card); return; }
+      ids.forEach(id => { const arr = byCen.get(id) || []; arr.push(card); byCen.set(id, arr); });
     });
-
-    const sortedCenKeys = [...byCen.keys()].sort((a, b) => {
+    const sortedCenKeys = [...byCen.keys()].filter(k => cenMap.has(k)).sort((a, b) => {
       const ca = cenMap.get(a); const cb = cenMap.get(b);
       const ra = ca?.roman || ""; const rb = cb?.roman || "";
       if (ra && rb && ra !== rb) return ra.localeCompare(rb);
       return (ca?.name_pt || "").localeCompare(cb?.name_pt || "");
     });
-
-    const buildRecGroups = (cardList: typeof filtered) => {
-      const byRec = new Map<string, typeof filtered>();
-      const recUnassigned: typeof filtered = [];
-      cardList.forEach(c => {
-        if (c.recurso_id && recMap.has(c.recurso_id)) {
-          const arr = byRec.get(c.recurso_id) || [];
-          arr.push(c); byRec.set(c.recurso_id, arr);
-        } else recUnassigned.push(c);
-      });
-      const keys = [...byRec.keys()].sort((a, b) =>
-        (recMap.get(a)?.name_pt || "").localeCompare(recMap.get(b)?.name_pt || "")
-      );
-      const out: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
-      keys.forEach(k => out.push({ recurso: recMap.get(k)!, cards: byRec.get(k)! }));
-      if (recUnassigned.length) out.push({ recurso: null, cards: recUnassigned });
-      return out;
+    const buildSev = (list: typeof filtered) => {
+      const keys = [...SEVERITY_ORDER, ...Array.from(new Set(list.map(c => c.severity))).filter(s => !SEVERITY_ORDER.includes(s as any))];
+      return keys.map(s => ({ severity: s, cards: list.filter(c => c.severity === s) })).filter(g => g.cards.length);
     };
-
-    const buildDrGroups = (cardList: typeof filtered) => {
-      const byDr = new Map<string, typeof filtered>();
-      const drUnassigned: typeof filtered = [];
-      cardList.forEach(c => {
-        const id = (c as any).dr_type_id;
-        if (id && drMap.has(id)) {
-          const arr = byDr.get(id) || [];
-          arr.push(c); byDr.set(id, arr);
-        } else drUnassigned.push(c);
-      });
-      const keys = [...byDr.keys()].sort((a, b) =>
-        (drMap.get(a)?.sort_order ?? 999) - (drMap.get(b)?.sort_order ?? 999)
-      );
-      const out: { drType: typeof drTypes[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
-      keys.forEach(k => {
-        const list = byDr.get(k)!;
-        out.push({ drType: drMap.get(k)!, recursoGroups: buildRecGroups(list), total: list.length });
-      });
-      if (drUnassigned.length) out.push({ drType: null, recursoGroups: buildRecGroups(drUnassigned), total: drUnassigned.length });
-      return out;
-    };
-
-    const groups: { cenario: typeof cenarios[0] | null; drGroups: ReturnType<typeof buildDrGroups>; total: number }[] = [];
-    sortedCenKeys.forEach(id => {
-      const list = byCen.get(id)!;
-      groups.push({ cenario: cenMap.get(id)!, drGroups: buildDrGroups(list), total: list.length });
-    });
-    if (cenUnassigned.length) {
-      groups.push({ cenario: null, drGroups: buildDrGroups(cenUnassigned), total: cenUnassigned.length });
-    }
+    const groups: { cenario: typeof cenarios[0] | null; sevGroups: ReturnType<typeof buildSev>; total: number }[] = [];
+    sortedCenKeys.forEach(id => { const list = byCen.get(id)!; groups.push({ cenario: cenMap.get(id)!, sevGroups: buildSev(list), total: list.length }); });
+    if (cenUnassigned.length) groups.push({ cenario: null, sevGroups: buildSev(cenUnassigned), total: cenUnassigned.length });
     return groups;
-  }, [filtered, cenarios, recursos, drTypes]);
+  }, [filtered, cenarios, cardCenMap, filterCenario]);
 
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
