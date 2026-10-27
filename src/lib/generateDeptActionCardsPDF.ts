@@ -6,8 +6,7 @@ interface Card {
   title_en: string;
   severity: string;
   cenario_id?: string | null;
-  recurso_id?: string | null;
-  dr_type_id?: string | null;
+  cenario_ids?: string[];
   macro_processo?: string | null;
   golden_rule?: string | null;
   activation_authority?: string | null;
@@ -64,10 +63,8 @@ export function generateDeptActionCardsPDF(opts: {
   cards: Card[];
   items: Item[];
   cenarios: Cenario[];
-  recursos: Recurso[];
-  drTypes?: DRType[];
 }) {
-  const { departmentName, departmentCode, cards, items, cenarios, recursos, drTypes = [] } = opts;
+  const { departmentName, departmentCode, cards, items, cenarios } = opts;
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" });
   const pageW = doc.internal.pageSize.getWidth();   // 297
   const pageH = doc.internal.pageSize.getHeight();  // 210
@@ -77,8 +74,6 @@ export function generateDeptActionCardsPDF(opts: {
   const CARD_W = (contentW - GAP) / 2;
 
   const cenMap = new Map(cenarios.map(c => [c.id, c]));
-  const recMap = new Map(recursos.map(r => [r.id, r.name_pt]));
-  const drMap = new Map(drTypes.map(d => [d.id, d]));
 
   const itemsByCard = new Map<string, Item[]>();
   items.forEach(i => {
@@ -174,11 +169,9 @@ export function generateDeptActionCardsPDF(opts: {
   };
 
   const cardMeta = (card: Card) => {
-    const dr = card.dr_type_id ? drMap.get(card.dr_type_id) : null;
-    const rto = dr ? `${dr.rto}h` : "—";
-    const rec = card.recurso_id ? recMap.get(card.recurso_id) : null;
+    const rec: string | null = null;
     const shortId = `AC_${deptCode}_${card.id.slice(0, 4).toUpperCase()}`;
-    return { dr, rto, rec, shortId };
+    return { rec, shortId };
   };
 
   const measureCard = (card: Card): number => {
@@ -219,7 +212,7 @@ export function generateDeptActionCardsPDF(opts: {
 
   const drawCard = (card: Card, x: number, y: number, h: number) => {
     const sev = SEV_COLOR[card.severity] ?? [100, 100, 100];
-    const { rto, rec, shortId } = cardMeta(card);
+    const { rec, shortId } = cardMeta(card);
     const inner = CARD_W - 10;
     const cardItems = itemsByCard.get(card.id) ?? [];
 
@@ -255,11 +248,6 @@ export function generateDeptActionCardsPDF(opts: {
     doc.setTextColor(255, 255, 255);
     doc.text(sevTxt, x + CARD_W - 5 - sevW / 2, cy, { align: "center" });
 
-    // RTO
-    doc.setFont("courier", "normal");
-    doc.setFontSize(6.5);
-    doc.setTextColor(...GREY);
-    doc.text(`RTO: ${rto}`, x + CARD_W - 5 - sevW - 3, cy, { align: "right" });
 
     // Strategic pause chip
     if (card.strategic_pause) {
@@ -363,14 +351,18 @@ export function generateDeptActionCardsPDF(opts: {
     doc.setTextColor(0, 0, 0);
   };
 
-  // Group cards by scenario
+  // Group cards by scenario (a card appears under each of its scenarios), sorted by criticality
+  const SEV_RANK: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
   const groups = new Map<string, Card[]>();
   cards.forEach(c => {
-    const k = c.cenario_id || "__none__";
-    const arr = groups.get(k) ?? [];
-    arr.push(c);
-    groups.set(k, arr);
+    const ids = (c.cenario_ids && c.cenario_ids.length ? c.cenario_ids : (c.cenario_id ? [c.cenario_id] : ["__none__"]));
+    ids.forEach(k => {
+      const arr = groups.get(k) ?? [];
+      arr.push(c);
+      groups.set(k, arr);
+    });
   });
+  groups.forEach(list => list.sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9)));
   const orderedKeys = Array.from(groups.keys()).sort((a, b) => {
     const ra = cenMap.get(a)?.roman ?? "ZZ";
     const rb = cenMap.get(b)?.roman ?? "ZZ";
@@ -397,14 +389,16 @@ export function generateDeptActionCardsPDF(opts: {
     doc.setFontSize(11);
     doc.text((cen ? cen.name_pt : "Sem cenário atribuído").toUpperCase(), margin + 8 + rw, cursorY + 7.5);
 
-    // Failure types on right
-    const failTypes = Array.from(new Set(groupCards.map(c => (c.recurso_id ? recMap.get(c.recurso_id) : null)).filter(Boolean))) as string[];
-    if (failTypes.length) {
+    // Criticality counts on right
+    const counts = ["critical", "high", "medium", "low"]
+      .map(s => ({ s, n: groupCards.filter(c => c.severity === s).length }))
+      .filter(x => x.n > 0)
+      .map(x => `${SEV_LABEL[x.s]}: ${x.n}`);
+    if (counts.length) {
       doc.setFont("courier", "normal");
       doc.setFontSize(6.5);
       doc.setTextColor(203, 213, 225);
-      const txt = failTypes.join("  /  ").toUpperCase();
-      doc.text(doc.splitTextToSize(txt, contentW / 2)[0], pageW - margin - 4, cursorY + 7, { align: "right" });
+      doc.text(counts.join("  /  "), pageW - margin - 4, cursorY + 7, { align: "right" });
     }
     doc.setTextColor(0, 0, 0);
     cursorY += 14;

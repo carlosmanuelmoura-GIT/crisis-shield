@@ -24,6 +24,7 @@ import {
   useActionCards, useChecklistItems, useChecklistStates, useToggleChecklistState,
   useCreateActionCard, useUpdateActionCard, useDeleteActionCard,
   useCreateChecklistItem, useDeleteChecklistItem, useUpdateChecklistItem, useReorderChecklistItems,
+  useActionCardCenarios, useSetActionCardCenarios,
 } from "@/hooks/useActionCards";
 import { useBusinessProcesses } from "@/hooks/useBusinessProcesses";
 import { useRecursos } from "@/hooks/useRecursos";
@@ -39,6 +40,7 @@ import { useCurrentUserProfile } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 
+const SEVERITY_ORDER = ["critical", "high", "medium"] as const;
 const severityColors: Record<string, string> = {
   critical: "border-crisis bg-crisis/10",
   high: "border-alert bg-alert/10",
@@ -53,6 +55,8 @@ const severityLabels: Record<string, { pt: string; en: string }> = {
 const EmergencySection: React.FC = () => {
   const { lang, searchQuery, crisisStartTime } = useApp();
   const { data: cards = [], isLoading } = useActionCards();
+  const { data: cardCenLinks = [] } = useActionCardCenarios();
+  const setCardCenarios = useSetActionCardCenarios();
   const { data: allItems = [] } = useChecklistItems();
   const { data: allStates = [] } = useChecklistStates();
   const { data: businessProcesses = [] } = useBusinessProcesses();
@@ -90,7 +94,8 @@ const EmergencySection: React.FC = () => {
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<string | null>(null);
-  const [form, setForm] = useState({ title_pt: "", title_en: "", severity: "medium", capability: "", recurso_id: "", cenario_id: "", department_id: "", dr_type_id: "", golden_rule: "", activation_authority: "" });
+  const emptyForm = { title_pt: "", title_en: "", severity: "medium", capability: "", cenario_ids: [] as string[], department_id: "", golden_rule: "", activation_authority: "" };
+  const [form, setForm] = useState(emptyForm);
   const [newItemText, setNewItemText] = useState<Record<string, string>>({});
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingItemText, setEditingItemText] = useState<string>("");
@@ -109,106 +114,62 @@ const EmergencySection: React.FC = () => {
   const [pendingCheck, setPendingCheck] = useState<{ itemId: string; checked: boolean; itemText: string; cardId: string } | null>(null);
   const [confirmForm, setConfirmForm] = useState({ department: "", person: "", notes: "" });
 
-  // Filters: Cenário, Departamento, Recurso
+  // Filters: Cenário, Criticidade, Departamento, Pausa
   const [filterCenario, setFilterCenario] = useState<string>("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
-  const [filterRecurso, setFilterRecurso] = useState<string>("all");
-  const [filterDR, setFilterDR] = useState<string>("all");
+  const [filterSeverity, setFilterSeverity] = useState<string>("all");
   const [filterPause, setFilterPause] = useState<string>("all");
 
-  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterRecurso !== "all" || filterDR !== "all" || filterPause !== "all";
+  const cardCenMap = useMemo(() => {
+    const m = new Map<string, string[]>();
+    cardCenLinks.forEach(l => { const a = m.get(l.action_card_id) || []; a.push(l.cenario_id); m.set(l.action_card_id, a); });
+    return m;
+  }, [cardCenLinks]);
+
+  const hasActiveFilter = filterCenario !== "all" || filterDepartment !== "all" || filterSeverity !== "all" || filterPause !== "all";
 
   const filtered = useMemo(() => {
     return cards.filter(c => {
       const title = lang === "pt" ? c.title_pt : c.title_en;
       if (searchQuery && !title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (filterCenario !== "all" && (c as any).cenario_id !== filterCenario) return false;
+      if (filterCenario !== "all" && !(cardCenMap.get(c.id) || []).includes(filterCenario)) return false;
       if (filterDepartment !== "all" && (c as any).department_id !== filterDepartment) return false;
-      if (filterRecurso !== "all" && c.recurso_id !== filterRecurso) return false;
-      if (filterDR !== "all" && ((c as any).dr_type_id || "__none") !== filterDR) return false;
+      if (filterSeverity !== "all" && c.severity !== filterSeverity) return false;
       if (filterPause === "yes" && !(c as any).strategic_pause) return false;
       if (filterPause === "no" && !!(c as any).strategic_pause) return false;
       return true;
     });
-  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterRecurso, filterDR, filterPause]);
+  }, [cards, searchQuery, lang, filterCenario, filterDepartment, filterSeverity, filterPause, cardCenMap]);
 
-  // Group cards: primary by Cenário, secondary by Recurso (used by both views)
+  // Group cards: by Cenário (a card appears in each of its scenarios), then by Criticidade
   const groupedByCenario = useMemo(() => {
     const cenMap = new Map(cenarios.map(c => [c.id, c]));
-    const recMap = new Map(recursos.map(r => [r.id, r]));
-    const drMap = new Map(drTypes.map(d => [d.id, d]));
-
     const byCen = new Map<string, typeof filtered>();
     const cenUnassigned: typeof filtered = [];
-
     filtered.forEach(card => {
-      const cId = (card as any).cenario_id;
-      if (cId && cenMap.has(cId)) {
-        const arr = byCen.get(cId) || [];
-        arr.push(card);
-        byCen.set(cId, arr);
-      } else {
-        cenUnassigned.push(card);
+      const ids = (cardCenMap.get(card.id) || []).filter(id => cenMap.has(id));
+      if (filterCenario !== "all") {
+        const arr = byCen.get(filterCenario) || []; arr.push(card); byCen.set(filterCenario, arr);
+        return;
       }
+      if (!ids.length) { cenUnassigned.push(card); return; }
+      ids.forEach(id => { const arr = byCen.get(id) || []; arr.push(card); byCen.set(id, arr); });
     });
-
-    const sortedCenKeys = [...byCen.keys()].sort((a, b) => {
+    const sortedCenKeys = [...byCen.keys()].filter(k => cenMap.has(k)).sort((a, b) => {
       const ca = cenMap.get(a); const cb = cenMap.get(b);
       const ra = ca?.roman || ""; const rb = cb?.roman || "";
       if (ra && rb && ra !== rb) return ra.localeCompare(rb);
       return (ca?.name_pt || "").localeCompare(cb?.name_pt || "");
     });
-
-    const buildRecGroups = (cardList: typeof filtered) => {
-      const byRec = new Map<string, typeof filtered>();
-      const recUnassigned: typeof filtered = [];
-      cardList.forEach(c => {
-        if (c.recurso_id && recMap.has(c.recurso_id)) {
-          const arr = byRec.get(c.recurso_id) || [];
-          arr.push(c); byRec.set(c.recurso_id, arr);
-        } else recUnassigned.push(c);
-      });
-      const keys = [...byRec.keys()].sort((a, b) =>
-        (recMap.get(a)?.name_pt || "").localeCompare(recMap.get(b)?.name_pt || "")
-      );
-      const out: { recurso: typeof recursos[0] | null; cards: typeof filtered }[] = [];
-      keys.forEach(k => out.push({ recurso: recMap.get(k)!, cards: byRec.get(k)! }));
-      if (recUnassigned.length) out.push({ recurso: null, cards: recUnassigned });
-      return out;
+    const buildSev = (list: typeof filtered) => {
+      const keys = [...SEVERITY_ORDER, ...Array.from(new Set(list.map(c => c.severity))).filter(s => !SEVERITY_ORDER.includes(s as any))];
+      return keys.map(s => ({ severity: s, cards: list.filter(c => c.severity === s) })).filter(g => g.cards.length);
     };
-
-    const buildDrGroups = (cardList: typeof filtered) => {
-      const byDr = new Map<string, typeof filtered>();
-      const drUnassigned: typeof filtered = [];
-      cardList.forEach(c => {
-        const id = (c as any).dr_type_id;
-        if (id && drMap.has(id)) {
-          const arr = byDr.get(id) || [];
-          arr.push(c); byDr.set(id, arr);
-        } else drUnassigned.push(c);
-      });
-      const keys = [...byDr.keys()].sort((a, b) =>
-        (drMap.get(a)?.sort_order ?? 999) - (drMap.get(b)?.sort_order ?? 999)
-      );
-      const out: { drType: typeof drTypes[0] | null; recursoGroups: ReturnType<typeof buildRecGroups>; total: number }[] = [];
-      keys.forEach(k => {
-        const list = byDr.get(k)!;
-        out.push({ drType: drMap.get(k)!, recursoGroups: buildRecGroups(list), total: list.length });
-      });
-      if (drUnassigned.length) out.push({ drType: null, recursoGroups: buildRecGroups(drUnassigned), total: drUnassigned.length });
-      return out;
-    };
-
-    const groups: { cenario: typeof cenarios[0] | null; drGroups: ReturnType<typeof buildDrGroups>; total: number }[] = [];
-    sortedCenKeys.forEach(id => {
-      const list = byCen.get(id)!;
-      groups.push({ cenario: cenMap.get(id)!, drGroups: buildDrGroups(list), total: list.length });
-    });
-    if (cenUnassigned.length) {
-      groups.push({ cenario: null, drGroups: buildDrGroups(cenUnassigned), total: cenUnassigned.length });
-    }
+    const groups: { cenario: typeof cenarios[0] | null; sevGroups: ReturnType<typeof buildSev>; total: number }[] = [];
+    sortedCenKeys.forEach(id => { const list = byCen.get(id)!; groups.push({ cenario: cenMap.get(id)!, sevGroups: buildSev(list), total: list.length }); });
+    if (cenUnassigned.length) groups.push({ cenario: null, sevGroups: buildSev(cenUnassigned), total: cenUnassigned.length });
     return groups;
-  }, [filtered, cenarios, recursos, drTypes]);
+  }, [filtered, cenarios, cardCenMap, filterCenario]);
 
 
   const toggle = (id: string) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -395,7 +356,7 @@ const EmergencySection: React.FC = () => {
   };
 
   const resetFilters = () => {
-    setFilterCenario("all"); setFilterDepartment("all"); setFilterRecurso("all"); setFilterDR("all"); setFilterPause("all");
+    setFilterCenario("all"); setFilterDepartment("all"); setFilterSeverity("all"); setFilterPause("all");
   };
 
   const handleDragStart = (cardId: string) => setDragCardId(cardId);
@@ -408,11 +369,11 @@ const EmergencySection: React.FC = () => {
 
   const statesMap = Object.fromEntries(allStates.map(s => [s.checklist_item_id, s.checked]));
 
-  const getCenarioLabel = (card: typeof cards[0]) => {
-    const cId = (card as any).cenario_id;
-    if (!cId) return null;
-    const c = cenarios.find(x => x.id === cId);
-    return c ? `${c.roman ? c.roman + " — " : ""}${lang === "pt" ? c.name_pt : c.name_en || c.name_pt}` : null;
+  const getCenarioLabels = (card: typeof cards[0]) => {
+    return (cardCenMap.get(card.id) || [])
+      .map(id => cenarios.find(x => x.id === id))
+      .filter(Boolean)
+      .map(c => `${c!.roman ? c!.roman + " — " : ""}${lang === "pt" ? c!.name_pt : c!.name_en || c!.name_pt}`);
   };
 
   const getDeptLabel = (card: typeof cards[0]) => {
@@ -420,19 +381,6 @@ const EmergencySection: React.FC = () => {
     if (!dId) return null;
     const d = departments.find(dep => dep.id === dId);
     return d ? d.name : null;
-  };
-
-  const getDRLabel = (card: typeof cards[0]) => {
-    const id = (card as any).dr_type_id;
-    if (!id) return null;
-    const d = drTypes.find(x => x.id === id);
-    return d ? `${d.code} — ${d.label}` : null;
-  };
-
-  const getRecursoLabel = (card: typeof cards[0]) => {
-    if (!card.recurso_id) return null;
-    const r = recursos.find(x => x.id === card.recurso_id);
-    return r ? (lang === "pt" ? r.name_pt : r.name_en || r.name_pt) : null;
   };
 
   return (
@@ -1082,8 +1030,7 @@ const EmergencySection: React.FC = () => {
             const done = items.filter(i => statesMap[i.id]).length;
             const total = items.length;
             const deptLabel = getDeptLabel(card);
-            const recLabel = getRecursoLabel(card);
-            const cLabel = getCenarioLabel(card);
+            const cLabels = getCenarioLabels(card);
             const linkedBias = biaACLinks.filter(l => l.action_card_id === card.id);
             const sevChip =
               card.severity === "critical" ? "bg-red-600 text-white" :
@@ -1112,9 +1059,7 @@ const EmergencySection: React.FC = () => {
                   <h2 className="text-lg font-black uppercase tracking-tight leading-tight">{title}</h2>
                   <div className="flex flex-wrap gap-2 text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
                     {deptLabel && <span>{deptLabel}</span>}
-                    {recLabel && <span>· {recLabel}</span>}
-                    {cLabel && <span>· {cLabel}</span>}
-                    {getDRLabel(card) && <span>· DR: {getDRLabel(card)}</span>}
+                    {cLabels.map(l => <span key={l}>· {l}</span>)}
                   </div>
                   <div className="flex items-center gap-2 pt-1">
                     <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => openEdit(card)}>
